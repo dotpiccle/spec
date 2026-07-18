@@ -19,7 +19,9 @@ Each invalid fixture fails for exactly one primary reason, matching the rule lis
 | `pitch-frequencies-entry-missing-hz.json`  | Pitch: each `frequencies[]` entry requires `hz`.  |
 | `pitch-timing-exceeds-duration.json`       | Semantic: pitch contour timing must not exceed `duration_ms`. |
 | `frequency-out-of-range.json`              | Pitch: `hz` must be 20–20000.                     |
-| `negative-fade.json`                       | Root: fade time cannot be negative.               |
+| `negative-fade.json`                       | Layer volume: fade time cannot be negative.       |
+| `root-fade-in-removed.json`                | Root: `fade_in_ms` is not a Piccle v1 field.       |
+| `root-fade-out-removed.json`               | Root: `fade_out_ms` is not a Piccle v1 field.      |
 | `negative-hold.json`                       | Contour: `hold_ms` cannot be negative.            |
 | `negative-transition.json`                 | Contour: `transition_ms` cannot be negative.      |
 | `offset-cents-out-of-range.json`           | Pitch: `offset_cents` must be −1200–1200.         |

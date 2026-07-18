@@ -9,7 +9,13 @@
       "source": {
         "type": "tone",
         "wave": "sine",
-        "pitch": { "frequencies": [{ "hz": 660 }] }
+        "pitch": {
+          "frequencies": [
+            {
+              "hz": 660
+            }
+          ]
+        }
       }
     },
     {
@@ -18,7 +24,13 @@
       "source": {
         "type": "tone",
         "wave": "sine",
-        "pitch": { "frequencies": [{ "hz": 330 }] }
+        "pitch": {
+          "frequencies": [
+            {
+              "hz": 330
+            }
+          ]
+        }
       }
     }
   ]

@@ -3,7 +3,6 @@
   "piccle": "1.0",
   "name": "Transition",
   "description": "A brightening whoosh — noise that opens up from dull to crisp.",
-  "fade_out_ms": 5,
   "layers": [
     {
       "id": "whoosh",
@@ -29,7 +28,9 @@
             "transition_ms": 60,
             "transition_curve": "easeOut"
           },
-          { "level": 0.1 }
+          {
+            "level": 0.1
+          }
         ]
       },
       "filters": [
@@ -42,7 +43,9 @@
               "transition_ms": 200,
               "transition_curve": "exponential"
             },
-            { "hz": 8000 }
+            {
+              "hz": 8000
+            }
           ],
           "resonance": 0
         }

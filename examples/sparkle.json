@@ -3,7 +3,6 @@
   "piccle": "1.0",
   "name": "Sparkle",
   "description": "Four quick rising notes — a playful twinkle.",
-  "fade_out_ms": 5,
   "layers": [
     {
       "id": "note1",
@@ -13,7 +12,11 @@
         "type": "tone",
         "wave": "sine",
         "pitch": {
-          "frequencies": [{ "hz": 523 }]
+          "frequencies": [
+            {
+              "hz": 523
+            }
+          ]
         }
       },
       "volume": {
@@ -26,7 +29,9 @@
             "transition_ms": 30,
             "transition_curve": "exponential"
           },
-          { "level": 0.04 }
+          {
+            "level": 0.04
+          }
         ]
       }
     },
@@ -38,7 +43,11 @@
         "type": "tone",
         "wave": "sine",
         "pitch": {
-          "frequencies": [{ "hz": 659 }]
+          "frequencies": [
+            {
+              "hz": 659
+            }
+          ]
         }
       },
       "volume": {
@@ -51,7 +60,9 @@
             "transition_ms": 30,
             "transition_curve": "exponential"
           },
-          { "level": 0.04 }
+          {
+            "level": 0.04
+          }
         ]
       }
     },
@@ -63,7 +74,11 @@
         "type": "tone",
         "wave": "sine",
         "pitch": {
-          "frequencies": [{ "hz": 784 }]
+          "frequencies": [
+            {
+              "hz": 784
+            }
+          ]
         }
       },
       "volume": {
@@ -76,7 +91,9 @@
             "transition_ms": 30,
             "transition_curve": "exponential"
           },
-          { "level": 0.04 }
+          {
+            "level": 0.04
+          }
         ]
       }
     },
@@ -88,7 +105,11 @@
         "type": "tone",
         "wave": "sine",
         "pitch": {
-          "frequencies": [{ "hz": 1047 }]
+          "frequencies": [
+            {
+              "hz": 1047
+            }
+          ]
         }
       },
       "volume": {
@@ -101,7 +122,9 @@
             "transition_ms": 30,
             "transition_curve": "exponential"
           },
-          { "level": 0.04 }
+          {
+            "level": 0.04
+          }
         ]
       }
     }

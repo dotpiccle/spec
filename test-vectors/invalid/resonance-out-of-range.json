@@ -4,8 +4,21 @@
     {
       "id": "noise",
       "duration_ms": 20,
-      "source": { "type": "noise", "character": "neutral" },
-      "filters": [{ "type": "lowpass", "frequencies": [{ "hz": 1000 }], "resonance": 1.1 }]
+      "source": {
+        "type": "noise",
+        "character": "neutral"
+      },
+      "filters": [
+        {
+          "type": "lowpass",
+          "frequencies": [
+            {
+              "hz": 1000
+            }
+          ],
+          "resonance": 1.1
+        }
+      ]
     }
   ]
 }

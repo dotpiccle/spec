@@ -9,8 +9,14 @@
         "wave": "sine",
         "pitch": {
           "frequencies": [
-            { "hz": 620, "hold_ms": 80, "transition_ms": 50 },
-            { "hz": 310 }
+            {
+              "hz": 620,
+              "hold_ms": 80,
+              "transition_ms": 50
+            },
+            {
+              "hz": 310
+            }
           ]
         }
       }

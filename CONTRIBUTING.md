@@ -1,6 +1,6 @@
 # Contributing to Piccle
 
-Piccle is a portable format contract. Changes must remain clear enough for independent engines and constrained enough for untrusted mobile playback.
+Piccle is a portable format contract. Changes must remain clear enough for independent engines and constrained enough for untrusted input across browsers, desktop and mobile systems, consoles, vehicles, kiosks, and embedded appliances.
 
 ## Design principles
 
@@ -10,6 +10,7 @@ Changes should preserve these properties:
 - **AI-friendly:** fields are explicit, consistently shaped, and schema-constrained.
 - **Readable:** JSON remains understandable without specialist tooling.
 - **Portable:** semantics do not depend on a platform audio API.
+- **Engine-neutral:** the format defines rendered results without prescribing live, offline, cached, or ahead-of-playback execution.
 - **Deterministic where practical:** exact rules are used for validation, timing, and control behavior; measurable tolerances are used where DSP algorithms may vary.
 - **Bounded by engines:** valid documents are finite, and engines publish resource limits before allocating render resources.
 - **Backward-compatible:** released documents do not change meaning without a new major format version.
@@ -37,7 +38,7 @@ Open an issue describing:
 5. CPU, memory, malicious-input, and determinism implications.
 6. At least one realistic example and positive and negative validation cases.
 
-Looping, continuous playback, runtime parameters, gesture control, modulation, and theming inputs are intentionally deferred beyond v1 and require a format proposal.
+Looping, continuous playback, host-controlled parameters, gesture control, modulation, and theming inputs are intentionally deferred beyond v1 and require a format proposal. Platform support is not a new format feature: engines adapt rates, numeric modes, channels, and resources without changing document validity.
 
 ## Making a change
 

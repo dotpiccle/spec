@@ -3,7 +3,6 @@
   "piccle": "1.0",
   "name": "Error",
   "description": "A muted tick followed by two falling tones — a calm, recoverable error.",
-  "fade_out_ms": 5,
   "layers": [
     {
       "id": "tick",
@@ -17,7 +16,11 @@
       "filters": [
         {
           "type": "bandpass",
-          "frequencies": [{ "hz": 2000 }],
+          "frequencies": [
+            {
+              "hz": 2000
+            }
+          ],
           "resonance": 0.3
         }
       ]
@@ -37,7 +40,9 @@
               "transition_ms": 120,
               "transition_curve": "exponential"
             },
-            { "hz": 280 }
+            {
+              "hz": 280
+            }
           ]
         }
       },
@@ -51,13 +56,19 @@
             "transition_ms": 30,
             "transition_curve": "exponential"
           },
-          { "level": 0.08 }
+          {
+            "level": 0.08
+          }
         ]
       },
       "filters": [
         {
           "type": "lowpass",
-          "frequencies": [{ "hz": 1000 }],
+          "frequencies": [
+            {
+              "hz": 1000
+            }
+          ],
           "resonance": 0
         }
       ]
@@ -77,7 +88,9 @@
               "transition_ms": 80,
               "transition_curve": "exponential"
             },
-            { "hz": 200 }
+            {
+              "hz": 200
+            }
           ]
         }
       },
@@ -91,13 +104,19 @@
             "transition_ms": 30,
             "transition_curve": "exponential"
           },
-          { "level": 0.06 }
+          {
+            "level": 0.06
+          }
         ]
       },
       "filters": [
         {
           "type": "lowpass",
-          "frequencies": [{ "hz": 1000 }],
+          "frequencies": [
+            {
+              "hz": 1000
+            }
+          ],
           "resonance": 0
         }
       ]

@@ -36,8 +36,7 @@ Start with **noise**. A button click is a short burst of hiss -- there is no pit
         }
       ]
     }
-  ],
-  "fade_out_ms": 5
+  ]
 }
 ```
 

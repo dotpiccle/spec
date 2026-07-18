@@ -8,17 +8,45 @@
       "source": {
         "type": "tone",
         "wave": "sine",
-        "pitch": { "frequencies": [{ "hz": 440 }] }
+        "pitch": {
+          "frequencies": [
+            {
+              "hz": 440
+            }
+          ]
+        }
       },
       "volume": {
         "fade_out_ms": 5,
         "levels": [
-          { "level": 0.1, "transition_ms": 10, "transition_curve": "linear" },
-          { "level": 0.2, "transition_ms": 10, "transition_curve": "exponential" },
-          { "level": 0.3, "transition_ms": 10, "transition_curve": "easeIn" },
-          { "level": 0.4, "transition_ms": 10, "transition_curve": "easeOut" },
-          { "level": 0.5, "transition_ms": 10, "transition_curve": "easeInOut" },
-          { "level": 0.25 }
+          {
+            "level": 0.1,
+            "transition_ms": 10,
+            "transition_curve": "linear"
+          },
+          {
+            "level": 0.2,
+            "transition_ms": 10,
+            "transition_curve": "exponential"
+          },
+          {
+            "level": 0.3,
+            "transition_ms": 10,
+            "transition_curve": "easeIn"
+          },
+          {
+            "level": 0.4,
+            "transition_ms": 10,
+            "transition_curve": "easeOut"
+          },
+          {
+            "level": 0.5,
+            "transition_ms": 10,
+            "transition_curve": "easeInOut"
+          },
+          {
+            "level": 0.25
+          }
         ]
       }
     }

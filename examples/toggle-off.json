@@ -3,7 +3,6 @@
   "piccle": "1.0",
   "name": "Toggle Off",
   "description": "A soft falling tone with a tiny noise tick underneath — for toggles switching off.",
-  "fade_out_ms": 5,
   "layers": [
     {
       "id": "tone",
@@ -20,7 +19,9 @@
               "transition_ms": 100,
               "transition_curve": "linear"
             },
-            { "hz": 400 }
+            {
+              "hz": 400
+            }
           ]
         }
       },
@@ -34,7 +35,9 @@
             "transition_ms": 30,
             "transition_curve": "exponential"
           },
-          { "level": 0.15 }
+          {
+            "level": 0.15
+          }
         ]
       }
     },
@@ -50,7 +53,11 @@
       "filters": [
         {
           "type": "highpass",
-          "frequencies": [{ "hz": 4000 }],
+          "frequencies": [
+            {
+              "hz": 4000
+            }
+          ],
           "resonance": 0
         }
       ]

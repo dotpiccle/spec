@@ -3,7 +3,6 @@
   "piccle": "1.0",
   "name": "Loading",
   "description": "A brief rising shimmer that doesn't quite resolve — work has started.",
-  "fade_out_ms": 5,
   "reverb": {
     "amount": 0.35,
     "tail_ms": 350,
@@ -28,7 +27,9 @@
             "transition_ms": 80,
             "transition_curve": "easeIn"
           },
-          { "level": 0.12 }
+          {
+            "level": 0.12
+          }
         ]
       },
       "filters": [
@@ -41,7 +42,9 @@
               "transition_ms": 200,
               "transition_curve": "exponential"
             },
-            { "hz": 6000 }
+            {
+              "hz": 6000
+            }
           ],
           "resonance": 0.1
         }
@@ -62,7 +65,9 @@
               "transition_ms": 200,
               "transition_curve": "exponential"
             },
-            { "hz": 660 }
+            {
+              "hz": 660
+            }
           ]
         }
       },
@@ -76,7 +81,9 @@
             "transition_ms": 40,
             "transition_curve": "exponential"
           },
-          { "level": 0.04 }
+          {
+            "level": 0.04
+          }
         ]
       }
     }

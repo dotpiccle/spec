@@ -3,7 +3,6 @@
   "piccle": "1.0",
   "name": "Success",
   "description": "Three rising sine tones with a short reverb — the classic 'done!' confirmation.",
-  "fade_out_ms": 5,
   "reverb": {
     "amount": 0.2,
     "tail_ms": 250,
@@ -18,7 +17,11 @@
         "type": "tone",
         "wave": "sine",
         "pitch": {
-          "frequencies": [{ "hz": 523 }]
+          "frequencies": [
+            {
+              "hz": 523
+            }
+          ]
         }
       },
       "volume": {
@@ -31,7 +34,9 @@
             "transition_ms": 40,
             "transition_curve": "exponential"
           },
-          { "level": 0.08 }
+          {
+            "level": 0.08
+          }
         ]
       }
     },
@@ -43,7 +48,11 @@
         "type": "tone",
         "wave": "sine",
         "pitch": {
-          "frequencies": [{ "hz": 659 }]
+          "frequencies": [
+            {
+              "hz": 659
+            }
+          ]
         }
       },
       "volume": {
@@ -56,7 +65,9 @@
             "transition_ms": 40,
             "transition_curve": "exponential"
           },
-          { "level": 0.08 }
+          {
+            "level": 0.08
+          }
         ]
       }
     },
@@ -68,7 +79,11 @@
         "type": "tone",
         "wave": "sine",
         "pitch": {
-          "frequencies": [{ "hz": 784 }]
+          "frequencies": [
+            {
+              "hz": 784
+            }
+          ]
         }
       },
       "volume": {
@@ -81,7 +96,9 @@
             "transition_ms": 40,
             "transition_curve": "exponential"
           },
-          { "level": 0.08 }
+          {
+            "level": 0.08
+          }
         ]
       }
     }

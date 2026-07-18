@@ -1,0 +1,25 @@
+{
+  "piccle": "1.0",
+  "reverb": {
+    "amount": 0,
+    "tail_ms": 500,
+    "soften_hz": 12000
+  },
+  "layers": [
+    {
+      "id": "dry-tone",
+      "duration_ms": 20,
+      "source": {
+        "type": "tone",
+        "wave": "triangle",
+        "pitch": {
+          "frequencies": [
+            {
+              "hz": 500
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

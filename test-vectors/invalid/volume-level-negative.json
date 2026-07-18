@@ -4,8 +4,24 @@
     {
       "id": "tone",
       "duration_ms": 20,
-      "source": { "type": "tone", "wave": "sine", "pitch": { "frequencies": [{ "hz": 440 }] } },
-      "volume": { "levels": [{ "level": -0.1 }] }
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [
+            {
+              "hz": 440
+            }
+          ]
+        }
+      },
+      "volume": {
+        "levels": [
+          {
+            "level": -0.1
+          }
+        ]
+      }
     }
   ]
 }

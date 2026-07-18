@@ -5,7 +5,10 @@
       "id": "early",
       "start_ms": -1,
       "duration_ms": 20,
-      "source": { "type": "noise", "character": "neutral" }
+      "source": {
+        "type": "noise",
+        "character": "neutral"
+      }
     }
   ]
 }

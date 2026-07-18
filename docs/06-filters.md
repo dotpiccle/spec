@@ -173,6 +173,6 @@ y[n] = b0×x[n] + b1×x[n-1] + b2×x[n-2]
        - a1×y[n-1] - a2×y[n-2]
 ```
 
-In the canonical render profile, a moving cutoff is evaluated and the coefficients are recomputed for every sample frame. A native engine MAY use a numerically stable coefficient-smoothing technique, but its cutoff trajectory MUST remain within one canonical frame of the declared contour and MUST NOT introduce instability or audible zipper noise.
+In the canonical render profile, a moving cutoff is evaluated and the coefficients are recomputed for every sample frame. Other engine render profiles use their clamped render frequency and MAY use a numerically stable optimization when they preserve the declared contour timing and finite, stable output. Guidance for avoiding zipper noise is non-normative; see [Implementer Notes](13-implementer-notes.md).
 
 Frequency clamping and numeric requirements are defined in [Engine Safety and the Canonical Render Profile](11-engine-safety.md).

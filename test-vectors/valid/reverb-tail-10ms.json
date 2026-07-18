@@ -1,0 +1,27 @@
+{
+  "piccle": "1.0",
+  "reverb": {
+    "amount": 0.5,
+    "tail_ms": 10,
+    "soften_hz": 6000
+  },
+  "layers": [
+    {
+      "id": "impulse-like",
+      "duration_ms": 5,
+      "source": {
+        "type": "noise",
+        "character": "neutral",
+        "seed": 0
+      },
+      "volume": {
+        "fade_out_ms": 5,
+        "levels": [
+          {
+            "level": 0.5
+          }
+        ]
+      }
+    }
+  ]
+}

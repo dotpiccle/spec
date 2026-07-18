@@ -9,7 +9,9 @@
         "wave": "sine",
         "pitch": {
           "frequencies": [
-            { "hz": 440 }
+            {
+              "hz": 440
+            }
           ]
         }
       },
@@ -17,8 +19,14 @@
         "fade_in_ms": 10,
         "fade_out_ms": 5,
         "levels": [
-          { "level": 0.5, "hold_ms": 60, "transition_ms": 40 },
-          { "level": 0.1 }
+          {
+            "level": 0.5,
+            "hold_ms": 60,
+            "transition_ms": 40
+          },
+          {
+            "level": 0.1
+          }
         ]
       }
     }

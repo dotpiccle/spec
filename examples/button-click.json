@@ -3,7 +3,6 @@
   "piccle": "1.0",
   "name": "Button Click",
   "description": "A short noise burst, brightened with a highpass filter — the everyday button click.",
-  "fade_out_ms": 5,
   "layers": [
     {
       "id": "click",
@@ -24,13 +23,19 @@
             "transition_ms": 5,
             "transition_curve": "exponential"
           },
-          { "level": 0.05 }
+          {
+            "level": 0.05
+          }
         ]
       },
       "filters": [
         {
           "type": "highpass",
-          "frequencies": [{ "hz": 3000 }],
+          "frequencies": [
+            {
+              "hz": 3000
+            }
+          ],
           "resonance": 0
         }
       ]

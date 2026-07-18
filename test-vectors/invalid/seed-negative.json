@@ -4,7 +4,11 @@
     {
       "id": "bad-seed",
       "duration_ms": 20,
-      "source": { "type": "noise", "character": "neutral", "seed": -1 }
+      "source": {
+        "type": "noise",
+        "character": "neutral",
+        "seed": -1
+      }
     }
   ]
 }

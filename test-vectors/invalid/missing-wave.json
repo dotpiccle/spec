@@ -8,7 +8,9 @@
         "type": "tone",
         "pitch": {
           "frequencies": [
-            { "hz": 440 }
+            {
+              "hz": 440
+            }
           ]
         }
       }

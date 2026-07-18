@@ -29,7 +29,7 @@ A Piccle asset should be:
 - Easy for AI systems to generate reliably.
 - Deterministic enough for compatible engines to interpret consistently.
 - Expressive enough to create polished UI audio without prerecorded WAV or MP3 assets.
-- Safe and efficient enough for real-time playback on mobile devices.
+- Safe and efficient enough for engines across interactive platforms, including constrained embedded devices.
 
 ---
 
@@ -101,13 +101,12 @@ Piccle is designed for short, synthetic micro-audio used in user interfaces.
 - Toggle states.
 - Success, warning, and error feedback.
 - Notifications.
-- Loading and progress cues.
+- One-shot loading-start and progress-event cues.
 - Navigation transitions.
-- Gesture feedback.
+- One-shot gesture-completion feedback.
 - Short branded audio signatures.
 - Audio synchronized with brief UI animations.
 - Layered procedural sounds.
-- Parameterized and themeable sounds.
 
 ### Out of scope unless explicitly introduced by a future specification
 
@@ -337,7 +336,7 @@ Examples:
 - Fixing broken links.
 - Reorganizing non-normative content.
 
-An editorial change must not alter valid documents or runtime behavior.
+An editorial change must not alter valid documents or rendered behavior.
 
 Update only the affected documentation unless the edit reveals inconsistencies elsewhere.
 
@@ -420,9 +419,9 @@ Do not change `additionalProperties` or equivalent behavior without considering 
 
 ### Defaults
 
-A schema `default` is not automatically a runtime requirement.
+A schema `default` is not automatically an engine requirement.
 
-Every runtime default must also be stated in normative documentation.
+Every engine-applied default must also be stated in normative documentation.
 
 When adding or changing a default, update:
 
@@ -688,7 +687,7 @@ Until a more specific policy is established:
 
 Do not create a new schema version only because documentation wording changed.
 
-Do create an appropriate new version when validation or runtime interpretation changes incompatibly.
+Do create an appropriate new version when validation or engine interpretation changes incompatibly.
 
 Every Piccle document must have an unambiguous way to identify the format version it targets.
 

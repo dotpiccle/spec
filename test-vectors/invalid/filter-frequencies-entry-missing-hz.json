@@ -12,7 +12,9 @@
         {
           "type": "lowpass",
           "frequencies": [
-            { "transition_ms": 50 }
+            {
+              "transition_ms": 50
+            }
           ]
         }
       ]

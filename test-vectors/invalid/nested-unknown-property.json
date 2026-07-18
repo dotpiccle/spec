@@ -4,7 +4,11 @@
     {
       "id": "unknown",
       "duration_ms": 20,
-      "source": { "type": "noise", "character": "neutral", "gain": 1 }
+      "source": {
+        "type": "noise",
+        "character": "neutral",
+        "gain": 1
+      }
     }
   ]
 }

@@ -15,7 +15,7 @@ A Piccle asset should be:
 - Easy for AI systems to generate reliably.
 - Deterministic enough for compatible engines to interpret consistently.
 - Expressive enough to create polished UI audio without prerecorded WAV or MP3 assets.
-- Safe and efficient enough for real-time playback on mobile devices.
+- Safe and efficient enough for engines across browsers, desktop and mobile systems, consoles, vehicles, kiosks, and constrained interactive devices.
 
 ## v1 feature summary
 
@@ -29,12 +29,12 @@ A Piccle asset should be:
 | Filter chain       | Lowpass, highpass, or bandpass filters in series, each with its own frequency contour and resonance.                         |
 | Balance            | Stereo position from -1 (left) to 1 (right).                                                                                 |
 | Reverb             | Optional whole-sound reverb with amount, tail length, and damping frequency.                                                 |
-| Output shaping     | Whole-sound volume, fade-in, and fade-out.                                                                                   |
+| Output shaping     | Final master volume and mandatory safety clipping.                                                                           |
 | Safety             | Built-in hard clipping, Nyquist-aware frequency handling, validation before allocation, and engine-declared resource limits. |
 
 ## v1 scope boundary
 
-Piccle v1 describes finite, one-shot assets. It does not define looping, continuous progress playback, gesture-controlled parameters, runtime theming inputs, modulation, or dynamic interaction with a playing sound. A host application may replay an asset, but seamless looping and host parameters are outside the v1 format contract.
+Piccle v1 describes finite, one-shot assets. It does not define looping, continuous progress playback, gesture-controlled parameters, host-supplied theming inputs, modulation, or dynamic interaction with a playing sound. A host application may replay an asset, but seamless looping and host parameters are outside the v1 format contract.
 
 These deferred capabilities require a future format proposal. They are not implied by the `loading` example, which is a one-shot “work started” cue.
 

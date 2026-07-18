@@ -14,7 +14,9 @@
         "wave": "sine",
         "pitch": {
           "frequencies": [
-            { "hz": 880 }
+            {
+              "hz": 880
+            }
           ]
         }
       }

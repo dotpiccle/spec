@@ -1,0 +1,227 @@
+{
+  "balance-out-of-range.json": {
+    "stage": "schema",
+    "code": "schema.minimum",
+    "path": "$.layers[0].balance"
+  },
+  "duplicate-layer-id.json": {
+    "stage": "semantic",
+    "code": "semantic.duplicate_layer_id",
+    "path": "$.layers[1].id"
+  },
+  "duplicate-member.json": {
+    "stage": "parse",
+    "code": "json.duplicate_member",
+    "path": "$"
+  },
+  "empty-description.json": {
+    "stage": "schema",
+    "code": "schema.minLength",
+    "path": "$.description"
+  },
+  "empty-name.json": {
+    "stage": "schema",
+    "code": "schema.minLength",
+    "path": "$.name"
+  },
+  "filter-frequencies-entry-missing-hz.json": {
+    "stage": "schema",
+    "code": "schema.required",
+    "path": "$.layers[0].filters[0].frequencies[0].hz"
+  },
+  "filter-missing-frequencies.json": {
+    "stage": "schema",
+    "code": "schema.required",
+    "path": "$.layers[0].filters[0].frequencies"
+  },
+  "filter-timing-exceeds-duration.json": {
+    "stage": "semantic",
+    "code": "semantic.filter_timing_exceeds_duration",
+    "path": "$.layers[0].filters[0].frequencies"
+  },
+  "frequency-out-of-range.json": {
+    "stage": "schema",
+    "code": "schema.minimum",
+    "path": "$.layers[0].source.pitch.frequencies[0].hz"
+  },
+  "layer-duration-zero.json": {
+    "stage": "schema",
+    "code": "schema.minimum",
+    "path": "$.layers[0].duration_ms"
+  },
+  "layer-missing-duration.json": {
+    "stage": "schema",
+    "code": "schema.required",
+    "path": "$.layers[0].duration_ms"
+  },
+  "missing-character.json": {
+    "stage": "schema",
+    "code": "schema.required",
+    "path": "$.layers[0].source.character"
+  },
+  "missing-piccle.json": {
+    "stage": "schema",
+    "code": "schema.required",
+    "path": "$.piccle"
+  },
+  "missing-wave.json": {
+    "stage": "schema",
+    "code": "schema.required",
+    "path": "$.layers[0].source.wave"
+  },
+  "negative-fade.json": {
+    "stage": "schema",
+    "code": "schema.minimum",
+    "path": "$.layers[0].volume.fade_in_ms"
+  },
+  "negative-hold.json": {
+    "stage": "schema",
+    "code": "schema.minimum",
+    "path": "$.layers[0].source.pitch.frequencies[0].hold_ms"
+  },
+  "negative-start.json": {
+    "stage": "schema",
+    "code": "schema.minimum",
+    "path": "$.layers[0].start_ms"
+  },
+  "negative-transition.json": {
+    "stage": "schema",
+    "code": "schema.minimum",
+    "path": "$.layers[0].source.pitch.frequencies[0].transition_ms"
+  },
+  "nested-unknown-property.json": {
+    "stage": "schema",
+    "code": "schema.additionalProperties",
+    "path": "$.layers[0].source.gain"
+  },
+  "noise-source-with-pitch-field.json": {
+    "stage": "schema",
+    "code": "schema.additionalProperties",
+    "path": "$.layers[0].source.pitch"
+  },
+  "offset-cents-out-of-range.json": {
+    "stage": "schema",
+    "code": "schema.maximum",
+    "path": "$.layers[0].source.pitch.offset_cents"
+  },
+  "pitch-frequencies-entry-missing-hz.json": {
+    "stage": "schema",
+    "code": "schema.required",
+    "path": "$.layers[0].source.pitch.frequencies[0].hz"
+  },
+  "pitch-timing-exceeds-duration.json": {
+    "stage": "semantic",
+    "code": "semantic.pitch_timing_exceeds_duration",
+    "path": "$.layers[0].source.pitch.frequencies"
+  },
+  "resonance-out-of-range.json": {
+    "stage": "schema",
+    "code": "schema.maximum",
+    "path": "$.layers[0].filters[0].resonance"
+  },
+  "reverb-amount-out-of-range.json": {
+    "stage": "schema",
+    "code": "schema.maximum",
+    "path": "$.reverb.amount"
+  },
+  "reverb-missing-field.json": {
+    "stage": "schema",
+    "code": "schema.required",
+    "path": "$.reverb.amount"
+  },
+  "reverb-soften-out-of-range.json": {
+    "stage": "schema",
+    "code": "schema.minimum",
+    "path": "$.reverb.soften_hz"
+  },
+  "reverb-tail-zero.json": {
+    "stage": "schema",
+    "code": "schema.minimum",
+    "path": "$.reverb.tail_ms"
+  },
+  "root-duration-zero.json": {
+    "stage": "schema",
+    "code": "schema.minimum",
+    "path": "$.duration_ms"
+  },
+  "root-fade-in-removed.json": {
+    "stage": "schema",
+    "code": "schema.additionalProperties",
+    "path": "$.fade_in_ms"
+  },
+  "root-fade-out-removed.json": {
+    "stage": "schema",
+    "code": "schema.additionalProperties",
+    "path": "$.fade_out_ms"
+  },
+  "seed-above-uint32.json": {
+    "stage": "schema",
+    "code": "schema.maximum",
+    "path": "$.layers[0].source.seed"
+  },
+  "seed-negative.json": {
+    "stage": "schema",
+    "code": "schema.minimum",
+    "path": "$.layers[0].source.seed"
+  },
+  "time-above-safe-integer.json": {
+    "stage": "schema",
+    "code": "schema.maximum",
+    "path": "$.duration_ms"
+  },
+  "tone-without-pitch.json": {
+    "stage": "schema",
+    "code": "schema.required",
+    "path": "$.layers[0].source.pitch"
+  },
+  "unknown-enum.json": {
+    "stage": "schema",
+    "code": "schema.enum",
+    "path": "$.layers[0].source.wave"
+  },
+  "unknown-property.json": {
+    "stage": "schema",
+    "code": "schema.additionalProperties",
+    "path": "$.unknown_field"
+  },
+  "unsupported-version.json": {
+    "stage": "schema",
+    "code": "schema.enum",
+    "path": "$.piccle"
+  },
+  "volume-above-1.json": {
+    "stage": "schema",
+    "code": "schema.maximum",
+    "path": "$.layers[0].volume"
+  },
+  "volume-fade-exceeds-duration.json": {
+    "stage": "semantic",
+    "code": "semantic.volume_timing_exceeds_duration",
+    "path": "$.layers[0].volume"
+  },
+  "volume-level-missing-level.json": {
+    "stage": "schema",
+    "code": "schema.required",
+    "path": "$.layers[0].volume.levels[0].level"
+  },
+  "volume-level-negative.json": {
+    "stage": "schema",
+    "code": "schema.minimum",
+    "path": "$.layers[0].volume.levels[0].level"
+  },
+  "volume-timing-exceeds-duration.json": {
+    "stage": "semantic",
+    "code": "semantic.volume_timing_exceeds_duration",
+    "path": "$.layers[0].volume"
+  },
+  "wrong-schema-uri.json": {
+    "stage": "schema",
+    "code": "schema.const",
+    "path": "$.$schema"
+  },
+  "zero-layers.json": {
+    "stage": "schema",
+    "code": "schema.minItems",
+    "path": "$.layers"
+  }
+}

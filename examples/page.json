@@ -3,7 +3,6 @@
   "piccle": "1.0",
   "name": "Page",
   "description": "A papery flick with a tiny glass tick — for pages and galleries.",
-  "fade_out_ms": 5,
   "layers": [
     {
       "id": "flick",
@@ -23,13 +22,19 @@
             "transition_ms": 10,
             "transition_curve": "exponential"
           },
-          { "level": 0.03 }
+          {
+            "level": 0.03
+          }
         ]
       },
       "filters": [
         {
           "type": "highpass",
-          "frequencies": [{ "hz": 600 }],
+          "frequencies": [
+            {
+              "hz": 600
+            }
+          ],
           "resonance": 0
         }
       ]
@@ -52,13 +57,19 @@
             "transition_ms": 20,
             "transition_curve": "exponential"
           },
-          { "level": 0.02 }
+          {
+            "level": 0.02
+          }
         ]
       },
       "filters": [
         {
           "type": "lowpass",
-          "frequencies": [{ "hz": 3000 }],
+          "frequencies": [
+            {
+              "hz": 3000
+            }
+          ],
           "resonance": 0
         }
       ]
@@ -71,7 +82,11 @@
         "type": "tone",
         "wave": "sine",
         "pitch": {
-          "frequencies": [{ "hz": 2000 }]
+          "frequencies": [
+            {
+              "hz": 2000
+            }
+          ]
         }
       },
       "volume": {
@@ -84,7 +99,9 @@
             "transition_ms": 8,
             "transition_curve": "exponential"
           },
-          { "level": 0.03 }
+          {
+            "level": 0.03
+          }
         ]
       }
     }

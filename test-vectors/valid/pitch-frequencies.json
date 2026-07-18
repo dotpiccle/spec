@@ -9,8 +9,15 @@
         "wave": "triangle",
         "pitch": {
           "frequencies": [
-            { "hz": 620, "hold_ms": 0, "transition_ms": 150, "transition_curve": "exponential" },
-            { "hz": 310 }
+            {
+              "hz": 620,
+              "hold_ms": 0,
+              "transition_ms": 150,
+              "transition_curve": "exponential"
+            },
+            {
+              "hz": 310
+            }
           ]
         }
       }

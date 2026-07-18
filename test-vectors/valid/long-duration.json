@@ -10,7 +10,9 @@
         "wave": "square",
         "pitch": {
           "frequencies": [
-            { "hz": 55 }
+            {
+              "hz": 55
+            }
           ]
         }
       }

@@ -3,7 +3,6 @@
   "piccle": "1.0",
   "name": "Droplet",
   "description": "A single note gliding smoothly downward, like a drop of water.",
-  "fade_out_ms": 5,
   "layers": [
     {
       "id": "drop",
@@ -26,7 +25,9 @@
               "transition_ms": 30,
               "transition_curve": "linear"
             },
-            { "hz": 310 }
+            {
+              "hz": 310
+            }
           ]
         }
       },
@@ -40,7 +41,9 @@
             "transition_ms": 30,
             "transition_curve": "exponential"
           },
-          { "level": 0.06 }
+          {
+            "level": 0.06
+          }
         ]
       }
     }

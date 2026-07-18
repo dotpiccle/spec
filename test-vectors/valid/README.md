@@ -24,8 +24,12 @@ Each valid fixture tests acceptance, a default behavior, or a boundary condition
 | `pitch-frequencies-multi.json`  | Three-entry multi-point pitch contour.                                    |
 | `pitch-frequencies-static.json` | Single-entry static pitch (saw wave).                                     |
 | `reverb-minimal.json`           | Reverb with all three required fields present.                            |
+| `reverb-tail-10ms.json`         | A short 10 ms wet tail and automatic terminal window.                     |
+| `reverb-tail-20ms.json`         | A short 20 ms wet tail and automatic terminal window.                     |
+| `reverb-tail-500ms.json`        | A 500 ms wet tail and automatic terminal window.                          |
 | `reverb-timeline.json`          | Explicit document duration plus emitted RT60 tail.                        |
-| `root-truncation.json`          | Explicit document duration truncates a longer layer.                      |
+| `root-truncation.json`          | Hard root cutoff truncates a layer before its declared fade.              |
+| `render-frequency-clamp.json`   | Valid frequencies that low-rate engine profiles clamp to bandwidth.       |
 | `seed-boundaries.json`          | Noise seed at unsigned 32-bit minimum and maximum.                        |
 | `short-default-fade.json`       | Default layer fade clamps for a layer shorter than 5 ms.                  |
 | `simultaneous-boundary.json`    | Half-open layer intervals meeting at one boundary.                        |

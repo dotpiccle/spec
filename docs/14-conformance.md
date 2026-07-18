@@ -1,6 +1,6 @@
 # Conformance
 
-This chapter defines the validation and implementation terms used by Piccle.
+This chapter defines validation and engine-conformance terms used by Piccle.
 
 ## Validation stages
 
@@ -11,13 +11,13 @@ A Piccle processor evaluates input in this order:
 3. **Schema validation** — validate the parsed value against the schema named by `piccle` and `$schema`.
 4. **Semantic validation** — enforce rules that JSON Schema cannot express directly:
    - layer IDs are unique;
-   - pitch and filter contour schedules do not exceed their layer duration;
-   - object-form volume schedules, including fades, do not exceed their layer duration.
-5. **Render support check** — compare the valid document with the engine's published render-resource limits.
+   - pitch and filter contour schedules do not exceed their declared layer duration;
+   - object-form layer-volume schedules, including fades, do not exceed their declared layer duration.
+5. **Engine support check** — compare the valid document with the engine's published resource and output-bandwidth limits.
 
-Failure at stage 1 is a **resource-rejected input** whose format validity was not established. Failure at stages 2 through 4 produces an **invalid document**. Failure only at stage 5 produces an **unsupported document**.
+Failure at stage 1 is a resource-rejected input whose format validity was not established. Failure at stages 2 through 4 produces an invalid document. Failure only at stage 5 produces an unsupported document.
 
-## Terms
+## Document terms
 
 ### Schema-valid document
 
@@ -29,39 +29,40 @@ A document that passes JSON parsing, schema validation, and semantic validation.
 
 ### Invalid document
 
-A document that violates a normative syntax, schema, or semantic requirement. Engines MUST reject invalid documents and MUST NOT attempt partial playback.
+A document that violates a normative syntax, schema, or semantic requirement. Engines MUST reject invalid documents and MUST NOT attempt partial rendering.
 
 ### Unsupported document
 
-A valid document that uses more duration, layers, filters, contour points, voices, memory, or another declared resource than a particular engine supports. An engine MUST distinguish this result from invalid input.
+A valid document that exceeds an engine's published duration, layers, filters, contour points, voices, memory, CPU, output bandwidth, or another render limit. An engine MUST distinguish this result from invalid input.
 
 ### Resource-rejected input
 
 Input whose byte size or nesting exceeds a processor's published safe parsing limits before document validity can be established. The processor MUST NOT label it invalid or valid; it reports that validation was not completed because of a resource limit.
 
-### Conforming validator
+## Engine conformance
 
-A conforming v1 validator:
+A conforming v1 engine:
 
-- implements all three validation stages;
+- performs JSON parsing, schema validation, and semantic validation;
 - accepts every fixture in `test-vectors/valid/`;
-- rejects every fixture in `test-vectors/invalid/` for its documented primary reason; and
-- does not use engine resource limits to change format validity.
+- rejects every fixture in `test-vectors/invalid/` for its documented primary stage, code, and location;
+- does not use engine limits to change format validity;
+- provides the canonical 48 kHz stereo binary64 test mode;
+- implements every v1 source, contour, filter, balance, reverb, output, and safety rule; and
+- meets each canonical determinism or tolerance requirement.
 
-### Conforming renderer
+The machine-readable expected stage, stable code, and JSON path for each invalid fixture are declared in `test-vectors/invalid-expectations.json`.
 
-A conforming v1 renderer:
+An engine MAY expose additional render profiles with different sample rates, numeric modes, output bandwidth, and resource limits as defined in [Engine Safety](11-engine-safety.md).
 
-- includes a conforming validator;
-- implements every v1 source, contour, filter, balance, reverb, output, and safety rule;
-- renders valid documents that fall within its published limits;
-- reports valid documents beyond those limits as unsupported; and
-- meets the determinism class for each component in [Engine Safety and the Canonical Render Profile](11-engine-safety.md).
+Whether the engine renders live, offline, ahead of playback, into a cache, or through another architecture is outside the Piccle format contract. These strategies do not create separate conformance classes.
 
-An engine cannot claim support for only a subset of v1 primitives while describing itself as a conforming v1 renderer. Capacity may vary; feature semantics may not.
+## Platform adaptation
+
+Piccle rendering ends with clipped stereo samples. Sample-rate conversion, stereo-to-mono downmixing, hardware routing, operating-system volume, and device processing occur afterward and are not part of asset semantics. No operating-system API, threading model, filesystem, network access, or hardware architecture is normative.
 
 ## Role of repository fixtures
 
-The checked-in fixtures prove parsing, schema, and semantic-validation behavior. They do not prove audible rendering conformance. Piccle intentionally publishes normative text and formulas rather than normative PCM files or a reference renderer.
+Checked-in document fixtures prove parsing, schema, and semantic-validation behavior. Non-PCM numeric aids help implementers check individual formulas. Neither category proves audible rendering conformance.
 
-Engine authors are responsible for testing their DSP implementation against the formulas and measured tolerances in the normative chapters. The cookbook and official examples are authoring guidance, not audio reference output.
+Piccle intentionally publishes normative text and formulas rather than normative PCM files or an embedded engine. Engine authors must test implementations against the formulas, measurements, cross-platform qualification matrix, and listening gates in this repository.

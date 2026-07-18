@@ -5,7 +5,10 @@
     {
       "id": "too-long",
       "duration_ms": 20,
-      "source": { "type": "noise", "character": "neutral" }
+      "source": {
+        "type": "noise",
+        "character": "neutral"
+      }
     }
   ]
 }

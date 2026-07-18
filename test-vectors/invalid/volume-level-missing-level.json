@@ -9,13 +9,17 @@
         "wave": "sine",
         "pitch": {
           "frequencies": [
-            { "hz": 440 }
+            {
+              "hz": 440
+            }
           ]
         }
       },
       "volume": {
         "levels": [
-          { "transition_ms": 50 }
+          {
+            "transition_ms": 50
+          }
         ]
       }
     }

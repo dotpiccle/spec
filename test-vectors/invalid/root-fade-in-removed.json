@@ -1,0 +1,21 @@
+{
+  "piccle": "1.0",
+  "fade_in_ms": 5,
+  "layers": [
+    {
+      "id": "tone",
+      "duration_ms": 20,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [
+            {
+              "hz": 440
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

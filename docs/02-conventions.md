@@ -23,8 +23,8 @@ The optional root `$schema` member, when present, MUST equal `https://spec.dotpi
 All document time values are integer milliseconds no greater than `9007199254740991` (`2^53-1`) and use an `_ms` suffix. Durations and reverb tails are at least `1`; offsets, fades, holds, and transitions are at least `0`.
 
 - `duration_ms` — total sound or layer length.
-- `fade_in_ms` — fade-in time.
-- `fade_out_ms` — fade-out time.
+- `fade_in_ms` — layer fade-in time.
+- `fade_out_ms` — layer fade-out time.
 - `start_ms` — layer start offset.
 - `hold_ms` — hold time at a contour value.
 - `transition_ms` — time to move to the next contour value.
@@ -36,7 +36,7 @@ The canonical conversion from milliseconds to sample frames is defined in [Engin
 
 Frequency values use Hertz. A field name uses `_hz`, except for `frequencies[].hz`, where the array supplies the context.
 
-- `soften_hz` — reverb damping frequency.
+- `soften_hz` — reverb wet-path lowpass frequency.
 - `frequencies[].hz` — pitch or filter frequency.
 
 ### Pitch offset: cents
@@ -52,7 +52,7 @@ Defaults generally represent an identity or safe baseline:
 - `start_ms: 0` — start at the document origin.
 - `balance: 0` — centered.
 - `resonance: 0` — Q = 0.707.
-- `fade_in_ms: 0` — no fade-in.
+- Layer `fade_in_ms: 0` — no fade-in.
 - `hold_ms: 0` — no hold.
 - `transition_ms: 0` — instantaneous transition.
 - `transition_curve: "linear"` — linear interpolation.
@@ -83,7 +83,7 @@ For pitch and filter contours, contour time zero is the layer start. Their sched
 Σ(i = 0 .. n-2) (hold_ms[i] + transition_ms[i])
 ```
 
-For an object-form volume contour, transitions begin after `fade_in_ms`. Its scheduled duration is:
+For an object-form layer-volume contour, transitions begin after `fade_in_ms`. Its scheduled duration is:
 
 ```text
 fade_in_ms
@@ -97,7 +97,7 @@ where:
 effective_fade_out_ms = min(fade_out_ms, layer.duration_ms)
 ```
 
-The applicable scheduled duration MUST NOT exceed the layer `duration_ms`; otherwise the document is semantically invalid. The shorthand numeric volume has no contour transitions and uses `min(5, layer.duration_ms)` as its effective default fade-out.
+The applicable scheduled duration MUST NOT exceed the declared layer `duration_ms`; otherwise the document is semantically invalid. The shorthand numeric volume has no contour transitions and uses `min(5, layer.duration_ms)` as its effective default fade-out. A shorter explicit document duration hard-truncates this declared schedule without relocating the fade.
 
 The precise sample-frame algorithm, including zero-duration transitions and boundaries, is defined in [Transition Curves](10-curves.md).
 

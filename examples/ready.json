@@ -3,7 +3,6 @@
   "piccle": "1.0",
   "name": "Ready",
   "description": "A crisp tick opening into two soft harmonic tones — content is ready.",
-  "fade_out_ms": 5,
   "reverb": {
     "amount": 0.2,
     "tail_ms": 300,
@@ -22,7 +21,11 @@
       "filters": [
         {
           "type": "bandpass",
-          "frequencies": [{ "hz": 2500 }],
+          "frequencies": [
+            {
+              "hz": 2500
+            }
+          ],
           "resonance": 0.4
         }
       ]
@@ -35,7 +38,11 @@
         "type": "tone",
         "wave": "sine",
         "pitch": {
-          "frequencies": [{ "hz": 880 }]
+          "frequencies": [
+            {
+              "hz": 880
+            }
+          ]
         }
       },
       "volume": {
@@ -48,7 +55,9 @@
             "transition_ms": 50,
             "transition_curve": "exponential"
           },
-          { "level": 0.05 }
+          {
+            "level": 0.05
+          }
         ]
       }
     },
@@ -60,7 +69,11 @@
         "type": "tone",
         "wave": "sine",
         "pitch": {
-          "frequencies": [{ "hz": 660 }]
+          "frequencies": [
+            {
+              "hz": 660
+            }
+          ]
         }
       },
       "volume": {
@@ -73,7 +86,9 @@
             "transition_ms": 50,
             "transition_curve": "exponential"
           },
-          { "level": 0.04 }
+          {
+            "level": 0.04
+          }
         ]
       }
     }

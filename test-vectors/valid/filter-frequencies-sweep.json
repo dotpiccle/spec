@@ -12,8 +12,14 @@
         {
           "type": "lowpass",
           "frequencies": [
-            { "hz": 200, "transition_ms": 150, "transition_curve": "exponential" },
-            { "hz": 8000 }
+            {
+              "hz": 200,
+              "transition_ms": 150,
+              "transition_curve": "exponential"
+            },
+            {
+              "hz": 8000
+            }
           ],
           "resonance": 0
         }

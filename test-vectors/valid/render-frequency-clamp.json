@@ -1,0 +1,35 @@
+{
+  "piccle": "1.0",
+  "reverb": {
+    "amount": 0.25,
+    "tail_ms": 20,
+    "soften_hz": 12000
+  },
+  "layers": [
+    {
+      "id": "high-tone",
+      "duration_ms": 20,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [
+            {
+              "hz": 20000
+            }
+          ]
+        }
+      },
+      "filters": [
+        {
+          "type": "lowpass",
+          "frequencies": [
+            {
+              "hz": 20000
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

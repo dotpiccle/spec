@@ -7,7 +7,17 @@
       "source": {
         "type": "tone",
         "wave": "sine",
-        "pitch": { "frequencies": [{ "hz": 440, "transition_ms": -1 }, { "hz": 441 }] }
+        "pitch": {
+          "frequencies": [
+            {
+              "hz": 440,
+              "transition_ms": -1
+            },
+            {
+              "hz": 441
+            }
+          ]
+        }
       }
     }
   ]

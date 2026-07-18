@@ -10,7 +10,9 @@
         "wave": "sine",
         "pitch": {
           "frequencies": [
-            { "hz": 880 }
+            {
+              "hz": 880
+            }
           ]
         }
       },
@@ -24,7 +26,10 @@
             "transition_ms": 30,
             "transition_curve": "linear"
           },
-          { "level": 0.1, "hold_ms": 50 }
+          {
+            "level": 0.1,
+            "hold_ms": 50
+          }
         ]
       }
     }

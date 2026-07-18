@@ -9,7 +9,9 @@
         "wave": "saw",
         "pitch": {
           "frequencies": [
-            { "hz": 440 }
+            {
+              "hz": 440
+            }
           ]
         }
       }

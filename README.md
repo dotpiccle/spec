@@ -23,7 +23,7 @@
 
 ## What is Piccle?
 
-Piccle is an open JSON format for short procedural sounds such as button clicks, toggle feedback, success chimes, error cues, notification pings, and transition whooshes.
+Piccle is an open JSON format for short procedural sounds on interactive platforms, from browsers and desktop applications to mobile devices, consoles, vehicles, kiosks, and embedded appliances.
 
 A Piccle asset contains structured synthesis instructions rather than recorded audio:
 
@@ -56,7 +56,9 @@ Piccle v1 is designed for finite, one-shot UI sounds:
 - short impacts, clicks, chimes, textures, and whooshes;
 - layered tone and deterministic noise synthesis.
 
-V1 does not define looping, continuous progress playback, runtime parameters, gesture control, theming inputs, modulation, speech, recorded samples, or long-form music. Hosts may replay an asset, but seamless looping is outside the format contract.
+The format is platform-neutral. A conforming engine includes a canonical 48 kHz test mode. Desktop, browser, mobile, console, vehicle, kiosk, and embedded engines use the same documents and may publish different render profiles and resource limits. Whether an engine renders live, ahead of playback, offline, or into a cache is an implementation choice.
+
+V1 does not define looping, continuous progress playback, host-controlled parameters, gesture control, theming inputs, modulation, speech, recorded samples, or long-form music. Hosts may replay an asset, but seamless looping is outside the format contract.
 
 ## Format at a glance
 
@@ -64,9 +66,7 @@ V1 does not define looping, continuous progress playback, runtime parameters, ge
 document
 ├── piccle          "1.0"
 ├── duration_ms     optional explicit cutoff
-├── volume          final output gain
-├── fade_in_ms      final output fade
-├── fade_out_ms     final output fade
+├── volume          final master gain
 ├── reverb          { amount, tail_ms, soften_hz }
 └── layers[]
     ├── id, start_ms, duration_ms
@@ -81,7 +81,7 @@ document
 The normative signal flow is:
 
 ```text
-source → filters → layer volume → balance → mix → reverb → root output → hard clip
+source → filters → layer volume → balance → mix → reverb → root volume → hard clip → platform adaptation
 ```
 
 ## Quick start
@@ -105,7 +105,7 @@ The shortest valid tone document is:
 }
 ```
 
-Optional fields use documented defaults. Schema `default` annotations do not modify JSON; engines apply runtime defaults defined by the normative chapters.
+Optional fields use documented defaults. Schema `default` annotations do not modify JSON; engines apply the defaults defined by the normative chapters.
 
 ## Documentation paths
 
@@ -155,9 +155,10 @@ The command:
 
 - meta-validates the Draft 2019-09 schema;
 - accepts every example and valid fixture;
-- rejects every invalid fixture at its documented validation stage;
+- rejects every invalid fixture with its declared stable error code and JSON path;
 - checks duplicate JSON members and Piccle semantic rules;
-- verifies fixture inventories, local links, schema invariants, and formatting.
+- recomputes the non-PCM DSP numeric aids;
+- verifies fixture inventories, local links and Markdown anchors, schema/docs invariants, and canonical JSON formatting.
 
 CI runs the same command.
 
@@ -173,7 +174,7 @@ Processing has five distinct outcomes:
 
 Piccle v1 leaves capacity limits to engines. That means format validity is portable, but the ability to render an unusually large valid document is capacity-dependent. Engines must report unsupported documents separately from invalid documents.
 
-The repository fixtures verify validation behavior. They do not, by themselves, prove audible rendering conformance; see [Conformance](docs/14-conformance.md).
+The repository document fixtures verify validation behavior, and non-PCM numeric aids check individual formulas. They do not, by themselves, prove audible rendering conformance; see [Conformance](docs/14-conformance.md).
 
 ## Versioning
 

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2019-09/schema",
   "$id": "https://spec.dotpiccle.com/schema/v1.json",
   "title": "Piccle 1.0 document",
-  "description": "Piccle v1.0 schema \u2014 a declarative format for short procedural audio micro-interactions. See https://dotpiccle.com for the full specification.",
+  "description": "Piccle v1.0 schema — a declarative format for short procedural audio micro-interactions. See https://dotpiccle.com for the full specification.",
   "type": "object",
   "properties": {
     "$schema": {
@@ -31,32 +31,18 @@
       "type": "integer",
       "minimum": 1,
       "maximum": 9007199254740991,
-      "description": "Total document duration in milliseconds. Optional \u2014 if absent, computed from the latest-ending layer. Shorter trims layers; longer pads with silence."
+      "description": "Total document duration in milliseconds. Optional — if absent, computed from the latest-ending layer. Shorter trims layers; longer pads with silence."
     },
     "volume": {
       "type": "number",
       "minimum": 0,
       "maximum": 1,
       "default": 1,
-      "description": "Whole-sound (final mix) output volume. 0 = silent, 1 = full. Independent of per-layer volume."
-    },
-    "fade_in_ms": {
-      "type": "integer",
-      "minimum": 0,
-      "maximum": 9007199254740991,
-      "default": 0,
-      "description": "Whole-sound fade-in in milliseconds. 0 = no fade-in."
-    },
-    "fade_out_ms": {
-      "type": "integer",
-      "minimum": 0,
-      "maximum": 9007199254740991,
-      "default": 5,
-      "description": "Whole-sound fade-out in milliseconds. Default 5 ms prevents an audible click at the end."
+      "description": "Final master gain applied to the dry/wet result before clipping. 0 = silent, 1 = unity gain. Independent of per-layer volume."
     },
     "reverb": {
       "$ref": "#/$defs/reverb",
-      "description": "Optional reverb applied to the whole-sound output after layers are mixed."
+      "description": "Optional whole-document reverb applied after layers are mixed. The wet response is softened, normalized, and automatically windowed to zero at the tail boundary."
     },
     "layers": {
       "type": "array",
@@ -108,7 +94,7 @@
                 "type": "number",
                 "minimum": 20,
                 "maximum": 20000,
-                "description": "Cutoff frequency in Hz at this point. 20\u201320000 Hz range."
+                "description": "Cutoff frequency in Hz at this point. 20–20000 Hz range."
               },
               "hold_ms": {
                 "type": "integer",
@@ -141,7 +127,7 @@
           "minimum": 0,
           "maximum": 1,
           "default": 0,
-          "description": "How much the filter resonates at its frequency, 0\u20131. 0 = flat/no resonance, 1 = strong resonance (Q \u2248 12). Like a struck bell singing at the cutoff frequency."
+          "description": "How much the filter resonates at its frequency, 0–1. 0 = flat/no resonance, 1 = strong resonance (Q ≈ 12). Like a struck bell singing at the cutoff frequency."
         }
       },
       "required": [
@@ -179,7 +165,7 @@
         "volume": {
           "$ref": "#/$defs/volume",
           "default": 1,
-          "description": "Loudness contour. A number (0\u20131) for a constant level, or an object with fade_in_ms, fade_out_ms, and a levels array."
+          "description": "Loudness contour. A number (0–1) for a constant level, or an object with fade_in_ms, fade_out_ms, and a levels array."
         },
         "balance": {
           "type": "number",
@@ -220,7 +206,7 @@
                 "type": "number",
                 "minimum": 20,
                 "maximum": 20000,
-                "description": "Target pitch in Hz at this point. 20\u201320000 Hz range."
+                "description": "Target pitch in Hz at this point. 20–20000 Hz range."
               },
               "hold_ms": {
                 "type": "integer",
@@ -262,7 +248,7 @@
       "additionalProperties": false
     },
     "reverb": {
-      "description": "Optional reverb applied to the whole-sound output after layers are mixed. All three fields are required when present \u2014 there are no defaults.",
+      "description": "Optional whole-document reverb. All three fields are required; topology is implementation-defined, while wet softening, normalization, RT60 measurement, and terminal windowing are normative.",
       "type": "object",
       "properties": {
         "amount": {
@@ -275,13 +261,13 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 9007199254740991,
-          "description": "Reverb RT60 decay time and emitted-tail duration, in milliseconds."
+          "description": "Reverb RT60 target and emitted wet-tail duration, in milliseconds. The wet response is automatically windowed to exact zero at its final frame."
         },
         "soften_hz": {
           "type": "number",
           "minimum": 200,
           "maximum": 12000,
-          "description": "Frequency above which the reverb is softened/damped, in Hz."
+          "description": "Corner frequency of the normative first-order wet-path lowpass, in Hz. Engines clamp it to the active render profile's available bandwidth."
         }
       },
       "required": [
@@ -300,7 +286,7 @@
             "type": {
               "type": "string",
               "const": "tone",
-              "description": "A pitched hum \u2014 a sound with a recognizable pitch you could hum or whistle back."
+              "description": "A pitched hum — a sound with a recognizable pitch you could hum or whistle back."
             },
             "wave": {
               "type": "string",
@@ -314,7 +300,7 @@
             },
             "pitch": {
               "$ref": "#/$defs/pitch",
-              "description": "The pitch of this tone \u2014 always a frequencies array with optional offset_cents."
+              "description": "The pitch of this tone — always a frequencies array with optional offset_cents."
             }
           },
           "required": [
@@ -330,7 +316,7 @@
             "type": {
               "type": "string",
               "const": "noise",
-              "description": "A pitchless hiss \u2014 a sound with no note, just texture."
+              "description": "A pitchless hiss — a sound with no note, just texture."
             },
             "character": {
               "type": "string",

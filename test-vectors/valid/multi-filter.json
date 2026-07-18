@@ -13,14 +13,18 @@
         {
           "type": "lowpass",
           "frequencies": [
-            { "hz": 3000 }
+            {
+              "hz": 3000
+            }
           ],
           "resonance": 0
         },
         {
           "type": "highpass",
           "frequencies": [
-            { "hz": 500 }
+            {
+              "hz": 500
+            }
           ],
           "resonance": 0.1
         }

@@ -18,9 +18,9 @@ A compact Schroeder-style reverb can satisfy short UI-sound use cases:
 
 1. Use several parallel comb filters with mutually non-harmonic delay lengths.
 2. Follow them with two or three short allpass stages.
-3. Put a lowpass in each feedback path for `soften_hz` damping.
-4. Choose feedback gains for an RT60 of `tail_ms`.
-5. Measure and normalize the combined stereo impulse-response energy before applying `amount`.
+3. Choose feedback gains for an RT60 near `tail_ms`.
+4. Apply the normative wet-output lowpass and terminal window.
+5. Measure and normalize the final stereo impulse-response energy before applying `amount`.
 
 For a delay of `delay_samples`, a common RT60 feedback starting point is:
 
@@ -28,7 +28,7 @@ For a delay of `delay_samples`, a common RT60 feedback starting point is:
 gain = 10 ^ (-3 × delay_samples / (tail_ms × sample_rate / 1000))
 ```
 
-The result still needs to pass the normative RT60, damping, energy, and lifetime measurements in [Reverb](07-reverb.md).
+The result still needs to pass the normative RT60, lowpass, energy, terminal-window, and lifetime measurements in [Reverb](07-reverb.md).
 
 ## Noise implementation
 
@@ -38,7 +38,7 @@ The `soft` and `sharp` character gains are analytic stationary-RMS gains. They a
 
 ## Oscillators
 
-A band-limited wavetable or polyBLEP oscillator is usually more efficient than evaluating a harmonic series per frame. Preserve the normative zero phase and phase integral when selecting or interpolating tables. Frequency-dependent tables help prevent high-frequency square and saw layers from aliasing on phone speakers.
+A band-limited wavetable or polyBLEP oscillator is usually more efficient than evaluating a harmonic series per frame. Preserve the normative zero phase, phase integral, and harmonic targets when selecting or interpolating tables. Frequency-dependent tables help prevent high-frequency square and saw layers from aliasing across output systems.
 
 ## Dynamic biquads
 
@@ -68,4 +68,4 @@ This separation makes authoring tools useful and prevents device capacity from b
 
 ## Release qualification
 
-Before claiming renderer conformance, render every official example at the canonical profile and the engine's native device rate. Listen on headphones and a phone speaker, then inspect for non-finite samples, clipping frequency, high-frequency aliasing, envelope discontinuities, reverb cutoff, and unexpected CPU spikes.
+Before claiming engine conformance, render every official example in canonical mode and in each additional declared render profile. Qualify native desktop, browser, mobile, constrained-device, low-rate, stereo, and mono-host integrations that the engine supports. Listen on headphones, full-range speakers, a small-device speaker, and the lowest-bandwidth supported output, then inspect for non-finite samples, clipping frequency, high-frequency aliasing, envelope discontinuities, reverb cutoff, and unexpected CPU spikes.

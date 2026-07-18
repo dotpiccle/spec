@@ -1,0 +1,25 @@
+{
+  "piccle": "1.0",
+  "reverb": {
+    "amount": 1,
+    "tail_ms": 20,
+    "soften_hz": 8000
+  },
+  "layers": [
+    {
+      "id": "tone",
+      "duration_ms": 10,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [
+            {
+              "hz": 1000
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

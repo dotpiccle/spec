@@ -8,7 +8,13 @@
       "source": {
         "type": "tone",
         "wave": "sine",
-        "pitch": { "frequencies": [{ "hz": 440 }] }
+        "pitch": {
+          "frequencies": [
+            {
+              "hz": 440
+            }
+          ]
+        }
       },
       "volume": 0.5
     }

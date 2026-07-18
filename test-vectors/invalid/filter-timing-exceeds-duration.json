@@ -4,13 +4,22 @@
     {
       "id": "bad-filter",
       "duration_ms": 100,
-      "source": { "type": "noise", "character": "neutral" },
+      "source": {
+        "type": "noise",
+        "character": "neutral"
+      },
       "filters": [
         {
           "type": "lowpass",
           "frequencies": [
-            { "hz": 200, "hold_ms": 60, "transition_ms": 50 },
-            { "hz": 2000 }
+            {
+              "hz": 200,
+              "hold_ms": 60,
+              "transition_ms": 50
+            },
+            {
+              "hz": 2000
+            }
           ]
         }
       ]

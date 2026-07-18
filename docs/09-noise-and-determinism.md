@@ -49,7 +49,7 @@ The resulting discrete uniform values lie in `[-1, 1)`. The first non-discarded 
 
 ## Character filters
 
-All filters below use binary64 control calculations, a zero initial state, and the canonical or engine render sample rate `sample_rate`.
+All filters below use a zero initial state and the active render profile's `sample_rate`. Canonical mode uses binary64. An engine clamps each fixed character corner to `render_frequency_max` from [Engine Safety](11-engine-safety.md).
 
 ### `neutral`
 
@@ -60,7 +60,8 @@ All filters below use binary64 control calculations, a zero initial state, and t
 `soft` is a first-order lowpass with a 400 Hz corner. It is approximately flat below the corner and approaches a −6 dB/octave slope above it:
 
 ```text
-a = exp(-2π × 400 / sample_rate)
+corner_hz = min(400, render_frequency_max)
+a = exp(-2π × corner_hz / sample_rate)
 y[n] = a × y[n-1] + (1-a) × x[n]
 y[-1] = 0
 ```
@@ -70,7 +71,8 @@ y[-1] = 0
 `sharp` is a first-order highpass with a 2 kHz corner. It approaches a +6 dB/octave slope below the corner and is approximately flat above it:
 
 ```text
-a = exp(-2π × 2000 / sample_rate)
+corner_hz = min(2000, render_frequency_max)
+a = exp(-2π × corner_hz / sample_rate)
 y[n] = a × (y[n-1] + x[n] - x[n-1])
 y[-1] = 0
 x[-1] = 0
@@ -104,6 +106,6 @@ Noise produces one mono channel. The layer's equal-power `balance` stage convert
 
 ## Native-rate equivalence
 
-Canonical 48 kHz renders are deterministic for a given character and seed. A native-rate engine uses the same PCG32 sequence and recomputes character coefficients at its render sample rate. Cross-rate sample equality is not required.
+Canonical 48 kHz renders are deterministic for a given character and seed. Other engine render profiles use the same PCG32 sequence and recompute clamped character coefficients at their declared rates. Cross-rate sample equality is not required.
 
 For implementation quality checks, a noise layer long enough to reach stationary behavior SHOULD measure within 10% of RMS `0.25`. Its spectrum SHOULD follow the stated first-order response within 3 dB per one-third-octave band, excluding bands whose upper edge reaches Nyquist.

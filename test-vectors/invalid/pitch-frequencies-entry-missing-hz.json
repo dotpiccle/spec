@@ -9,7 +9,9 @@
         "wave": "sine",
         "pitch": {
           "frequencies": [
-            { "hold_ms": 50 }
+            {
+              "hold_ms": 50
+            }
           ]
         }
       }

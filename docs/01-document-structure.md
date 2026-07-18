@@ -11,11 +11,9 @@ A Piccle document is a single JSON object with the fields below.
 | `name`        | string  | --       | No       | Non-empty human-readable name for this sound.                                                                                                                                           |
 | `description` | string  | --       | No       | Non-empty human-readable description of what this sound is for.                                                                                                                         |
 | `duration_ms` | integer | computed | No       | Total document duration in milliseconds. 1 or more. If absent, duration is computed from the latest-ending layer. A shorter duration trims layers; a longer duration pads with silence. |
-| `volume`      | number  | 1        | No       | Whole-sound (final mix) output volume. 0 = silent, 1 = full. Independent of per-layer volume.                                                                                           |
-| `fade_in_ms`  | integer | 0        | No       | Whole-sound fade-in in milliseconds. 0 = no fade-in. 0 or more.                                                                                                                         |
-| `fade_out_ms` | integer | 5        | No       | Whole-sound fade-out in milliseconds. The default of 5 ms prevents an audible click at the end. 0 or more.                                                                              |
-| `reverb`      | object  | --       | No       | Optional reverb applied after layers are mixed                                                                                                                                          |
-| `layers`      | array   | --       | **Yes**  | One or more layers that make up this sound                                                                                                                                              |
+| `volume`      | number  | 1        | No       | Final master gain. 0 = silent, 1 = full. Independent of per-layer volume.                                                                                                               |
+| `reverb`      | object  | --       | No       | Optional whole-document reverb applied after layers are mixed.                                                                                                                          |
+| `layers`      | array   | --       | **Yes**  | One or more layers that make up this sound.                                                                                                                                             |
 
 ## Layer fields
 
@@ -61,10 +59,10 @@ Here is a minimal document showing the required fields:
 ## Duration rules
 
 - If `duration_ms` is absent from the document root, the engine computes it from the latest-ending layer (layer `start_ms` + layer `duration_ms`).
-- If `duration_ms` is present and shorter than a layer, that layer is truncated.
+- If `duration_ms` is present and shorter than a layer, that layer is hard-truncated. Truncation does not move or create a layer fade and may therefore click.
 - If `duration_ms` is present and longer than all layers, the remaining time is silence.
 - Every layer has its own required `duration_ms` (1 or more) which is independent of the document duration.
-- When reverb is present, the output length is the document duration plus `reverb.tail_ms`. Root fades are applied over this complete timeline; see [Output](08-output.md).
+- When reverb is present, the output length is the document duration plus `reverb.tail_ms`; see [Reverb](07-reverb.md).
 
 ## Layer timing
 

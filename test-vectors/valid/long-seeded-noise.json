@@ -5,17 +5,34 @@
     {
       "id": "long-noise",
       "duration_ms": 500,
-      "source": { "type": "noise", "character": "neutral", "seed": 42 },
+      "source": {
+        "type": "noise",
+        "character": "neutral",
+        "seed": 42
+      },
       "volume": {
         "fade_in_ms": 5,
         "fade_out_ms": 20,
         "levels": [
-          { "level": 1.0, "hold_ms": 400 },
-          { "level": 0.0 }
+          {
+            "level": 1.0,
+            "hold_ms": 400
+          },
+          {
+            "level": 0.0
+          }
         ]
       },
       "filters": [
-        { "type": "lowpass", "frequencies": [{ "hz": 8000 }], "resonance": 0 }
+        {
+          "type": "lowpass",
+          "frequencies": [
+            {
+              "hz": 8000
+            }
+          ],
+          "resonance": 0
+        }
       ]
     }
   ]

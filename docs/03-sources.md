@@ -61,7 +61,7 @@ phase[0] = 0
 phase[n + 1] = (phase[n] + 2π × frequency_hz[n] / sample_rate) mod 2π
 ```
 
-The ideal, peak-normalized waveforms are:
+The ideal continuous waveforms are peak-normalized to `[-1, 1]`:
 
 ```text
 sine(phase)     = sin(phase)
@@ -70,13 +70,40 @@ saw(phase)      = phase / π, for -π < phase <= π
 triangle(phase) = (2 / π) × asin(sin(phase))
 ```
 
-The phase is interpreted in `(-π, π]` for the `saw` formula. All waveforms have a fundamental phase that crosses zero with positive slope at the layer start, except that the discontinuous square waveform takes the value `1` at phase zero.
+The phase is interpreted in `(-π, π]` for the `saw` formula. The ideal square value at its discontinuity is `1`. A rendered band-limited square instead uses the midpoint value implied by its finite harmonic series; this distinction prevents the discontinuity convention from requiring an aliased sample.
 
-An engine MUST prevent harmonics at or above the Nyquist frequency from folding into the audible band. It MAY use a band-limited wavetable, additive synthesis, polyBLEP, oversampling, or another anti-aliasing technique. For a steady pitch measured over at least ten complete cycles, the mono source peak MUST be between `0.99` and `1`, its mean MUST be within `0.001` of zero, and aliased components MUST remain below −60 dBFS in the canonical profile. The fundamental frequency and phase MUST follow the equations above. Exact sample equality between different anti-aliasing implementations is not required.
+#### Band-limited harmonic target
+
+Let `f` be the current oscillator frequency, `r` the render sample rate, and:
+
+```text
+H = { k ∈ positive integers | k × f < r / 2 }
+```
+
+Only harmonics in `H` are present in the target. The band-limited reference series are:
+
+```text
+sine(φ) = sin(φ)
+
+square(φ) = (4/π) × Σ(k ∈ H, k odd) sin(kφ) / k
+
+saw(φ) = (2/π) × Σ(k ∈ H) (-1)^(k+1) × sin(kφ) / k
+
+triangle(φ) = (8/π²) × Σ(k ∈ H, k odd)
+              (-1)^((k-1)/2) × sin(kφ) / k²
+```
+
+These finite series define target harmonic amplitude, sign, and phase. Their sampled peak need not reach `1`, and truncating a discontinuous waveform's series may produce a peak above `1`. Engines MUST NOT renormalize the retained harmonics independently because doing so would change their published amplitudes.
+
+An engine MAY use additive synthesis, a band-limited wavetable, polyBLEP, oversampling, or another method. For steady canonical-profile tests, each target harmonic at or above −60 dBFS MUST be within ±1 dB of its reference amplitude and within ±1 degree of its reference phase. DC MUST remain below −80 dBFS. Every non-target or aliased spectral component MUST remain below −60 dBFS. Exact sample equality between permitted implementations is not required.
+
+Measure with a rectangular 48000-frame window after oscillator initialization at each coherent frequency `375`, `1000`, `3000`, `8000`, and `16000` Hz. These frequencies contain an integer number of cycles in one canonical-profile second. Do not apply layer volume, filters, balance, reverb, root volume, or clipping during the measurement.
+
+During pitch motion, engines MUST preserve the phase integral and MUST suppress components at or above Nyquist. The steady-frequency spectral tolerances do not require engines to switch harmonic sets with one particular algorithm.
 
 Pitch and phase calculations use the canonical precision and frame timing defined in [Engine Safety and the Canonical Render Profile](11-engine-safety.md).
 
-> **Non-normative origin:** The ideal waveform phase conventions are aligned with the [W3C Web Audio oscillator model](https://www.w3.org/TR/webaudio-1.1/). The equations and tolerances in this chapter remain the complete Piccle requirement.
+> **Non-normative origin:** The ideal waveform phase conventions are aligned with the [W3C Web Audio oscillator model](https://www.w3.org/TR/webaudio-1.1/). The equations, harmonic targets, and tolerances in this chapter remain the complete Piccle requirement.
 
 ### Tone example
 

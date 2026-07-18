@@ -12,7 +12,9 @@
         {
           "type": "bandpass",
           "frequencies": [
-            { "hz": 2000 }
+            {
+              "hz": 2000
+            }
           ],
           "resonance": 0.2
         }

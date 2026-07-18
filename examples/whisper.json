@@ -3,7 +3,6 @@
   "piccle": "1.0",
   "name": "Whisper",
   "description": "The quietest option — a breathy swell for dense lists.",
-  "fade_out_ms": 5,
   "volume": 0.4,
   "layers": [
     {
@@ -24,13 +23,19 @@
             "transition_ms": 0,
             "transition_curve": "linear"
           },
-          { "level": 0.5 }
+          {
+            "level": 0.5
+          }
         ]
       },
       "filters": [
         {
           "type": "lowpass",
-          "frequencies": [{ "hz": 2000 }],
+          "frequencies": [
+            {
+              "hz": 2000
+            }
+          ],
           "resonance": 0
         }
       ]

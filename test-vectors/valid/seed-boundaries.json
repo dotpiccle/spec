@@ -5,12 +5,20 @@
     {
       "id": "seed-min",
       "duration_ms": 40,
-      "source": { "type": "noise", "character": "neutral", "seed": 0 }
+      "source": {
+        "type": "noise",
+        "character": "neutral",
+        "seed": 0
+      }
     },
     {
       "id": "seed-max",
       "duration_ms": 40,
-      "source": { "type": "noise", "character": "neutral", "seed": 4294967295 }
+      "source": {
+        "type": "noise",
+        "character": "neutral",
+        "seed": 4294967295
+      }
     }
   ]
 }

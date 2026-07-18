@@ -4,8 +4,19 @@
     {
       "id": "bad-fade",
       "duration_ms": 50,
-      "source": { "type": "noise", "character": "neutral" },
-      "volume": { "fade_in_ms": 50, "fade_out_ms": 5, "levels": [{ "level": 0.5 }] }
+      "source": {
+        "type": "noise",
+        "character": "neutral"
+      },
+      "volume": {
+        "fade_in_ms": 50,
+        "fade_out_ms": 5,
+        "levels": [
+          {
+            "level": 0.5
+          }
+        ]
+      }
     }
   ]
 }

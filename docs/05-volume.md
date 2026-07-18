@@ -100,7 +100,7 @@ _A sharp hit to 60%, immediate dip to 20%, exponential rise to 40%, hold for the
 
 ## Layer-envelope algorithm (normative)
 
-For object-form volume, the layer starts at silence. A non-zero `fade_in_ms` linearly reaches the first level using the same frame convention as [Transition Curves](10-curves.md). Contour holds and transitions then run in order. After the final target is reached, the engine holds it until the fade-out begins. The linear fade-out reaches zero at the effective layer end.
+For object-form volume, the layer starts at silence. A non-zero `fade_in_ms` linearly reaches the first level using the same frame convention as [Transition Curves](10-curves.md). Contour holds and transitions then run in order. After the final target is reached, the engine holds it until the fade-out begins. The linear fade-out reaches zero at the declared layer end.
 
 The effective fade-out is `min(fade_out_ms, layer.duration_ms)`. The complete scheduled contour budget defined in [Conventions](02-conventions.md) MUST fit within the layer duration. This prevents an explicit fade-out from overlapping scheduled contour motion.
 
@@ -123,7 +123,7 @@ In digital audio, any sound that is still audible (non-zero amplitude) at the ex
 
 The default `fade_out_ms: 5` applies a tiny fade that smooths the discontinuity. If the contour reaches a final `level` of `0`, this default has no audible effect because the sound is already silent. To request an abrupt ending, set `fade_out_ms: 0` explicitly.
 
-The engine does NOT apply any additional anti-click fades beyond the documented `fade_out_ms` default -- what you write is what you hear.
+The engine does NOT add a fade when root `duration_ms` truncates a layer before its declared fade. What you write is what you hear; align the layer end with the document cutoff when a smooth exit is required.
 
 ## Exponential curves
 
