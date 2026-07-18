@@ -11,8 +11,12 @@
         "seed": 42
       },
       "volume": {
-        "fade_in_ms": 5,
-        "fade_out_ms": 20,
+        "fade_in": {
+          "ms": 5
+        },
+        "fade_out": {
+          "ms": 20
+        },
         "levels": [
           {
             "level": 1.0,

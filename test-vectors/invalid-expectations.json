@@ -74,10 +74,35 @@
     "code": "schema.required",
     "path": "$.layers[0].source.wave"
   },
+  "fade-in-additional-property.json": {
+    "stage": "schema",
+    "code": "schema.additionalProperties",
+    "path": "$.layers[0].volume.fade_in.duration"
+  },
+  "fade-in-as-integer.json": {
+    "stage": "schema",
+    "code": "schema.type",
+    "path": "$.layers[0].volume.fade_in"
+  },
+  "fade-in-missing-ms.json": {
+    "stage": "schema",
+    "code": "schema.required",
+    "path": "$.layers[0].volume.fade_in.ms"
+  },
+  "fade-in-negative-ms.json": {
+    "stage": "schema",
+    "code": "schema.minimum",
+    "path": "$.layers[0].volume.fade_in.ms"
+  },
+  "fade-in-unknown-curve.json": {
+    "stage": "schema",
+    "code": "schema.enum",
+    "path": "$.layers[0].volume.fade_in.curve"
+  },
   "negative-fade.json": {
     "stage": "schema",
     "code": "schema.minimum",
-    "path": "$.layers[0].volume.fade_in_ms"
+    "path": "$.layers[0].volume.fade_in.ms"
   },
   "negative-hold.json": {
     "stage": "schema",

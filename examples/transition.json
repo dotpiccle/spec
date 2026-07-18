@@ -13,8 +13,12 @@
         "character": "neutral"
       },
       "volume": {
-        "fade_in_ms": 5,
-        "fade_out_ms": 30,
+        "fade_in": {
+          "ms": 5
+        },
+        "fade_out": {
+          "ms": 30
+        },
         "levels": [
           {
             "level": 0.01,

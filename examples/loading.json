@@ -18,8 +18,12 @@
         "character": "sharp"
       },
       "volume": {
-        "fade_in_ms": 5,
-        "fade_out_ms": 40,
+        "fade_in": {
+          "ms": 5
+        },
+        "fade_out": {
+          "ms": 40
+        },
         "levels": [
           {
             "level": 0.3,
@@ -72,8 +76,12 @@
         }
       },
       "volume": {
-        "fade_in_ms": 10,
-        "fade_out_ms": 50,
+        "fade_in": {
+          "ms": 10
+        },
+        "fade_out": {
+          "ms": 50
+        },
         "levels": [
           {
             "level": 0.25,

@@ -17,7 +17,9 @@
         }
       },
       "volume": {
-        "fade_out_ms": 5,
+        "fade_out": {
+          "ms": 5
+        },
         "levels": [
           {
             "level": 0.1,

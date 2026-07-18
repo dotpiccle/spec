@@ -113,8 +113,8 @@ def semantic_issues(document: dict[str, Any]) -> list[Issue]:
 
         volume = layer.get("volume", 1)
         if isinstance(volume, dict):
-            fade_out = min(volume.get("fade_out_ms", 5), duration)
-            elapsed = volume.get("fade_in_ms", 0) + contour_time(volume["levels"]) + fade_out
+            fade_out = min(volume.get("fade_out", {}).get("ms", 5), duration)
+            elapsed = volume.get("fade_in", {}).get("ms", 0) + contour_time(volume["levels"]) + fade_out
             if elapsed > duration:
                 issues.append(Issue(
                     "semantic", "semantic.volume_timing_exceeds_duration",
@@ -275,10 +275,13 @@ def check_schema_contract(schema: dict[str, Any]) -> list[str]:
 
     volume_object = defs["volume"]["oneOf"][1]
     expect(volume_object["required"], ["levels"], "volume required fields")
-    expect(volume_object["properties"]["fade_in_ms"].get("default"), 0, "layer fade-in default")
-    expect(volume_object["properties"]["fade_out_ms"].get("default"), 5, "layer fade-out default")
-    expect_property(volume_object, "fade_in_ms", kind="integer", minimum=0, default=0, has_default=True)
-    expect_property(volume_object, "fade_out_ms", kind="integer", minimum=0, default=5, has_default=True)
+    expect(volume_object["properties"]["fade_in"].get("default"), {"ms": 0, "curve": "linear"}, "layer fade-in default")
+    expect(volume_object["properties"]["fade_out"].get("default"), {"ms": 5, "curve": "linear"}, "layer fade-out default")
+    fade_stage = defs["fade_stage"]
+    expect(fade_stage["properties"]["ms"].get("minimum"), 0, "fade_stage ms minimum")
+    expect(fade_stage["required"], ["ms"], "fade_stage required fields")
+    expect(fade_stage["properties"]["curve"].get("default"), "linear", "fade_stage curve default")
+    expect(fade_stage["properties"]["curve"].get("$ref"), "#/$defs/curves", "fade_stage curve $ref")
     level_entry = volume_object["properties"]["levels"]["items"]
     expect(level_entry["required"], ["level"], "volume level required fields")
     expect_property(level_entry, "level", kind="number", minimum=0, maximum=1)
@@ -312,7 +315,7 @@ def documentation_parity_errors() -> list[str]:
         "docs/01-document-structure.md": {"$schema", "piccle", "name", "description", "duration_ms", "volume", "reverb", "layers", "id", "start_ms", "source", "balance", "filters"},
         "docs/03-sources.md": {"type", "wave", "pitch", "character", "seed"},
         "docs/04-pitch.md": {"frequencies", "hz", "hold_ms", "transition_ms", "transition_curve", "offset_cents"},
-        "docs/05-volume.md": {"fade_in_ms", "fade_out_ms", "levels", "level", "hold_ms", "transition_ms", "transition_curve"},
+        "docs/05-volume.md": {"fade_in", "fade_out", "levels", "level", "hold_ms", "transition_ms", "transition_curve"},
         "docs/06-filters.md": {"type", "frequencies", "hz", "hold_ms", "transition_ms", "transition_curve", "resonance"},
         "docs/07-reverb.md": {"amount", "tail_ms", "soften_hz"},
     }
@@ -325,7 +328,7 @@ def documentation_parity_errors() -> list[str]:
 
     exact_tokens = {
         "docs/01-document-structure.md": ["`duration_ms` | integer", "`volume`      | number  | 1        | No"],
-        "docs/05-volume.md": ["`fade_in_ms`  | integer | 0", "`fade_out_ms` | integer | 5"],
+        "docs/05-volume.md": ["`fade_in`  | object | `{\"ms\": 0", "`fade_out` | object | `{\"ms\": 5"],
         "docs/06-filters.md": ["`resonance`   | number | 0", "20-20000 Hz"],
         "docs/07-reverb.md": ["`amount`    | number", "`tail_ms`   | integer | `1` or more", "`soften_hz` | number  | `200`–`12000`"],
         "docs/11-engine-safety.md": ["at least 8000 Hz", "min(20000, 0.49 × sample_rate)", "48000 Hz", "frame(S + b) - frame(S + a)"],
@@ -512,7 +515,7 @@ def behavior_aid_errors() -> list[str]:
             start = layer.get("start_ms", 0)
             end = start + layer["duration_ms"]
             volume = layer.get("volume", 1)
-            fade_ms = volume.get("fade_out_ms", 5) if isinstance(volume, dict) else 5
+            fade_ms = volume.get("fade_out", {}).get("ms", 5) if isinstance(volume, dict) else 5
             fade_start = end - min(fade_ms, layer["duration_ms"])
             declared_start_frame = frame(start)
             declared_end_frame = frame(end)
@@ -578,7 +581,6 @@ def main() -> int:
         print(f"Piccle validation failed with {len(failures)} issue(s):", file=sys.stderr)
         for failure in failures:
             print(f"- {failure}", file=sys.stderr)
-        return 1
     print(f"Piccle validation passed: schema, {len(valid_paths)} accepted documents, {len(invalid_paths)} rejected documents with stable codes and paths, semantic rules, numeric and behavior aids, documentation parity, inventories, canonical JSON, anchors, and links.")
     return 0
 

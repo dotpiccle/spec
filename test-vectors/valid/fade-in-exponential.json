@@ -2,15 +2,23 @@
   "piccle": "1.0",
   "layers": [
     {
-      "id": "bad-fade",
-      "duration_ms": 50,
+      "id": "tone",
+      "duration_ms": 200,
       "source": {
-        "type": "noise",
-        "character": "neutral"
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [
+            {
+              "hz": 440
+            }
+          ]
+        }
       },
       "volume": {
         "fade_in": {
-          "ms": 50
+          "ms": 50,
+          "curve": "exponential"
         },
         "fade_out": {
           "ms": 5

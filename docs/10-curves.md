@@ -24,11 +24,13 @@ For `linear`, `easeIn`, `easeOut`, and `easeInOut`, the same progress shape appl
 
 The `transition_curve` on one contour entry shapes the movement from that entry's value to the next entry's value. It changes only the intermediate values: it does not change the hold duration, transition duration, start value, or exact target at the segment boundary.
 
+Fade stages (`fade_in.curve` and `fade_out.curve` on a layer volume object) reuse the same five curves and the same `t = j / N` frame convention. The difference is that fades always interpolate between zero and the first/last level, rather than between consecutive contour entries. See [Volume](05-volume.md#curved-fades) for fade-specific guidance.
+
 ## Frame scheduling
 
 Let `S` be the layer's document-time start. Build cumulative contour offsets in milliseconds, beginning at `0`. Convert offset `c` to global frame `frame(S + c)` using [the render-profile timing rule](11-engine-safety.md). Derive every hold and transition length by subtracting consecutive global boundary frames; do not round a hold, transition, or cumulative offset independently.
 
-Pitch and filter contour offsets begin at `0`. Object-form volume contour offsets begin after `fade_in_ms`; the fade-in boundary is therefore `frame(S + fade_in_ms)`. The declared target at any boundary becomes active on that boundary's frame.
+Pitch and filter contour offsets begin at `0`. Object-form volume contour offsets begin after `fade_in.ms`; the fade-in boundary is therefore `frame(S + fade_in.ms)`. The declared target at any boundary becomes active on that boundary's frame.
 
 At layer frame zero, a contour has entry `0`'s value. For each entry except the last:
 
@@ -175,3 +177,25 @@ This non-normative table compares how much of a rising value change has occurred
 The percentages describe the illustrated rising examples only. In particular, exponential interpolation should be chosen for its ratio-based behavior, not as a generic substitute for `easeIn`.
 
 All control calculations use binary64 precision. Engines MUST produce finite values and MUST begin the next segment from the exact preceding target so rounding error does not accumulate across a contour.
+
+## Fade curves
+
+A fade stage (the `fade_in` or `fade_out` object) is a special case of the same scheduling and interpolation rules. For a fade-out of `O > 0` frames, the fade gain at local layer frame `n >= T - O` is:
+
+```text
+t = (n - (T - O)) / O
+gain = c(t)
+```
+
+where `c(t)` is the curve function for `fade_out.curve`. The gain multiplies the held final level. At frame `T`, the gain reaches zero.
+
+For a fade-in of `I > 0` frames, the fade gain at local layer frame `n < I` is:
+
+```text
+t = n / I
+gain = c(t)
+```
+
+The gain multiplies the first level. At frame `I`, the gain reaches `1` and the first level becomes exact.
+
+For `exponential`, the same positive-floor rule from [Curve Formulas](#curve-formulas) applies to prevent division by zero. During a fade-out, `s` is the held level (positive) and `target` floors to `1e-10` internally; the exact `0` is produced only at frame `T`. During a fade-in from silence, `s` floors to `1e-10` and `target` is the first level. See [Engine Safety](11-engine-safety.md) for the canonical epsilon definition.

@@ -20,8 +20,12 @@
         }
       },
       "volume": {
-        "fade_in_ms": 1,
-        "fade_out_ms": 40,
+        "fade_in": {
+          "ms": 1
+        },
+        "fade_out": {
+          "ms": 40
+        },
         "levels": [
           {
             "level": 0.5,
@@ -51,8 +55,12 @@
         }
       },
       "volume": {
-        "fade_in_ms": 1,
-        "fade_out_ms": 40,
+        "fade_in": {
+          "ms": 1
+        },
+        "fade_out": {
+          "ms": 40
+        },
         "levels": [
           {
             "level": 0.5,
@@ -82,8 +90,12 @@
         }
       },
       "volume": {
-        "fade_in_ms": 1,
-        "fade_out_ms": 40,
+        "fade_in": {
+          "ms": 1
+        },
+        "fade_out": {
+          "ms": 40
+        },
         "levels": [
           {
             "level": 0.5,
@@ -113,8 +125,12 @@
         }
       },
       "volume": {
-        "fade_in_ms": 1,
-        "fade_out_ms": 60,
+        "fade_in": {
+          "ms": 1
+        },
+        "fade_out": {
+          "ms": 60
+        },
         "levels": [
           {
             "level": 0.5,

@@ -47,8 +47,12 @@
         }
       },
       "volume": {
-        "fade_in_ms": 5,
-        "fade_out_ms": 50,
+        "fade_in": {
+          "ms": 5
+        },
+        "fade_out": {
+          "ms": 50
+        },
         "levels": [
           {
             "level": 0.45,
@@ -95,8 +99,12 @@
         }
       },
       "volume": {
-        "fade_in_ms": 5,
-        "fade_out_ms": 50,
+        "fade_in": {
+          "ms": 5
+        },
+        "fade_out": {
+          "ms": 50
+        },
         "levels": [
           {
             "level": 0.4,

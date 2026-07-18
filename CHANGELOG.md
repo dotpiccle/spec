@@ -22,6 +22,7 @@ All notable changes to the Piccle specification are documented here. Piccle v1 h
 - Stable semantic errors for derived layer-end and output-end safe-integer overflow.
 - Parser fixtures and stable errors for non-JSON numeric tokens and decimal values outside finite binary64 range.
 - Non-PCM document render cases for computed duration, hard truncation, simultaneous boundaries, fades, and non-additive reverb-tail frame counts.
+- Curved fade-in and fade-out. The `transition_curve` enum (`linear`, `exponential`, `easeIn`, `easeOut`, `easeInOut`) is now reusable on `fade_in.curve` and `fade_out.curve` in object-form layer volume.
 
 ### Removed
 
@@ -30,6 +31,7 @@ All notable changes to the Piccle specification are documented here. Piccle v1 h
 ### Changed
 
 - **Narrative:** Reframed the repository as the specification for the Piccle product (which ships an open-source reference engine), rather than as an open standard primarily for third-party engine implementers. Building an independent engine remains a fully supported path via the Engine Build Guide and conformance gates. No format, validation, schema, or playback behavior changed.
+- **Fade fields migrated to object form (breaking, pre-rc.1).** Layer-volume `fade_in_ms` (integer) and `fade_out_ms` (integer) replaced by `fade_in` and `fade_out` objects, each `{ "ms": integer, "curve": enum }`. The `curve` defaults to `"linear"`, so existing audio output is byte-equivalent when migrating via the mechanical form `"fade_in_ms": X` → `"fade_in": {"ms": X}`. The marker-level workaround (zero-level entry with `transition_curve`) remains valid for transitions between audible levels.
 - Narrowed v1's public scope to finite one-shot UI sounds. Looping, continuous playback, host-controlled parameters, gesture control, theming inputs, and modulation are deferred.
 - Replaced fixed noise buffers with duration-independent deterministic streams.
 - Defined `soft` as a 400 Hz first-order lowpass and `sharp` as a realizable 2 kHz first-order highpass.

@@ -8,7 +8,7 @@ Start with **noise**. A button click is a short burst of hiss -- there is no pit
 
 1. Create a noise layer with `character: "neutral"`.
 2. Give it a short `duration_ms` (about 60-100 ms).
-3. Shape the volume so it punches quickly and fades out: a short `fade_in_ms` (1 ms), a peak level (0.5), and a `fade_out_ms` (around 40-60 ms).
+3. Shape the volume so it punches quickly and fades out: a short `fade_in` (1 ms), a peak level (0.5), and a `fade_out` (around 40-60 ms).
 4. Add a `highpass` filter to brighten it and remove low-end rumble.
 
 ```json
@@ -24,8 +24,8 @@ Start with **noise**. A button click is a short burst of hiss -- there is no pit
         "seed": 7
       },
       "volume": {
-        "fade_in_ms": 1,
-        "fade_out_ms": 50,
+        "fade_in": { "ms": 1 },
+        "fade_out": { "ms": 50 },
         "levels": [{ "level": 0.5 }]
       },
       "filters": [
@@ -66,8 +66,8 @@ Start with a **tone**. A notification bell is a pitched sound, like a doorbell d
         }
       },
       "volume": {
-        "fade_in_ms": 2,
-        "fade_out_ms": 200,
+        "fade_in": { "ms": 2 },
+        "fade_out": { "ms": 200, "curve": "exponential" },
         "levels": [
           {
             "level": 0.5,
@@ -114,8 +114,8 @@ Use multiple **tone** layers offset in time. A success sound is often three risi
         }
       },
       "volume": {
-        "fade_in_ms": 2,
-        "fade_out_ms": 250,
+        "fade_in": { "ms": 2 },
+        "fade_out": { "ms": 250 },
         "levels": [
           {
             "level": 0.4,
@@ -138,8 +138,8 @@ Use multiple **tone** layers offset in time. A success sound is often three risi
         }
       },
       "volume": {
-        "fade_in_ms": 2,
-        "fade_out_ms": 250,
+        "fade_in": { "ms": 2 },
+        "fade_out": { "ms": 250 },
         "levels": [
           {
             "level": 0.4,
@@ -162,8 +162,8 @@ Use multiple **tone** layers offset in time. A success sound is often three risi
         }
       },
       "volume": {
-        "fade_in_ms": 2,
-        "fade_out_ms": 250,
+        "fade_in": { "ms": 2 },
+        "fade_out": { "ms": 250 },
         "levels": [
           {
             "level": 0.4,
@@ -206,8 +206,8 @@ Use **noise** with a **filter sweep**. A whoosh is noise that opens up from dull
         "character": "neutral"
       },
       "volume": {
-        "fade_in_ms": 20,
-        "fade_out_ms": 30,
+        "fade_in": { "ms": 20 },
+        "fade_out": { "ms": 30 },
         "levels": [{ "level": 0.3 }]
       },
       "filters": [
@@ -253,8 +253,8 @@ Use **descending tones**. An error sound signals something went wrong -- it ofte
         "character": "neutral"
       },
       "volume": {
-        "fade_in_ms": 1,
-        "fade_out_ms": 50,
+        "fade_in": { "ms": 1 },
+        "fade_out": { "ms": 50 },
         "levels": [{ "level": 0.3 }]
       },
       "filters": [
@@ -284,8 +284,8 @@ Use **descending tones**. An error sound signals something went wrong -- it ofte
         }
       },
       "volume": {
-        "fade_in_ms": 3,
-        "fade_out_ms": 100,
+        "fade_in": { "ms": 3 },
+        "fade_out": { "ms": 100 },
         "levels": [
           {
             "level": 0.3,
@@ -315,8 +315,8 @@ Use **descending tones**. An error sound signals something went wrong -- it ofte
         }
       },
       "volume": {
-        "fade_in_ms": 3,
-        "fade_out_ms": 150,
+        "fade_in": { "ms": 3 },
+        "fade_out": { "ms": 150 },
         "levels": [
           {
             "level": 0.25,

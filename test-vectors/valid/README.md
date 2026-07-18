@@ -6,6 +6,10 @@ Each valid fixture tests acceptance, a default behavior, or a boundary condition
 | ------------------------------- | ------------------------------------------------------------------------- |
 | `defaults.json`                 | All optional fields omitted — engine must apply defaults.                 |
 | `engine-limit-independent.json` | Validity remains independent of engine duration limits.                   |
+| `fade-defaults-equivalence.json`| Explicit linear defaults match the implicit rule.                         |
+| `fade-in-exponential.json`      | Fade-in with exponential curve from silence.                              |
+| `fade-out-ease-in.json`         | Fade-out with easeIn curve (settle-then-cut exit).                        |
+| `fade-out-exponential.json`     | Fade-out with exponential curve to silence (natural decay tail).          |
 | `all-curves.json`               | All five transition-curve values in one valid contour.                    |
 | `filter-frequencies.json`       | Static bandpass filter with resonance.                                    |
 | `filter-frequencies-sweep.json` | Filter frequency sweep (two entries, exponential curve).                  |

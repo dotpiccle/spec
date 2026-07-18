@@ -52,4 +52,9 @@ Each invalid fixture fails for exactly one primary reason, matching the rule lis
 | `seed-above-uint32.json`                   | Noise: `seed` exceeds the unsigned 32-bit range.   |
 | `seed-negative.json`                       | Noise: `seed` cannot be negative.                  |
 | `volume-fade-exceeds-duration.json`        | Semantic: volume fade budget exceeds duration.    |
+| `fade-in-additional-property.json`          | Layer volume: `fade_in` object rejects unknown properties. |
+| `fade-in-as-integer.json`                  | Layer volume: `fade_in` must be an object, not a number.   |
+| `fade-in-missing-ms.json`                  | Layer volume: `fade_in` object requires `ms`.              |
+| `fade-in-negative-ms.json`                 | Layer volume: `fade_in.ms` cannot be negative.             |
+| `fade-in-unknown-curve.json`               | Layer volume: `fade_in.curve` must be a valid curve name.  |
 | `wrong-schema-uri.json`                    | Root: `$schema` must identify the v1 schema.       |

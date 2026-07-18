@@ -2,7 +2,7 @@
   "piccle": "1.0",
   "layers": [
     {
-      "id": "bad-timing",
+      "id": "tone",
       "duration_ms": 100,
       "source": {
         "type": "tone",
@@ -16,20 +16,10 @@
         }
       },
       "volume": {
-        "fade_in": {
-          "ms": 10
-        },
-        "fade_out": {
-          "ms": 5
-        },
+        "fade_in": 5,
         "levels": [
           {
-            "level": 0.5,
-            "hold_ms": 60,
-            "transition_ms": 40
-          },
-          {
-            "level": 0.1
+            "level": 0.5
           }
         ]
       }

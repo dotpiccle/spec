@@ -12,9 +12,7 @@
     },
     "piccle": {
       "type": "string",
-      "enum": [
-        "1.0"
-      ],
+      "enum": ["1.0"],
       "description": "The Piccle format version this document targets. '1.0' is the only valid value for v1."
     },
     "name": {
@@ -53,22 +51,32 @@
       "description": "One or more layers that make up this sound (no spec maximum; engines MAY enforce their own). Each layer is an independent sound generator with its own volume, balance, and filter chain."
     }
   },
-  "required": [
-    "piccle",
-    "layers"
-  ],
+  "required": ["piccle", "layers"],
   "additionalProperties": false,
   "$defs": {
     "curves": {
       "description": "Transition curve shapes used in volume, pitch, and filter frequency entries.",
       "type": "string",
-      "enum": [
-        "linear",
-        "exponential",
-        "easeIn",
-        "easeOut",
-        "easeInOut"
-      ]
+      "enum": ["linear", "exponential", "easeIn", "easeOut", "easeInOut"]
+    },
+    "fade_stage": {
+      "description": "A fade stage: a duration plus the curve used to interpolate the fade gain. Used mainly for fade_in and fade_out",
+      "type": "object",
+      "properties": {
+        "ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Fade duration in milliseconds. 0 means no fade stage."
+        },
+        "curve": {
+          "$ref": "#/$defs/curves",
+          "default": "linear",
+          "description": "Curve applied to the fade gain. Reuses the transition_curve enum."
+        }
+      },
+      "required": ["ms"],
+      "additionalProperties": false
     },
     "filter": {
       "description": "A single filter applied to a layer. Type is fixed for the layer duration. Cutoff frequency uses an always-array describing motion over time.",
@@ -76,11 +84,7 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": [
-            "lowpass",
-            "highpass",
-            "bandpass"
-          ],
+          "enum": ["lowpass", "highpass", "bandpass"],
           "description": "Filter type. lowpass keeps lows, highpass keeps highs, bandpass keeps a focused frequency region."
         },
         "frequencies": {
@@ -116,9 +120,7 @@
                 "description": "Shape of the transition from this cutoff to the next. Ignored on the last entry."
               }
             },
-            "required": [
-              "hz"
-            ],
+            "required": ["hz"],
             "additionalProperties": false
           }
         },
@@ -130,10 +132,7 @@
           "description": "How much the filter resonates at its frequency, 0–1. 0 = flat/no resonance, 1 = strong resonance (Q ≈ 12). Like a struck bell singing at the cutoff frequency."
         }
       },
-      "required": [
-        "type",
-        "frequencies"
-      ],
+      "required": ["type", "frequencies"],
       "additionalProperties": false
     },
     "layer": {
@@ -184,11 +183,7 @@
           "description": "Filter chain applied in series (filter 1 output feeds filter 2). Zero or more filters (engine-defined maximum)."
         }
       },
-      "required": [
-        "id",
-        "duration_ms",
-        "source"
-      ],
+      "required": ["id", "duration_ms", "source"],
       "additionalProperties": false
     },
     "pitch": {
@@ -228,9 +223,7 @@
                 "description": "Shape of the transition from this pitch to the next. Ignored on the last entry."
               }
             },
-            "required": [
-              "hz"
-            ],
+            "required": ["hz"],
             "additionalProperties": false
           }
         },
@@ -242,9 +235,7 @@
           "description": "Pitch offset in cents (100 cents = 1 semitone). Applied after contour interpolation and before render-profile frequency clamping."
         }
       },
-      "required": [
-        "frequencies"
-      ],
+      "required": ["frequencies"],
       "additionalProperties": false
     },
     "reverb": {
@@ -270,11 +261,7 @@
           "description": "Corner frequency of the normative first-order wet-path lowpass, in Hz. Engines clamp it to the active render profile's available bandwidth."
         }
       },
-      "required": [
-        "amount",
-        "tail_ms",
-        "soften_hz"
-      ],
+      "required": ["amount", "tail_ms", "soften_hz"],
       "additionalProperties": false
     },
     "source": {
@@ -290,12 +277,7 @@
             },
             "wave": {
               "type": "string",
-              "enum": [
-                "sine",
-                "triangle",
-                "square",
-                "saw"
-              ],
+              "enum": ["sine", "triangle", "square", "saw"],
               "description": "The waveform shape. sine = smooth/soft, triangle = warmer, square = buzzy/hollow, saw = bright/buzzy."
             },
             "pitch": {
@@ -303,11 +285,7 @@
               "description": "The pitch of this tone — always a frequencies array with optional offset_cents."
             }
           },
-          "required": [
-            "type",
-            "wave",
-            "pitch"
-          ],
+          "required": ["type", "wave", "pitch"],
           "additionalProperties": false
         },
         {
@@ -320,11 +298,7 @@
             },
             "character": {
               "type": "string",
-              "enum": [
-                "soft",
-                "neutral",
-                "sharp"
-              ],
+              "enum": ["soft", "neutral", "sharp"],
               "description": "The spectral character of deterministic noise. soft is a 400 Hz first-order lowpass, neutral is unfiltered uniform noise, and sharp is a 2 kHz first-order highpass. See docs/09-noise-and-determinism.md."
             },
             "seed": {
@@ -335,39 +309,38 @@
               "description": "Unsigned 32-bit seed for the normative PCG32 noise stream. Equal character and seed values reproduce the same raw stream."
             }
           },
-          "required": [
-            "type",
-            "character"
-          ],
+          "required": ["type", "character"],
           "additionalProperties": false
         }
       ]
     },
     "volume": {
-      "description": "Loudness contour for a layer. A plain number is shorthand for a constant level with anti-click fade-out. An object allows multi-level contours.",
+      "description": "Loudness contour for a layer. A plain number is shorthand for a constant level with anti-click fade-out. An object allows multi-level contours with per-direction fade curves.",
       "oneOf": [
         {
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "Shorthand for a constant level at this value with fade_out_ms defaulting to 5."
+          "description": "Shorthand for a constant level at this value with a 5 ms linear fade-out."
         },
         {
           "type": "object",
           "properties": {
-            "fade_in_ms": {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 9007199254740991,
-              "default": 0,
-              "description": "Time to rise from silence to the first level, in milliseconds."
+            "fade_in": {
+              "$ref": "#/$defs/fade_stage",
+              "default": {
+                "ms": 0,
+                "curve": "linear"
+              },
+              "description": "Fade-in from silence to the first declared level. Defaults to no fade-in (0 ms, linear)."
             },
-            "fade_out_ms": {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 9007199254740991,
-              "default": 5,
-              "description": "Time to fade from the last level to silence, in milliseconds. Default 5 ms is an anti-click necessity."
+            "fade_out": {
+              "$ref": "#/$defs/fade_stage",
+              "default": {
+                "ms": 5,
+                "curve": "linear"
+              },
+              "description": "Fade-out from the last declared level to silence. Defaults to a 5 ms linear fade for anti-click. Use curve: \"exponential\" for natural decay tails."
             },
             "levels": {
               "type": "array",
@@ -402,16 +375,12 @@
                     "description": "Shape of the transition from this level to the next. Ignored on the last entry."
                   }
                 },
-                "required": [
-                  "level"
-                ],
+                "required": ["level"],
                 "additionalProperties": false
               }
             }
           },
-          "required": [
-            "levels"
-          ],
+          "required": ["levels"],
           "additionalProperties": false
         }
       ]

@@ -13,8 +13,12 @@
         "character": "soft"
       },
       "volume": {
-        "fade_in_ms": 1,
-        "fade_out_ms": 15,
+        "fade_in": {
+          "ms": 1
+        },
+        "fade_out": {
+          "ms": 15
+        },
         "levels": [
           {
             "level": 0.5,
@@ -48,8 +52,12 @@
         "character": "neutral"
       },
       "volume": {
-        "fade_in_ms": 5,
-        "fade_out_ms": 20,
+        "fade_in": {
+          "ms": 5
+        },
+        "fade_out": {
+          "ms": 20
+        },
         "levels": [
           {
             "level": 0.25,
@@ -90,8 +98,12 @@
         }
       },
       "volume": {
-        "fade_in_ms": 1,
-        "fade_out_ms": 15,
+        "fade_in": {
+          "ms": 1
+        },
+        "fade_out": {
+          "ms": 15
+        },
         "levels": [
           {
             "level": 0.35,
