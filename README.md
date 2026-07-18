@@ -2,7 +2,7 @@
   <img alt="piccle" src="assets/banner.png" width="600">
 </p>
 
-<p align="center"><strong>The Lottie for audio</strong> — a declarative format for one-shot UI micro-audio.</p>
+<p align="center"><strong>Building micro-audio made easy.</strong></p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/spec-v1.0.0--rc.1-orange?style=flat-square" alt="version candidate">
@@ -23,7 +23,7 @@
 
 ## What is Piccle?
 
-Piccle is an open JSON format for short procedural sounds on interactive platforms, from browsers and desktop applications to mobile devices, consoles, vehicles, kiosks, and embedded appliances.
+Piccle is a product that makes building micro-audio for user interfaces across platforms easy — from browsers and desktop applications to mobile devices, consoles, vehicles, kiosks, and embedded appliances. This repository is the specification for the Piccle format.
 
 A Piccle asset contains structured synthesis instructions rather than recorded audio:
 
@@ -42,7 +42,7 @@ A Piccle asset contains structured synthesis instructions rather than recorded a
 }
 ```
 
-This repository is the canonical format contract. It contains the normative specification, JSON Schema, authoring examples, and validation fixtures. It does not contain a playback engine.
+This repository is the specification for the Piccle product. It contains the normative specification, JSON Schema, authoring examples, and validation fixtures. It does not contain a playback engine — Piccle's reference engine lives in a separate repository. Anyone may implement their own engine using this specification.
 
 > [!IMPORTANT]
 > Piccle v1 is a release candidate. Do not describe the format as stable until the canonical schema URL, clean-room implementation, and listening gates in [Conformance](docs/14-conformance.md) are complete.
@@ -56,7 +56,7 @@ Piccle v1 is designed for finite, one-shot UI sounds:
 - short impacts, clicks, chimes, textures, and whooshes;
 - layered tone and deterministic noise synthesis.
 
-The format is platform-neutral. A conforming engine includes a canonical 48 kHz test mode. Desktop, browser, mobile, console, vehicle, kiosk, and embedded engines use the same documents and may publish different render profiles and resource limits. Whether an engine renders live, ahead of playback, offline, or into a cache is an implementation choice.
+The format is platform-neutral. Piccle's reference engine includes a canonical 48 kHz test mode, and any conforming engine does the same. Desktop, browser, mobile, console, vehicle, kiosk, and embedded engines use the same documents and may publish different render profiles and resource limits. Whether an engine renders live, ahead of playback, offline, or into a cache is an implementation choice.
 
 V1 does not define looping, continuous progress playback, host-controlled parameters, gesture control, theming inputs, modulation, speech, recorded samples, or long-form music. Hosts may replay an asset, but seamless looping is outside the format contract.
 
@@ -109,17 +109,17 @@ Optional fields use documented defaults. Schema `default` annotations do not mod
 
 ## Documentation paths
 
-| Audience and goal                              | Start here                                                                                    |
-| ---------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Learn the format model                         | [Overview](docs/00-overview.md)                                                               |
-| Implement parsing and the document model       | [Document Structure](docs/01-document-structure.md) and [Conventions](docs/02-conventions.md) |
-| Implement DSP behavior                         | [Sources](docs/03-sources.md), then chapters 04–11                                            |
-| Author common UI sounds                        | [Cookbook](docs/12-cookbook.md)                                                               |
-| Review non-normative DSP guidance              | [Implementer Notes](docs/13-implementer-notes.md)                                             |
-| Implement validation and conformance reporting | [Conformance](docs/14-conformance.md)                                                         |
+| Audience and goal                               | Start here                                                                                    |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Learn the format model                          | [Overview](docs/00-overview.md)                                                               |
+| Implement parsing and the document model        | [Document Structure](docs/01-document-structure.md) and [Conventions](docs/02-conventions.md) |
+| Implement DSP behavior                          | [Sources](docs/03-sources.md), then chapters 04–11                                            |
+| Author common UI sounds                         | [Cookbook](docs/12-cookbook.md)                                                               |
+| Review non-normative DSP guidance               | [Implementer Notes](docs/13-implementer-notes.md)                                             |
+| Implement validation and conformance reporting  | [Conformance](docs/14-conformance.md)                                                         |
 | Build an engine from the complete specification | [Engine Build Guide](docs/15-engine-build-guide.md)                                           |
-| Propose a format change                        | [Contributing](CONTRIBUTING.md)                                                               |
-| Prepare an RC or stable release                | [Release Checklist](RELEASE_CHECKLIST.md)                                                     |
+| Propose a format change                         | [Contributing](CONTRIBUTING.md)                                                               |
+| Prepare an RC or stable release                 | [Release Checklist](RELEASE_CHECKLIST.md)                                                     |
 
 When artifacts disagree, authority is: normative `docs/` chapters, schema, test vectors, examples, then README.
 
@@ -163,11 +163,11 @@ The command:
 
 CI runs the same command.
 
-## Implementing an engine
+## Building an engine
 
-Give an implementation agent this complete repository and a target such as:
+Most users will use Piccle's reference engine. If you want to build your own engine — for a new platform, language, or use case — give an implementation agent this complete repository and a target such as:
 
-> Implement a conforming Piccle v1 engine for `<platform>` using `<language and integration constraints>`. Follow the Engine Build Guide, implement canonical mode and every v1 primitive, and provide the required conformance evidence.
+> Implement a conforming Piccle engine for `<platform>` using `<language and integration constraints>`. Follow the Engine Build Guide, implement canonical mode and every v1 primitive, and provide the required conformance evidence.
 
 The [Engine Build Guide](docs/15-engine-build-guide.md) provides the task order and definition of done. Normative behavior remains in chapters 00–11 and 14. Live, offline, cached, and ahead-of-playback execution are engine choices.
 
@@ -175,7 +175,7 @@ An implementation question that requires inventing Piccle behavior is a specific
 
 ## Conformance and engine limits
 
-Processing has five distinct outcomes:
+Piccle's reference engine and any independent engine follow the same processing model, which has five distinct outcomes:
 
 1. resource-rejected before parsing completes;
 2. malformed JSON;

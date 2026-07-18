@@ -70,4 +70,4 @@ Piccle rendering ends with clipped stereo samples. Sample-rate conversion, stere
 
 Checked-in document fixtures prove parsing, schema, and semantic-validation behavior. Non-PCM numeric aids help implementers check individual formulas, and behavior aids check document-level schedules. None of these categories proves audible rendering conformance.
 
-Piccle intentionally publishes normative text and formulas rather than normative PCM files or an embedded engine. Engine authors must test implementations against the formulas, measurements, cross-platform qualification matrix, and listening gates in this repository.
+Piccle intentionally publishes normative text and formulas rather than normative PCM files or an embedded engine. Piccle's reference engine and any independent engine must be tested against the formulas, measurements, cross-platform qualification matrix, and listening gates in this repository.

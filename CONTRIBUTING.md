@@ -1,6 +1,6 @@
 # Contributing to Piccle
 
-Piccle is a portable format contract. Changes must remain clear enough for independent engines and constrained enough for untrusted input across browsers, desktop and mobile systems, consoles, vehicles, kiosks, and embedded appliances.
+Piccle is a company that ships a declarative micro-audio format. This repository is the specification for it. Changes must remain clear enough for the reference engine and any independent engine, and constrained enough for untrusted input across browsers, desktop and mobile systems, consoles, vehicles, kiosks, and embedded appliances.
 
 ## Design principles
 

@@ -1,6 +1,6 @@
 # Piccle v1 Overview
 
-Piccle is an open, declarative format for describing short, one-shot procedural UI sounds such as feedback, transitions, notifications, confirmations, and errors. This chapter is part of the normative specification for version 1.0.
+The Piccle format is a declarative specification for describing short, one-shot procedural UI sounds such as feedback, transitions, notifications, confirmations, and errors. Piccle ships a reference engine — this specification is also precise enough for anyone to build their own engine. This chapter is part of the normative specification.
 
 ## Mission
 
@@ -52,21 +52,21 @@ The engine mixes all layers together, optionally adds a little **reverb** for a 
 
 ## Glossary
 
-| Term             | Meaning                                                                                                                           |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Layer            | One sound generator within a document. Each layer has a source, volume, balance, and optional filters.                            |
-| Source           | The raw sound a layer makes -- either a tone (pitched) or noise (pitchless).                                                      |
-| Tone             | A pitched sound with a recognizable frequency, like a beep or bell.                                                               |
-| Noise            | A pitchless sound, like static or a whisper.                                                                                      |
-| Wave             | The shape of a tone's vibration. Piccle supports sine, triangle, square, and saw.                                                 |
-| Character        | The spectral quality of noise: soft (muffled), neutral (balanced), or sharp (bright).                                             |
-| Frequency (Hz)   | How high or low a pitch sounds. Higher Hz = higher pitch. 440 Hz is the A above middle C.                                         |
-| Volume           | How loud a sound is, from 0 (silent) to 1 (full).                                                                                 |
-| Balance          | Where a sound sits in stereo: -1 is left, 0 is center, 1 is right.                                                                |
-| Contour          | How a value (like volume or pitch) changes over time, described as a sequence of target values with hold and transition timing.   |
-| Filter           | A processor that removes or boosts certain frequencies. Lowpass keeps lows, highpass keeps highs, bandpass keeps a focused range. |
-| Resonance        | How much a filter rings at its target frequency, like a struck bell.                                                              |
-| Reverb           | A sense of space around the sound, like playing in a small room.                                                                  |
-| Transition curve | The interpolation shape between contour targets: linear, exponential, easeIn, easeOut, or easeInOut.                              |
-| Offset cents     | A tiny pitch shift measured in cents (100 cents = 1 semitone). Two tones at slightly different cents create a warm chorus effect. |
+| Term             | Meaning                                                                                                                                        |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Layer            | One sound generator within a document. Each layer has a source, volume, balance, and optional filters.                                         |
+| Source           | The raw sound a layer makes -- either a tone (pitched) or noise (pitchless).                                                                   |
+| Tone             | A pitched sound with a recognizable frequency, like a beep or bell.                                                                            |
+| Noise            | A pitchless sound, like static or a whisper.                                                                                                   |
+| Wave             | The shape of a tone's vibration. Piccle supports sine, triangle, square, and saw.                                                              |
+| Character        | The spectral quality of noise: soft (muffled), neutral (balanced), or sharp (bright).                                                          |
+| Frequency (Hz)   | How high or low a pitch sounds. Higher Hz = higher pitch. 440 Hz is the A above middle C.                                                      |
+| Volume           | How loud a sound is, from 0 (silent) to 1 (full).                                                                                              |
+| Balance          | Where a sound sits in stereo: -1 is left, 0 is center, 1 is right.                                                                             |
+| Contour          | How a value (like volume or pitch) changes over time, described as a sequence of target values with hold and transition timing.                |
+| Filter           | A processor that removes or boosts certain frequencies. Lowpass keeps lows, highpass keeps highs, bandpass keeps a focused range.              |
+| Resonance        | How much a filter rings at its target frequency, like a struck bell.                                                                           |
+| Reverb           | A sense of space around the sound, like playing in a small room.                                                                               |
+| Transition curve | The interpolation shape between contour targets: linear, exponential, easeIn, easeOut, or easeInOut.                                           |
+| Offset cents     | A tiny pitch shift measured in cents (100 cents = 1 semitone). Two tones at slightly different cents create a warm chorus effect.              |
 | Boundary click   | A brief, harsh click caused by an abrupt non-zero start or stop. Piccle's default fade-out reduces ending clicks; authors control onset shape. |

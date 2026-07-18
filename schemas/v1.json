@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2019-09/schema",
   "$id": "https://spec.dotpiccle.com/schema/v1.json",
   "title": "Piccle 1.0 document",
-  "description": "Piccle v1.0 schema — a declarative format for short procedural audio micro-interactions. See https://dotpiccle.com for the full specification.",
+  "description": "Piccle v1.0 schema — Piccle's declarative format for short procedural audio micro-interactions. See https://dotpiccle.com for the full specification.",
   "type": "object",
   "properties": {
     "$schema": {

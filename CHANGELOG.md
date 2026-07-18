@@ -29,6 +29,7 @@ All notable changes to the Piccle specification are documented here. Piccle v1 h
 
 ### Changed
 
+- **Narrative:** Reframed the repository as the specification for the Piccle product (which ships an open-source reference engine), rather than as an open standard primarily for third-party engine implementers. Building an independent engine remains a fully supported path via the Engine Build Guide and conformance gates. No format, validation, schema, or playback behavior changed.
 - Narrowed v1's public scope to finite one-shot UI sounds. Looping, continuous playback, host-controlled parameters, gesture control, theming inputs, and modulation are deferred.
 - Replaced fixed noise buffers with duration-independent deterministic streams.
 - Defined `soft` as a 400 Hz first-order lowpass and `sharp` as a realizable 2 kHz first-order highpass.

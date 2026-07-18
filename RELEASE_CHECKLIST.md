@@ -18,9 +18,9 @@ Use this checklist for `v1.0.0-rc.1` and repeat it before promoting v1 to stable
 - [ ] The schema response has an appropriate JSON media type and long-lived immutable caching for the stable release.
 - [ ] Record `shasum -a 256 schemas/v1.json` in the stable GitHub release notes.
 
-## Independent implementation
+## Reference and independent engine qualification
 
-- [ ] Build a clean-room engine using only the public normative documentation.
+- [ ] Build or update Piccle's reference engine and a clean-room independent engine using only the public normative documentation.
 - [ ] Give an implementation agent only this repository, a target platform, and the prompt in README; confirm it can finish without an unanswered format-level question.
 - [ ] Record and resolve every implementation question as a specification issue.
 - [ ] Verify canonical 48 kHz timing, PCG32 sequences, oscillator phase, filter equations, equal-power balance, reverb measurements, and output clipping.

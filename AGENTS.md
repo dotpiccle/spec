@@ -2,9 +2,9 @@
 
 ## 0. Mission
 
-You are working in the specification repository for **Piccle**.
+You are working in the specification repository for **Piccle**. Piccle is a company that ships an open-source micro-audio format. This repository is the specification for that format — defining what makes a valid Piccle document and how conforming engines must interpret it.
 
-Piccle is an open, declarative format for describing short procedural audio experiences such as UI feedback, transitions, notifications, confirmations, errors, and other audio micro-interactions.
+The Piccle format is a declarative specification for describing short procedural audio experiences such as UI feedback, transitions, notifications, confirmations, errors, and other audio micro-interactions.
 
 This repository defines:
 
@@ -14,7 +14,7 @@ This repository defines:
 - How the format evolves.
 - Which examples and test cases represent expected behavior.
 
-This repository does **not** implement a playback engine.
+This repository does **not** implement a playback engine — Piccle's reference engine lives in a separate repository.
 
 ### Core product promise
 
@@ -35,7 +35,7 @@ A Piccle asset should be:
 
 ## 1. Repository authority
 
-This repository is the canonical source of truth for the Piccle format.
+This repository is the canonical specification for the Piccle micro UI sounds.
 
 When files disagree, use the following priority:
 
@@ -842,7 +842,7 @@ A change is complete only when:
 - Unrelated files remain unchanged.
 - The final summary states what changed and which checks were run.
 
-For format additions, an independent engine implementer should be able to implement the feature without guessing.
+For format additions, Piccle's engine team and any independent engine implementer should be able to implement the feature without guessing.
 
 An AI agent should be able to generate a valid example without relying on undocumented conventions.
 
@@ -873,7 +873,7 @@ Add them only when those directories develop specialized workflows that cannot b
 
 ## 24. Final principle
 
-The quality of Piccle depends on independent engines interpreting the same document consistently.
+The quality of Piccle depends on the reference engine and any independent engine interpreting the same document consistently.
 
 Optimize every change for:
 

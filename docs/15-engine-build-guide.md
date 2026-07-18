@@ -1,12 +1,12 @@
 # Engine Build Guide
 
-This guide is non-normative. It turns the normative Piccle v1 chapters into an implementation sequence for engine authors and coding agents. When this guide and a normative chapter disagree, the normative chapter wins.
+This guide is non-normative. It turns the normative Piccle chapters into an implementation sequence for anyone building a Piccle engine — whether Piccle's own reference engine team or an independent implementer. When this guide and a normative chapter disagree, the normative chapter wins.
 
 ## Intended handoff
 
-An engine task may begin with:
+If you are building a Piccle engine — for a new target platform, language, or integration — a typical task begins with:
 
-> Here is the Piccle specification. Implement a conforming Piccle v1 engine for `<target platform>` using `<language and integration constraints>`.
+> Implement a conforming Piccle engine for `<target platform>` using `<language and integration constraints>`.
 
 The implementation agent should receive this repository in full, not isolated excerpts. The target-platform request supplies deployment constraints; the Piccle repository supplies document validity and audio semantics.
 
