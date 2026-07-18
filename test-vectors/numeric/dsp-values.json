@@ -117,5 +117,107 @@
     "dry_end_frame": 176,
     "output_end_frame": 353,
     "tail_frames": 177
+  },
+  "reverb_baseline_at_48000": {
+    "tail_1_ms": {
+      "allpass_left_frames": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "allpass_right_frames": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "fdn_frames": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "direct_gain": 1.5
+    },
+    "tail_20_ms": {
+      "allpass_left_frames": [
+        3,
+        6,
+        12,
+        23
+      ],
+      "allpass_right_frames": [
+        3,
+        6,
+        12,
+        23
+      ],
+      "fdn_frames": [
+        4,
+        6,
+        9,
+        12,
+        18,
+        26,
+        36,
+        51
+      ],
+      "direct_gain": 1.5
+    },
+    "tail_220_ms": {
+      "allpass_left_frames": [
+        8,
+        15,
+        25,
+        43
+      ],
+      "allpass_right_frames": [
+        11,
+        20,
+        32,
+        51
+      ],
+      "fdn_frames": [
+        42,
+        63,
+        95,
+        136,
+        168,
+        208,
+        259,
+        322
+      ],
+      "direct_gain": 0.7
+    },
+    "tail_500_ms": {
+      "allpass_left_frames": [
+        8,
+        15,
+        25,
+        43
+      ],
+      "allpass_right_frames": [
+        11,
+        20,
+        32,
+        51
+      ],
+      "fdn_frames": [
+        72,
+        90,
+        110,
+        136,
+        168,
+        208,
+        259,
+        322
+      ],
+      "direct_gain": 0.7
+    }
   }
 }

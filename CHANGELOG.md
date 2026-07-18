@@ -18,7 +18,7 @@ All notable changes to the Piccle specification are documented here. Piccle v1 h
 - Normative reverb wet lowpass, energy-decay measurement, and automatic terminal window.
 - Exact absolute-boundary scheduling for layers, contours, fades, document cutoffs, and reverb tails at every render rate.
 - Agent-oriented engine build guide with subsystem order, target-platform decisions, required evidence, and definition of done.
-- Deterministic generated-convolution baseline for a first conforming reverb implementation.
+- Deterministic diffused eight-line feedback-delay-network baseline with constant per-frame work, bounded delay memory, and perceptual qualification against the earlier generated-convolution response.
 - Stable semantic errors for derived layer-end and output-end safe-integer overflow.
 - Parser fixtures and stable errors for non-JSON numeric tokens and decimal values outside finite binary64 range.
 - Non-PCM document render cases for computed duration, hard truncation, simultaneous boundaries, fades, and non-additive reverb-tail frame counts.
@@ -43,6 +43,7 @@ All notable changes to the Piccle specification are documented here. Piccle v1 h
 - Clarified that mathematically integral JSON numbers such as `1.0` satisfy integer fields.
 - Clarified that engine resource limits affect support, never format validity.
 - Reorganized public documentation into normative reference, authoring cookbook, non-normative implementation guidance, and conformance material.
+- Separated document compilation from audio production and documented allocation-free, block-streamable engine guidance.
 
 ### Fixed
 

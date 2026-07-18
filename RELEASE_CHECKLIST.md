@@ -46,7 +46,14 @@ Use this checklist for `v1.0.0-rc.1` and repeat it before promoting v1 to stable
 - [ ] Listen on full-range speakers and at least one small-device speaker.
 - [ ] Listen through the lowest-bandwidth supported output path.
 - [ ] Check recognizability, onset clicks, ending clicks, clipping, loudness consistency, oscillator aliasing, filter instability, and reverb cutoff.
-- [ ] Profile the examples on the lowest supported device and document peak CPU, allocations, and simultaneous voices.
+- [ ] A/B the lightweight reverb against the pre-optimization generated-convolution response at 20, 220, and 500 ms tails with 4 kHz softening.
+- [ ] Confirm comparable wet onset, echo density, early-to-late energy, stereo decorrelation, brightness, and decay without metallic ringing or discrete echoes; RT60 agreement alone is insufficient.
+- [ ] Profile the examples and the engine's published maximum supported document on the lowest supported device; document render throughput, peak CPU, state memory, and simultaneous voices.
+- [ ] Confirm the production render path performs no JSON work, schema traversal, sorting, table construction, impulse measurement, or memory allocation.
+- [ ] Confirm output can be streamed in bounded blocks without retaining whole-document PCM.
+- [ ] Confirm oscillator cost is bounded per voice and does not evaluate the full reference harmonic series per sample.
+- [ ] Confirm reverb work per frame does not grow with `tail_ms`; record its fixed state-memory cost at the maximum supported tail.
+- [ ] Confirm contour boundaries and voice starts do not cause unexpected render-cost spikes.
 
 ## Stable release
 

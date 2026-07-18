@@ -16,35 +16,132 @@ For a task-ordered implementation checklist, see [Engine Build Guide](15-engine-
 
 ## Baseline reverb implementation
 
-An agent or first engine implementation should use the deterministic generated-convolution baseline below unless the platform already has another implementation that passes the normative measurements. This recipe is non-normative: engines may replace it without changing Piccle documents.
+An agent or first engine implementation should use the diffused eight-line feedback-delay network (FDN) below, not direct convolution. The input diffusers target the immediate, dense, noise-like onset of the earlier generated-convolution baseline; the FDN targets a similar smooth late decay with constant work per rendered frame. This recipe is non-normative: engines may replace it without changing Piccle documents.
 
-For one `tail_ms`, `soften_hz`, and sample-rate configuration:
+For one `tail_ms` and sample-rate configuration, define the conformance-response length `R` exactly as the reverb harness does:
 
-1. Set `N = floor(tail_ms × sample_rate / 1000 + 0.5)` and allocate a 2-by-2 FIR matrix `hLL`, `hLR`, `hRL`, and `hRR`, each indexed `0..N`.
-2. Initialize four Piccle PCG32 streams for those arrays with seeds `0x50494343`, `0x4C455256`, `0x52455652`, and `0x53544552` respectively. Generate and retain one sign per coefficient. Reuse these same sign arrays for every calibration candidate; do not continue advancing the generators during bisection.
-3. For a provisional decay value `p`, generate every matrix coefficient from its retained sign:
+```text
+R = floor(tail_ms × sample_rate / 1000 + 0.5)
+```
 
-   ```text
-   envelope[n] = 10 ^ (-p × n / N)
-   signXY = -1 when pcgXY_next() < 2^31, otherwise 1
-   hXY[n] = signXY × envelope[n] / 2
-   ```
+`R` configures the reverb core. It is distinct from the document's emitted-tail length `N`, which is derived from two absolute boundaries and can differ by one frame at a non-integer-millisecond sample rate.
 
-4. Treat these coefficients as a stereo FIR reverb core:
+### Input diffusion
 
-   ```text
-   wetL = convolve(dryL, hLL) + convolve(dryR, hLR)
-   wetR = convolve(dryL, hRL) + convolve(dryR, hRR)
-   ```
+Create four serial Schroeder all-pass stages for each input channel. Each stage has one zero-filled circular delay and processes input `x` as follows:
 
-   Do not add a separate dry tap to the wet branch.
-5. Run the normative conformance impulse through the FIR, wet lowpass, and terminal window. Measure its first −60 dB energy crossing.
-6. Starting with the interval `p = [0.5, 6]`, use 32 bisection steps to target crossing frame `1 + floor(0.95 × N)`. If the crossing is earlier than the target, lower `p`; if it is later, raise `p`. A crossing anywhere in the normative final-10% interval is sufficient; exact convergence on the target is not required.
-7. Apply the normative constant wet-energy normalization to the calibrated response. Cache the coefficients and gain by render profile, `tail_ms`, and `soften_hz` when useful.
+```text
+delayed = buffer[index]
+y = delayed - allpass_gain × x
+buffer[index] = x + allpass_gain × y
+advance index
+```
 
-The FIR is causal, stable, deterministic, linear, time-invariant, dense even for short tails, and finite by construction. Independent signs give stereo decorrelation without introducing an author-facing random parameter. Direct convolution is adequate for short UI tails; partitioned convolution or another mathematically equivalent implementation can reduce cost for long supported tails.
+Use `allpass_gain = 0.7` for the left stages and `-0.7` for the right stages. Derive the delay lengths with the helper below, using these caps and ratios:
 
-A Schroeder or feedback-delay-network reverb is also permitted, but its delay layout, feedback tuning, stereo mapping, and response calibration become engine responsibilities. It still needs to pass every normative measurement in [Reverb](07-reverb.md).
+```text
+left_cap_ms  = [0.17, 0.31, 0.53, 0.89]
+right_cap_ms = [0.23, 0.41, 0.67, 1.07]
+ratio        = [0.003, 0.006, 0.012, 0.024]
+```
+
+For either cap array:
+
+```text
+raw[i] = max(1, min(frame(cap_ms[i]), floor(R × ratio[i] + 0.5)))
+d[0] = raw[0]
+d[i] = min(R, max(raw[i], d[i-1] + 1))
+```
+
+Here `frame` is the active render profile's boundary conversion. Process the four stages in array order. Call their final outputs `diffL` and `diffR`.
+
+### Eight-line late network
+
+Create eight zero-filled circular delay lines. Use the same delay-length helper with:
+
+```text
+cap_ms = [1.49, 1.87, 2.29, 2.83, 3.49, 4.33, 5.39, 6.71]
+ratio  = [0.004, 0.006, 0.009, 0.013, 0.019, 0.027, 0.038, 0.053]
+```
+
+Every render profile has at least eight frames in the shortest valid tail, so these eight lengths can remain positive and distinct. Start with decay exponent `p = 3` and set each line's feedback gain to:
+
+```text
+g[i] = 10 ^ (-p × d[i] / R)
+```
+
+For each frame, read the eight delayed samples as `z[0..7]` before writing new values. Map the diffused input into the lines:
+
+```text
+mid  = (diffL + diffR) / sqrt(2)
+side = (diffL - diffR) / sqrt(2)
+
+mid_sign  = [ 1,  1, -1,  1, -1, -1,  1, -1] / sqrt(8)
+side_sign = [ 1, -1,  1,  1, -1,  1, -1, -1] / sqrt(8)
+u[i] = mid_sign[i] × mid + side_sign[i] × side
+```
+
+Apply an eight-point normalized fast Walsh-Hadamard transform to `q[i] = g[i] × z[i]`. One in-place transform is:
+
+```text
+for width = 1, 2, 4:
+    for each adjacent block of 2 × width values:
+        for j = 0 .. width-1:
+            a = value[j]
+            b = value[j + width]
+            value[j] = a + b
+            value[j + width] = a - b
+
+v[i] = value[i] / sqrt(8)
+write[i] = u[i] + v[i]
+```
+
+Write and advance all eight circular delay lines. The normalized transform is orthogonal and every `g[i]` is below `1`, so the late network is stable.
+
+### Wet output and decay preparation
+
+Use these orthogonal sign vectors for the FDN output:
+
+```text
+left_sign  = [ 1,  1,  1, -1,  1, -1, -1, -1] / sqrt(8)
+right_sign = [ 1, -1,  1, -1, -1,  1, -1,  1] / sqrt(8)
+```
+
+Set the diffused direct contribution to:
+
+```text
+direct_gain = min(1.5, max(0.7, 0.7 × sqrt(220 / tail_ms)))
+```
+
+Then produce:
+
+```text
+coreL = direct_gain × diffL + Σ(i = 0 .. 7) left_sign[i]  × z[i]
+coreR = direct_gain × diffR + Σ(i = 0 .. 7) right_sign[i] × z[i]
+```
+
+The first term is part of the wet diffuser response, not an unprocessed dry bypass. Do not add another dry tap to the wet branch.
+
+Apply the normative wet lowpass and terminal window after this core. During configuration preparation, run the normative impulse once, calculate `normalization_gain = 1 / sqrt(wet_energy)`, and cache that scalar by render profile, `tail_ms`, and `soften_hz`. Apply the cached scalar to rendered wet samples. During document rendering, use the document's actual `N` for the terminal window and output boundary. Do not generate an impulse response, measure energy, tune decay, or allocate delay lines in the audio callback.
+
+Measure the final softened, windowed response in every declared render profile. If its RT60 crossing is outside the permitted window, calibrate `p` during configuration preparation. Use 16 bisection steps over `[0.5, 6]` to target crossing frame `1 + floor(0.95 × R)`: lower `p` when the crossing is too early and raise `p` when it is too late. Cache the resulting exponent with the normalization gain. A crossing anywhere in the normative final-10% interval is sufficient; do not add calibration work to the render loop.
+
+### Perceptual qualification
+
+Passing RT60 and normalization measurements is necessary but does not prove that a lightweight reverb resembles the intended dense response. Before adopting this or another baseline, A/B it against the pre-optimization generated-convolution response at `tail_ms` values `20`, `220`, and `500`, with `soften_hz: 4000`.
+
+Listen for:
+
+- immediate wet onset rather than audible predelay;
+- dense, noise-like reflections without discrete echoes;
+- no pitched or metallic ringing;
+- similar early-to-late energy balance and decay shape;
+- low left/right correlation without unstable image movement; and
+- comparable brightness after the normative lowpass.
+
+Also inspect the impulse response, backward-integrated energy curve, short-window echo density, left/right correlation, and spectral flatness. No single metric substitutes for listening. A candidate that only matches RT60 is not an acceptable replacement for the baseline.
+
+At 48 kHz, the capped FDN and diffuser delays retain about 1,570 samples in total. The eight-line transform, eight feedback gains, eight all-pass stages, and stereo input/output matrices require constant work independent of `tail_ms`. A 500 ms generated 2-by-2 FIR would instead retain about 96,000 coefficients and direct convolution would perform work proportional to the tail length for every output frame.
 
 ## Noise implementation
 
@@ -54,11 +151,11 @@ The `soft` and `sharp` character gains are analytic stationary-RMS gains. They a
 
 ## Oscillators
 
-A band-limited wavetable or polyBLEP oscillator is usually more efficient than evaluating a harmonic series per frame. Preserve the normative zero phase, phase integral, and harmonic targets when selecting or interpolating tables. Frequency-dependent tables help prevent high-frequency square and saw layers from aliasing across output systems.
+A band-limited wavetable or polyBLEP oscillator is usually more efficient than evaluating a harmonic series per frame. Treat the published series as a conformance target, not a production algorithm. Build tables outside the render loop and share immutable tables between voices. Preserve the normative zero phase, phase integral, and harmonic targets when selecting or interpolating tables. Frequency-dependent tables help prevent high-frequency square and saw layers from aliasing across output systems.
 
 ## Dynamic biquads
 
-The canonical profile recomputes coefficients per frame. A real-time engine may reduce coefficient work when a cutoff is static. For moving cutoffs, common stable approaches include per-frame coefficient calculation, short control blocks with coefficient interpolation, or a topology-preserving transform. Validate fast exponential sweeps at high Q; direct coefficient interpolation can become unstable.
+The canonical profile recomputes coefficients per frame. A production engine may reduce coefficient work when a cutoff is static. For moving cutoffs, common stable approaches include per-frame coefficient calculation, short control blocks with coefficient interpolation, or a topology-preserving transform. Validate fast exponential sweeps at high Q; direct coefficient interpolation can become unstable.
 
 The normative coefficient equations and zero initial state are in [Filters](06-filters.md).
 
@@ -68,7 +165,21 @@ On x86, Flush-to-Zero and Denormals-Are-Zero flags are usually the cheapest prot
 
 ## Voice allocation
 
-Preflight the layer intervals before playback so the engine can determine peak simultaneous voices without allocating each voice. A sweep-line over sorted start and end boundaries is sufficient. When a host chooses degraded partial playback, earlier layer-array entries have the recommended priority.
+Preflight the layer intervals before playback so the engine can determine peak simultaneous voices. A sweep-line over sorted start and end boundaries is sufficient. Allocate or reserve a bounded voice pool before rendering; do not allocate a new voice or grow collections in the audio callback. When a host chooses degraded partial playback, earlier layer-array entries have the recommended priority.
+
+## Render-loop discipline
+
+Compile a validated document into an immutable render plan before producing audio. The plan should contain resolved defaults, absolute frame boundaries, contour segments, precomputed static gains, oscillator-table selections, filter configuration, and bounded state sizes.
+
+The production render loop should:
+
+- accept and emit fixed-size blocks or individual frames without requiring a whole-document PCM buffer;
+- advance contour cursors instead of searching contour arrays each frame;
+- reuse preallocated voice, filter, mix, and reverb state;
+- reuse cached oscillator tables and reverb normalization values; and
+- perform work proportional to active voices and filters, with constant reverb work per frame.
+
+JSON decoding, schema validation, semantic validation, sorting, table construction, impulse measurement, resource-limit checks, and memory allocation belong before rendering. Canonical test mode may favor clarity over speed, but it should not be presented as the recommended production architecture.
 
 ## Validation architecture
 
