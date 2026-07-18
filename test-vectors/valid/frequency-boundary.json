@@ -1,0 +1,32 @@
+{
+  "piccle": "1.0",
+  "description": "Tests the 20 Hz minimum and 20000 Hz maximum frequency boundaries.",
+  "layers": [
+    {
+      "id": "low",
+      "duration_ms": 100,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [
+            { "hz": 20 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "high",
+      "duration_ms": 100,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [
+            { "hz": 20000 }
+          ]
+        }
+      }
+    }
+  ]
+}

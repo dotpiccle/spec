@@ -1,0 +1,16 @@
+{
+  "piccle": "1.0",
+  "description": "An explicit root duration may truncate a longer layer.",
+  "duration_ms": 30,
+  "layers": [
+    {
+      "id": "trimmed",
+      "duration_ms": 100,
+      "source": {
+        "type": "tone",
+        "wave": "triangle",
+        "pitch": { "frequencies": [{ "hz": 440 }] }
+      }
+    }
+  ]
+}

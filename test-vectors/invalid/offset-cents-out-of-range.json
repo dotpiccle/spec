@@ -1,0 +1,14 @@
+{
+  "piccle": "1.0",
+  "layers": [
+    {
+      "id": "detuned",
+      "duration_ms": 20,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": { "frequencies": [{ "hz": 440 }], "offset_cents": 1201 }
+      }
+    }
+  ]
+}

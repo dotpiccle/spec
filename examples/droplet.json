@@ -1,0 +1,48 @@
+{
+  "$schema": "https://spec.dotpiccle.com/schema/v1.json",
+  "piccle": "1.0",
+  "name": "Droplet",
+  "description": "A single note gliding smoothly downward, like a drop of water.",
+  "fade_out_ms": 5,
+  "layers": [
+    {
+      "id": "drop",
+      "start_ms": 0,
+      "duration_ms": 120,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [
+            {
+              "hz": 620,
+              "hold_ms": 0,
+              "transition_ms": 50,
+              "transition_curve": "exponential"
+            },
+            {
+              "hz": 430,
+              "hold_ms": 0,
+              "transition_ms": 30,
+              "transition_curve": "linear"
+            },
+            { "hz": 310 }
+          ]
+        }
+      },
+      "volume": {
+        "fade_in_ms": 2,
+        "fade_out_ms": 15,
+        "levels": [
+          {
+            "level": 0.6,
+            "hold_ms": 0,
+            "transition_ms": 30,
+            "transition_curve": "exponential"
+          },
+          { "level": 0.06 }
+        ]
+      }
+    }
+  ]
+}

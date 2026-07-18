@@ -1,0 +1,17 @@
+{
+  "piccle": "1.0",
+  "layers": [
+    {
+      "id": "layer1",
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [
+            { "hz": 440 }
+          ]
+        }
+      }
+    }
+  ]
+}

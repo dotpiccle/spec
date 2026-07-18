@@ -1,0 +1,29 @@
+{
+  "piccle": "1.0",
+  "volume": 1,
+  "reverb": { "amount": 1, "tail_ms": 1, "soften_hz": 12000 },
+  "layers": [
+    {
+      "id": "maximums",
+      "duration_ms": 20,
+      "source": {
+        "type": "tone",
+        "wave": "saw",
+        "pitch": { "frequencies": [{ "hz": 20000 }], "offset_cents": 1200 }
+      },
+      "volume": {
+        "fade_out_ms": 0,
+        "levels": [{ "level": 1 }]
+      },
+      "balance": 1,
+      "filters": [
+        { "type": "bandpass", "frequencies": [{ "hz": 20000 }], "resonance": 1 }
+      ]
+    },
+    {
+      "id": "seed-maximum",
+      "duration_ms": 20,
+      "source": { "type": "noise", "character": "sharp", "seed": 4294967295 }
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "$schema": "https://spec.dotpiccle.com/schema/v1.json",
+  "piccle": "1.0",
+  "name": "Loading",
+  "description": "A brief rising shimmer that doesn't quite resolve — work has started.",
+  "fade_out_ms": 5,
+  "reverb": {
+    "amount": 0.35,
+    "tail_ms": 350,
+    "soften_hz": 5000
+  },
+  "layers": [
+    {
+      "id": "shimmer",
+      "start_ms": 0,
+      "duration_ms": 250,
+      "source": {
+        "type": "noise",
+        "character": "sharp"
+      },
+      "volume": {
+        "fade_in_ms": 5,
+        "fade_out_ms": 40,
+        "levels": [
+          {
+            "level": 0.3,
+            "hold_ms": 0,
+            "transition_ms": 80,
+            "transition_curve": "easeIn"
+          },
+          { "level": 0.12 }
+        ]
+      },
+      "filters": [
+        {
+          "type": "lowpass",
+          "frequencies": [
+            {
+              "hz": 400,
+              "hold_ms": 0,
+              "transition_ms": 200,
+              "transition_curve": "exponential"
+            },
+            { "hz": 6000 }
+          ],
+          "resonance": 0.1
+        }
+      ]
+    },
+    {
+      "id": "lift",
+      "start_ms": 0,
+      "duration_ms": 250,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [
+            {
+              "hz": 440,
+              "hold_ms": 0,
+              "transition_ms": 200,
+              "transition_curve": "exponential"
+            },
+            { "hz": 660 }
+          ]
+        }
+      },
+      "volume": {
+        "fade_in_ms": 10,
+        "fade_out_ms": 50,
+        "levels": [
+          {
+            "level": 0.25,
+            "hold_ms": 0,
+            "transition_ms": 40,
+            "transition_curve": "exponential"
+          },
+          { "level": 0.04 }
+        ]
+      }
+    }
+  ]
+}

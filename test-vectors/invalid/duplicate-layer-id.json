@@ -1,0 +1,31 @@
+{
+  "piccle": "1.0",
+  "layers": [
+    {
+      "id": "dup",
+      "duration_ms": 100,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [
+            { "hz": 440 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "dup",
+      "duration_ms": 100,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [
+            { "hz": 440 }
+          ]
+        }
+      }
+    }
+  ]
+}

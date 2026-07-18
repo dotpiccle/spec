@@ -1,0 +1,20 @@
+{
+  "piccle": "1.0",
+  "layers": [
+    {
+      "id": "droplet",
+      "duration_ms": 300,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [
+            { "hz": 620, "transition_ms": 100, "transition_curve": "exponential" },
+            { "hz": 430, "transition_ms": 80, "transition_curve": "linear" },
+            { "hz": 310 }
+          ]
+        }
+      }
+    }
+  ]
+}

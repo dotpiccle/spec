@@ -1,0 +1,18 @@
+{
+  "piccle": "1.0",
+  "layers": [
+    {
+      "id": "static",
+      "duration_ms": 150,
+      "source": {
+        "type": "tone",
+        "wave": "saw",
+        "pitch": {
+          "frequencies": [
+            { "hz": 440 }
+          ]
+        }
+      }
+    }
+  ]
+}

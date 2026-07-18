@@ -1,0 +1,16 @@
+{
+  "piccle": "1.0",
+  "description": "Format validity is independent of an engine's declared duration limit; an engine may report this valid document as unsupported.",
+  "duration_ms": 86400000,
+  "layers": [
+    {
+      "id": "capacity-test",
+      "duration_ms": 86400000,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": { "frequencies": [{ "hz": 440 }] }
+      }
+    }
+  ]
+}

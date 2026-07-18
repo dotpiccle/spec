@@ -1,0 +1,11 @@
+{
+  "piccle": "1.0",
+  "piccle": "1.0",
+  "layers": [
+    {
+      "id": "duplicate-json-key",
+      "duration_ms": 20,
+      "source": { "type": "noise", "character": "neutral" }
+    }
+  ]
+}

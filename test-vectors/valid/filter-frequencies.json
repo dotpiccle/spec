@@ -1,0 +1,22 @@
+{
+  "piccle": "1.0",
+  "layers": [
+    {
+      "id": "filtered",
+      "duration_ms": 100,
+      "source": {
+        "type": "noise",
+        "character": "neutral"
+      },
+      "filters": [
+        {
+          "type": "bandpass",
+          "frequencies": [
+            { "hz": 2000 }
+          ],
+          "resonance": 0.2
+        }
+      ]
+    }
+  ]
+}

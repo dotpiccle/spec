@@ -1,0 +1,10 @@
+{
+  "piccle": "1.0",
+  "layers": [
+    {
+      "id": "bad-seed",
+      "duration_ms": 20,
+      "source": { "type": "noise", "character": "neutral", "seed": 4294967296 }
+    }
+  ]
+}

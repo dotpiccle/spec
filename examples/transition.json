@@ -1,0 +1,52 @@
+{
+  "$schema": "https://spec.dotpiccle.com/schema/v1.json",
+  "piccle": "1.0",
+  "name": "Transition",
+  "description": "A brightening whoosh — noise that opens up from dull to crisp.",
+  "fade_out_ms": 5,
+  "layers": [
+    {
+      "id": "whoosh",
+      "start_ms": 0,
+      "duration_ms": 250,
+      "source": {
+        "type": "noise",
+        "character": "neutral"
+      },
+      "volume": {
+        "fade_in_ms": 5,
+        "fade_out_ms": 30,
+        "levels": [
+          {
+            "level": 0.01,
+            "hold_ms": 0,
+            "transition_ms": 60,
+            "transition_curve": "easeIn"
+          },
+          {
+            "level": 0.5,
+            "hold_ms": 30,
+            "transition_ms": 60,
+            "transition_curve": "easeOut"
+          },
+          { "level": 0.1 }
+        ]
+      },
+      "filters": [
+        {
+          "type": "lowpass",
+          "frequencies": [
+            {
+              "hz": 300,
+              "hold_ms": 0,
+              "transition_ms": 200,
+              "transition_curve": "exponential"
+            },
+            { "hz": 8000 }
+          ],
+          "resonance": 0
+        }
+      ]
+    }
+  ]
+}

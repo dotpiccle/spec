@@ -1,0 +1,434 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "$id": "https://spec.dotpiccle.com/schema/v1.json",
+  "title": "Piccle 1.0 document",
+  "description": "Piccle v1.0 schema \u2014 a declarative format for short procedural audio micro-interactions. See https://dotpiccle.com for the full specification.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "const": "https://spec.dotpiccle.com/schema/v1.json",
+      "description": "Canonical Piccle v1 JSON Schema URI. Optional, but when present it must identify this schema."
+    },
+    "piccle": {
+      "type": "string",
+      "enum": [
+        "1.0"
+      ],
+      "description": "The Piccle format version this document targets. '1.0' is the only valid value for v1."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional human-readable name for this sound."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional human-readable description of what this sound is for."
+    },
+    "duration_ms": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991,
+      "description": "Total document duration in milliseconds. Optional \u2014 if absent, computed from the latest-ending layer. Shorter trims layers; longer pads with silence."
+    },
+    "volume": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 1,
+      "description": "Whole-sound (final mix) output volume. 0 = silent, 1 = full. Independent of per-layer volume."
+    },
+    "fade_in_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "default": 0,
+      "description": "Whole-sound fade-in in milliseconds. 0 = no fade-in."
+    },
+    "fade_out_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "default": 5,
+      "description": "Whole-sound fade-out in milliseconds. Default 5 ms prevents an audible click at the end."
+    },
+    "reverb": {
+      "$ref": "#/$defs/reverb",
+      "description": "Optional reverb applied to the whole-sound output after layers are mixed."
+    },
+    "layers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/layer"
+      },
+      "description": "One or more layers that make up this sound (no spec maximum; engines MAY enforce their own). Each layer is an independent sound generator with its own volume, balance, and filter chain."
+    }
+  },
+  "required": [
+    "piccle",
+    "layers"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "curves": {
+      "description": "Transition curve shapes used in volume, pitch, and filter frequency entries.",
+      "type": "string",
+      "enum": [
+        "linear",
+        "exponential",
+        "easeIn",
+        "easeOut",
+        "easeInOut"
+      ]
+    },
+    "filter": {
+      "description": "A single filter applied to a layer. Type is fixed for the layer duration. Cutoff frequency uses an always-array describing motion over time.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "lowpass",
+            "highpass",
+            "bandpass"
+          ],
+          "description": "Filter type. lowpass keeps lows, highpass keeps highs, bandpass keeps a focused frequency region."
+        },
+        "frequencies": {
+          "type": "array",
+          "minItems": 1,
+          "description": "One or more cutoff-frequency targets evaluated from layer time zero.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "hz": {
+                "type": "number",
+                "minimum": 20,
+                "maximum": 20000,
+                "description": "Cutoff frequency in Hz at this point. 20\u201320000 Hz range."
+              },
+              "hold_ms": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991,
+                "default": 0,
+                "description": "How long to hold at this cutoff before transitioning to the next, in milliseconds."
+              },
+              "transition_ms": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991,
+                "default": 0,
+                "description": "How long to move from this cutoff to the next, in milliseconds. Ignored on the last entry."
+              },
+              "transition_curve": {
+                "$ref": "#/$defs/curves",
+                "default": "linear",
+                "description": "Shape of the transition from this cutoff to the next. Ignored on the last entry."
+              }
+            },
+            "required": [
+              "hz"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "resonance": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0,
+          "description": "How much the filter resonates at its frequency, 0\u20131. 0 = flat/no resonance, 1 = strong resonance (Q \u2248 12). Like a struck bell singing at the cutoff frequency."
+        }
+      },
+      "required": [
+        "type",
+        "frequencies"
+      ],
+      "additionalProperties": false
+    },
+    "layer": {
+      "description": "A single layer in a Piccle document. Each layer is one sound generator (tone or noise) with volume contour, stereo position, and an optional filter chain.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "description": "Unique identifier for this layer. Lowercase letters, digits, and hyphens only."
+        },
+        "start_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "default": 0,
+          "description": "When this layer starts, in milliseconds from the document start. Defaults to 0. Layers that omit start_ms all start at the document start simultaneously; the order of layers in the layers array does not affect timing."
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991,
+          "description": "How long this layer plays, in milliseconds."
+        },
+        "source": {
+          "$ref": "#/$defs/source",
+          "description": "The raw sound this layer makes. A tone (waveform + pitch) or noise (character)."
+        },
+        "volume": {
+          "$ref": "#/$defs/volume",
+          "default": 1,
+          "description": "Loudness contour. A number (0\u20131) for a constant level, or an object with fade_in_ms, fade_out_ms, and a levels array."
+        },
+        "balance": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1,
+          "default": 0,
+          "description": "Stereo position. -1 = full left, 0 = center, 1 = full right."
+        },
+        "filters": {
+          "type": "array",
+          "minItems": 0,
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/filter"
+          },
+          "description": "Filter chain applied in series (filter 1 output feeds filter 2). Zero or more filters (engine-defined maximum)."
+        }
+      },
+      "required": [
+        "id",
+        "duration_ms",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "pitch": {
+      "description": "Pitch specification for a tone source. Always has a frequencies array (no static shortcuts). Optional offset_cents for chorus/detuning.",
+      "type": "object",
+      "properties": {
+        "frequencies": {
+          "type": "array",
+          "minItems": 1,
+          "description": "One or more pitch-frequency targets evaluated from layer time zero.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "hz": {
+                "type": "number",
+                "minimum": 20,
+                "maximum": 20000,
+                "description": "Target pitch in Hz at this point. 20\u201320000 Hz range."
+              },
+              "hold_ms": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991,
+                "default": 0,
+                "description": "How long to hold at this pitch before transitioning to the next, in milliseconds."
+              },
+              "transition_ms": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991,
+                "default": 0,
+                "description": "How long to move from this pitch to the next, in milliseconds. Ignored on the last entry."
+              },
+              "transition_curve": {
+                "$ref": "#/$defs/curves",
+                "default": "linear",
+                "description": "Shape of the transition from this pitch to the next. Ignored on the last entry."
+              }
+            },
+            "required": [
+              "hz"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "offset_cents": {
+          "type": "integer",
+          "minimum": -1200,
+          "maximum": 1200,
+          "default": 0,
+          "description": "Small pitch offset in cents (100 cents = 1 semitone). Added to the hz value of every entry. Use to create chorus/beating effects."
+        }
+      },
+      "required": [
+        "frequencies"
+      ],
+      "additionalProperties": false
+    },
+    "reverb": {
+      "description": "Optional reverb applied to the whole-sound output after layers are mixed. All three fields are required when present \u2014 there are no defaults.",
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "How much reverb is heard. 0 = dry (no reverb), 1 = fully wet."
+        },
+        "tail_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991,
+          "description": "Reverb RT60 decay time and emitted-tail duration, in milliseconds."
+        },
+        "soften_hz": {
+          "type": "number",
+          "minimum": 200,
+          "maximum": 12000,
+          "description": "Frequency above which the reverb is softened/damped, in Hz."
+        }
+      },
+      "required": [
+        "amount",
+        "tail_ms",
+        "soften_hz"
+      ],
+      "additionalProperties": false
+    },
+    "source": {
+      "description": "The raw sound generator for a layer. Either a tone (pitched hum with a waveform) or noise (pitchless hiss with a character). The two variants are structurally distinct so validation is automatic.",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "tone",
+              "description": "A pitched hum \u2014 a sound with a recognizable pitch you could hum or whistle back."
+            },
+            "wave": {
+              "type": "string",
+              "enum": [
+                "sine",
+                "triangle",
+                "square",
+                "saw"
+              ],
+              "description": "The waveform shape. sine = smooth/soft, triangle = warmer, square = buzzy/hollow, saw = bright/buzzy."
+            },
+            "pitch": {
+              "$ref": "#/$defs/pitch",
+              "description": "The pitch of this tone \u2014 always a frequencies array with optional offset_cents."
+            }
+          },
+          "required": [
+            "type",
+            "wave",
+            "pitch"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "noise",
+              "description": "A pitchless hiss \u2014 a sound with no note, just texture."
+            },
+            "character": {
+              "type": "string",
+              "enum": [
+                "soft",
+                "neutral",
+                "sharp"
+              ],
+              "description": "The spectral character of deterministic noise. soft is a 400 Hz first-order lowpass, neutral is unfiltered uniform noise, and sharp is a 2 kHz first-order highpass. See docs/09-noise-and-determinism.md."
+            },
+            "seed": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4294967295,
+              "default": 0,
+              "description": "Unsigned 32-bit seed for the normative PCG32 noise stream. Equal character and seed values reproduce the same raw stream."
+            }
+          },
+          "required": [
+            "type",
+            "character"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "volume": {
+      "description": "Loudness contour for a layer. A plain number is shorthand for a constant level with anti-click fade-out. An object allows multi-level contours.",
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Shorthand for a constant level at this value with fade_out_ms defaulting to 5."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "fade_in_ms": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 0,
+              "description": "Time to rise from silence to the first level, in milliseconds."
+            },
+            "fade_out_ms": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 5,
+              "description": "Time to fade from the last level to silence, in milliseconds. Default 5 ms is an anti-click necessity."
+            },
+            "levels": {
+              "type": "array",
+              "minItems": 1,
+              "description": "One or more linear-amplitude targets for the layer volume contour.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "level": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "Target loudness at this point. Always a plain number."
+                  },
+                  "hold_ms": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991,
+                    "default": 0,
+                    "description": "How long to hold at this level before transitioning to the next, in milliseconds."
+                  },
+                  "transition_ms": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991,
+                    "default": 0,
+                    "description": "How long to move from this level to the next, in milliseconds. Ignored on the last entry."
+                  },
+                  "transition_curve": {
+                    "$ref": "#/$defs/curves",
+                    "default": "linear",
+                    "description": "Shape of the transition from this level to the next. Ignored on the last entry."
+                  }
+                },
+                "required": [
+                  "level"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "levels"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "piccle": "1.0",
+  "name": "Layers start together",
+  "description": "Two layers both omit start_ms. Each layer takes the default start_ms: 0 and starts at the document origin simultaneously. There is no implicit sequencing by array order; both layers begin at t=0 and the computed document duration is max(120, 80) = 120 ms.",
+  "layers": [
+    {
+      "id": "high",
+      "duration_ms": 120,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": { "frequencies": [{ "hz": 660 }] }
+      }
+    },
+    {
+      "id": "low",
+      "duration_ms": 80,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": { "frequencies": [{ "hz": 330 }] }
+      }
+    }
+  ]
+}

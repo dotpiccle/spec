@@ -1,0 +1,19 @@
+{
+  "piccle": "1.0",
+  "layers": [
+    {
+      "id": "glide",
+      "duration_ms": 200,
+      "source": {
+        "type": "tone",
+        "wave": "triangle",
+        "pitch": {
+          "frequencies": [
+            { "hz": 620, "hold_ms": 0, "transition_ms": 150, "transition_curve": "exponential" },
+            { "hz": 310 }
+          ]
+        }
+      }
+    }
+  ]
+}

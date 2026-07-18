@@ -1,0 +1,18 @@
+{
+  "piccle": "1.0",
+  "layers": [
+    {
+      "id": "wrong",
+      "duration_ms": 100,
+      "source": {
+        "type": "noise",
+        "character": "neutral",
+        "pitch": {
+          "frequencies": [
+            { "hz": 440 }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+# Valid test vectors
+
+Each valid fixture tests acceptance, a default behavior, or a boundary condition.
+
+| Test vector                     | What it exercises                                                         |
+| ------------------------------- | ------------------------------------------------------------------------- |
+| `defaults.json`                 | All optional fields omitted — engine must apply defaults.                 |
+| `engine-limit-independent.json` | Validity remains independent of engine duration limits.                   |
+| `all-curves.json`               | All five transition-curve values in one valid contour.                    |
+| `filter-frequencies.json`       | Static bandpass filter with resonance.                                    |
+| `filter-frequencies-sweep.json` | Filter frequency sweep (two entries, exponential curve).                  |
+| `frequency-boundary.json`       | Pitch `hz` at 20 and 20000 (range boundaries).                            |
+| `layers-start-together.json`    | Two layers both omit `start_ms` — default to 0, no implicit sequencing.   |
+| `long-duration.json`            | 5000 ms duration with square wave.                                        |
+| `many-layers.json`              | 32 layers (valid under the no-spec-maximum rule).                         |
+| `minimal.json`                  | Shortest valid document with only required fields.                        |
+| `multi-filter.json`             | Two filters in series on one layer.                                       |
+| `numeric-maximums.json`         | Inclusive upper bounds for bounded numeric fields.                        |
+| `numeric-minimums.json`         | Inclusive lower bounds for bounded numeric fields.                        |
+| `long-seeded-noise.json`        | Deterministic noise streams without buffering or looping.                 |
+| `noise-determinism.json`        | Explicit seeded soft noise with a bandpass filter.                        |
+| `offset-cents.json`             | Two layers with different `offset_cents` values (0 and 12).               |
+| `pitch-frequencies.json`        | Two-entry pitch glide with exponential curve.                             |
+| `pitch-frequencies-multi.json`  | Three-entry multi-point pitch contour.                                    |
+| `pitch-frequencies-static.json` | Single-entry static pitch (saw wave).                                     |
+| `reverb-minimal.json`           | Reverb with all three required fields present.                            |
+| `reverb-timeline.json`          | Explicit document duration plus emitted RT60 tail.                        |
+| `root-truncation.json`          | Explicit document duration truncates a longer layer.                      |
+| `seed-boundaries.json`          | Noise seed at unsigned 32-bit minimum and maximum.                        |
+| `short-default-fade.json`       | Default layer fade clamps for a layer shorter than 5 ms.                  |
+| `simultaneous-boundary.json`    | Half-open layer intervals meeting at one boundary.                        |
+| `volume-last-entry-hold.json`   | Last-entry timing fields are ignored by semantic validation.              |
+| `volume-level-curve.json`       | Volume contour with two levels and exponential decay.                     |

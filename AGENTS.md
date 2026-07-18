@@ -249,8 +249,7 @@ piccle-spec/
 │
 ├── schemas/
 │   ├── <version>.json
-│   └── definitions/
-│       └── ...
+│   └── ...
 │
 ├── docs/
 │   ├── ...
@@ -271,9 +270,11 @@ Not every directory must exist during the earliest repository stage. When introd
 
 ### `schemas/`
 
-Contains published JSON Schemas for Piccle versions and reusable schema definitions.
+Contains published JSON Schemas for Piccle versions.
 
 Schemas are machine-readable validation contracts. They must match the normative specification but should not be the only place where semantics are explained.
+
+The published schema file (e.g., `v1.json`) is self-contained — all reusable definitions live under `$defs` within the file. There is no separate `definitions/` directory; the schema can be validated offline without resolving remote references.
 
 ### `docs/`
 
@@ -447,7 +448,7 @@ JSON does not permit `NaN` or infinity. Do not invent string representations for
 
 ### Reusable definitions
 
-Place a definition in `schemas/definitions/` only when it is genuinely shared or conceptually stable.
+Place a definition under `$defs` within the schema file when it is genuinely shared or conceptually stable.
 
 Do not fragment schemas into tiny files that make the format harder to understand.
 
@@ -657,6 +658,19 @@ Clearly label non-normative content where confusion is possible.
 - Avoid words such as “simple,” “obvious,” “normal,” or “reasonable” when they replace a precise rule.
 - Use examples after defining behavior, not instead of defining it.
 - Include JSON snippets when they materially improve understanding.
+
+### Single canonical source
+
+Each normative rule, formula, constraint, or field definition MUST live in exactly one doc — its **canonical home**. Other docs that need to mention it MUST give a brief context-specific note plus a `See docs/XX` reference, not a restatement.
+
+Why: restating a rule in two places guarantees they will drift. When the rule changes, one copy is updated and the other is forgotten, creating a silent contradiction.
+
+When to reference vs. restate:
+
+- **Reference**: the rule itself, the formula, the constraint, the default value, the behavior description.
+- **Restate (briefly)**: only what the reader needs to understand the current doc's context — e.g., "the safety clipper runs at this signal-flow stage" without restating the full normative requirement.
+
+Field tables are an exception: a table may include a brief one-line description of each field even if the full definition lives elsewhere, provided the table entry links to the canonical doc.
 
 ---
 

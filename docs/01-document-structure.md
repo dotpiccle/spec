@@ -1,0 +1,93 @@
+# Document Structure
+
+A Piccle document is a single JSON object with the fields below.
+
+## Root fields
+
+| Field         | Type    | Default  | Required | Description                                                                                                                                                                             |
+| ------------- | ------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `$schema`     | string  | --       | No       | When present, MUST be `https://spec.dotpiccle.com/schema/v1.json`.                                                                                                                      |
+| `piccle`      | string  | --       | **Yes**  | The Piccle format version. Always prefer the latest available version.                                                                                                                  |
+| `name`        | string  | --       | No       | Non-empty human-readable name for this sound.                                                                                                                                           |
+| `description` | string  | --       | No       | Non-empty human-readable description of what this sound is for.                                                                                                                         |
+| `duration_ms` | integer | computed | No       | Total document duration in milliseconds. 1 or more. If absent, duration is computed from the latest-ending layer. A shorter duration trims layers; a longer duration pads with silence. |
+| `volume`      | number  | 1        | No       | Whole-sound (final mix) output volume. 0 = silent, 1 = full. Independent of per-layer volume.                                                                                           |
+| `fade_in_ms`  | integer | 0        | No       | Whole-sound fade-in in milliseconds. 0 = no fade-in. 0 or more.                                                                                                                         |
+| `fade_out_ms` | integer | 5        | No       | Whole-sound fade-out in milliseconds. The default of 5 ms prevents an audible click at the end. 0 or more.                                                                              |
+| `reverb`      | object  | --       | No       | Optional reverb applied after layers are mixed                                                                                                                                          |
+| `layers`      | array   | --       | **Yes**  | One or more layers that make up this sound                                                                                                                                              |
+
+## Layer fields
+
+Each layer is an independent sound generator. The fields below define its behavior:
+
+| Field         | Type             | Default | Required | Description                                                                                                                                       |
+| ------------- | ---------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | string           | --      | **Yes**  | Unique identifier for this layer. Lowercase letters, digits, and hyphens only (pattern: `^[a-z][a-z0-9-]*$`). MUST be unique within the document. |
+| `start_ms`    | integer          | 0       | No       | When this layer starts playing, in milliseconds from the document start. Default 0 = start at the same time as all other layers.                  |
+| `duration_ms` | integer          | --      | **Yes**  | How long this layer plays, in milliseconds. 1 or more.                                                                                            |
+| `source`      | object           | --      | **Yes**  | The raw sound this layer makes: a `tone` or deterministic `noise`. See [Sources](03-sources.md).                                                  |
+| `volume`      | number or object | 1       | No       | Loudness contour. A number (0–1) or an object with fades and a `levels` array. See [Volume](05-volume.md).                                        |
+| `balance`     | number           | 0       | No       | Stereo position. −1 = full left, 0 = center, 1 = full right.                                                                                      |
+| `filters`     | array            | []      | No       | Filter chain applied in series. Zero or more filters. See [Filters](06-filters.md).                                                               |
+
+Both tone and noise sources produce a mono signal. Stereo placement is applied exclusively by the `balance` field.
+
+## The layers field
+
+`layers` is the heart of a Piccle document. It is an array of one or more layer objects. The spec does not impose a maximum layer count — engines MAY enforce their own limits. Each layer is an independent sound generator with its own source, volume contour, balance, and optional filter chain.
+
+Here is a minimal document showing the required fields:
+
+```json
+{
+  "piccle": "1.0",
+  "layers": [
+    {
+      "id": "my-layer",
+      "duration_ms": 200,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [{ "hz": 440 }]
+        }
+      }
+    }
+  ]
+}
+```
+
+## Duration rules
+
+- If `duration_ms` is absent from the document root, the engine computes it from the latest-ending layer (layer `start_ms` + layer `duration_ms`).
+- If `duration_ms` is present and shorter than a layer, that layer is truncated.
+- If `duration_ms` is present and longer than all layers, the remaining time is silence.
+- Every layer has its own required `duration_ms` (1 or more) which is independent of the document duration.
+- When reverb is present, the output length is the document duration plus `reverb.tail_ms`. Root fades are applied over this complete timeline; see [Output](08-output.md).
+
+## Layer timing
+
+- `start_ms` is the offset, in milliseconds, from the document start to the moment the layer begins playing. It defaults to `0`.
+- Every layer that omits `start_ms` (or sets it to `0`) starts at the document start **simultaneously**.
+- The order of layers in the `layers` array does **not** affect timing. Array order is for author readability and optional degraded voice-allocation priority; see [Engine Safety](11-engine-safety.md).
+- Piccle has **no implicit sequencing**: layers never play "one after the other" by default. To chain a layer after another layer's end, set the later layer's `start_ms` explicitly (for example, layer B's `start_ms` = layer A's `duration_ms`).
+- Layers whose intervals `[start_ms, start_ms + duration_ms)` overlap contribute simultaneously during the overlap; see [Output](08-output.md).
+
+The duration-computation rule above uses the _effective_ layer end, which is `start_ms + duration_ms` per layer.
+
+### Layer identifiers
+
+Every layer `id` MUST be unique within the document. Two layers MUST NOT share the same `id`. A validator MUST reject any document in which two or more layers have the same `id`.
+
+## Unknown properties
+
+Every root, layer, source, pitch, volume, filter, frequency-entry, level-entry, and reverb object is closed. A document containing an unknown property is invalid. Future fields require a future schema version.
+
+## Required vs optional visual key
+
+Throughout this specification:
+
+- **Bold "Yes"** under Required means the field must be present.
+- **Bold "No"** under Required means the field is optional and has a default value.
+- **"--"** under Default means the field has no default -- if required, it must be explicitly set; if not required, it is absent when omitted.

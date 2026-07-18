@@ -1,0 +1,32 @@
+{
+  "piccle": "1.0",
+  "description": "The final entry's hold_ms is ignored; the final value remains active until fade-out.",
+  "layers": [
+    {
+      "id": "bell",
+      "duration_ms": 100,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [
+            { "hz": 880 }
+          ]
+        }
+      },
+      "volume": {
+        "fade_in_ms": 2,
+        "fade_out_ms": 10,
+        "levels": [
+          {
+            "level": 0.5,
+            "hold_ms": 20,
+            "transition_ms": 30,
+            "transition_curve": "linear"
+          },
+          { "level": 0.1, "hold_ms": 50 }
+        ]
+      }
+    }
+  ]
+}

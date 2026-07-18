@@ -1,0 +1,30 @@
+{
+  "piccle": "1.0",
+  "description": "Two filters in series on one layer exercises the serial filter chain handling.",
+  "layers": [
+    {
+      "id": "two-filters",
+      "duration_ms": 200,
+      "source": {
+        "type": "noise",
+        "character": "neutral"
+      },
+      "filters": [
+        {
+          "type": "lowpass",
+          "frequencies": [
+            { "hz": 3000 }
+          ],
+          "resonance": 0
+        },
+        {
+          "type": "highpass",
+          "frequencies": [
+            { "hz": 500 }
+          ],
+          "resonance": 0.1
+        }
+      ]
+    }
+  ]
+}

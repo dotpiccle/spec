@@ -1,0 +1,81 @@
+{
+  "$schema": "https://spec.dotpiccle.com/schema/v1.json",
+  "piccle": "1.0",
+  "name": "Ready",
+  "description": "A crisp tick opening into two soft harmonic tones — content is ready.",
+  "fade_out_ms": 5,
+  "reverb": {
+    "amount": 0.2,
+    "tail_ms": 300,
+    "soften_hz": 4500
+  },
+  "layers": [
+    {
+      "id": "tick",
+      "start_ms": 0,
+      "duration_ms": 50,
+      "source": {
+        "type": "noise",
+        "character": "neutral"
+      },
+      "volume": 0.5,
+      "filters": [
+        {
+          "type": "bandpass",
+          "frequencies": [{ "hz": 2500 }],
+          "resonance": 0.4
+        }
+      ]
+    },
+    {
+      "id": "tone-high",
+      "start_ms": 30,
+      "duration_ms": 350,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [{ "hz": 880 }]
+        }
+      },
+      "volume": {
+        "fade_in_ms": 5,
+        "fade_out_ms": 80,
+        "levels": [
+          {
+            "level": 0.4,
+            "hold_ms": 0,
+            "transition_ms": 50,
+            "transition_curve": "exponential"
+          },
+          { "level": 0.05 }
+        ]
+      }
+    },
+    {
+      "id": "tone-low",
+      "start_ms": 30,
+      "duration_ms": 350,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [{ "hz": 660 }]
+        }
+      },
+      "volume": {
+        "fade_in_ms": 5,
+        "fade_out_ms": 80,
+        "levels": [
+          {
+            "level": 0.3,
+            "hold_ms": 0,
+            "transition_ms": 50,
+            "transition_curve": "exponential"
+          },
+          { "level": 0.04 }
+        ]
+      }
+    }
+  ]
+}

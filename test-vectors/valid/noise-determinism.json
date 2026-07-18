@@ -1,0 +1,23 @@
+{
+  "piccle": "1.0",
+  "layers": [
+    {
+      "id": "noise-a",
+      "duration_ms": 80,
+      "source": {
+        "type": "noise",
+        "character": "soft",
+        "seed": 12345
+      },
+      "filters": [
+        {
+          "type": "bandpass",
+          "frequencies": [
+            { "hz": 3000 }
+          ],
+          "resonance": 0.1
+        }
+      ]
+    }
+  ]
+}

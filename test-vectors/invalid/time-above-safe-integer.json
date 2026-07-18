@@ -1,0 +1,11 @@
+{
+  "piccle": "1.0",
+  "duration_ms": 9007199254740992,
+  "layers": [
+    {
+      "id": "too-long",
+      "duration_ms": 20,
+      "source": { "type": "noise", "character": "neutral" }
+    }
+  ]
+}

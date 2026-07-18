@@ -1,0 +1,16 @@
+{
+  "piccle": "1.0",
+  "description": "Noise seed accepts both unsigned 32-bit boundaries.",
+  "layers": [
+    {
+      "id": "seed-min",
+      "duration_ms": 40,
+      "source": { "type": "noise", "character": "neutral", "seed": 0 }
+    },
+    {
+      "id": "seed-max",
+      "duration_ms": 40,
+      "source": { "type": "noise", "character": "neutral", "seed": 4294967295 }
+    }
+  ]
+}

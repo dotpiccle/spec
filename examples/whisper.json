@@ -1,0 +1,39 @@
+{
+  "$schema": "https://spec.dotpiccle.com/schema/v1.json",
+  "piccle": "1.0",
+  "name": "Whisper",
+  "description": "The quietest option — a breathy swell for dense lists.",
+  "fade_out_ms": 5,
+  "volume": 0.4,
+  "layers": [
+    {
+      "id": "breath",
+      "start_ms": 0,
+      "duration_ms": 400,
+      "source": {
+        "type": "noise",
+        "character": "soft"
+      },
+      "volume": {
+        "fade_in_ms": 60,
+        "fade_out_ms": 80,
+        "levels": [
+          {
+            "level": 0.5,
+            "hold_ms": 100,
+            "transition_ms": 0,
+            "transition_curve": "linear"
+          },
+          { "level": 0.5 }
+        ]
+      },
+      "filters": [
+        {
+          "type": "lowpass",
+          "frequencies": [{ "hz": 2000 }],
+          "resonance": 0
+        }
+      ]
+    }
+  ]
+}

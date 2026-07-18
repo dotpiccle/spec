@@ -1,0 +1,39 @@
+{
+  "$schema": "https://spec.dotpiccle.com/schema/v1.json",
+  "piccle": "1.0",
+  "name": "Button Click",
+  "description": "A short noise burst, brightened with a highpass filter — the everyday button click.",
+  "fade_out_ms": 5,
+  "layers": [
+    {
+      "id": "click",
+      "start_ms": 0,
+      "duration_ms": 80,
+      "source": {
+        "type": "noise",
+        "character": "sharp",
+        "seed": 7
+      },
+      "volume": {
+        "fade_in_ms": 0,
+        "fade_out_ms": 10,
+        "levels": [
+          {
+            "level": 0.7,
+            "hold_ms": 0,
+            "transition_ms": 5,
+            "transition_curve": "exponential"
+          },
+          { "level": 0.05 }
+        ]
+      },
+      "filters": [
+        {
+          "type": "highpass",
+          "frequencies": [{ "hz": 3000 }],
+          "resonance": 0
+        }
+      ]
+    }
+  ]
+}

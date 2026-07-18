@@ -1,0 +1,26 @@
+{
+  "piccle": "1.0",
+  "layers": [
+    {
+      "id": "bell",
+      "duration_ms": 400,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [
+            { "hz": 1046.5 }
+          ]
+        }
+      },
+      "volume": {
+        "fade_in_ms": 2,
+        "fade_out_ms": 200,
+        "levels": [
+          { "level": 0.4, "transition_ms": 35, "transition_curve": "exponential" },
+          { "level": 0.08 }
+        ]
+      }
+    }
+  ]
+}

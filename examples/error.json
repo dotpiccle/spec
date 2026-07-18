@@ -1,0 +1,106 @@
+{
+  "$schema": "https://spec.dotpiccle.com/schema/v1.json",
+  "piccle": "1.0",
+  "name": "Error",
+  "description": "A muted tick followed by two falling tones — a calm, recoverable error.",
+  "fade_out_ms": 5,
+  "layers": [
+    {
+      "id": "tick",
+      "start_ms": 0,
+      "duration_ms": 60,
+      "source": {
+        "type": "noise",
+        "character": "neutral"
+      },
+      "volume": 0.5,
+      "filters": [
+        {
+          "type": "bandpass",
+          "frequencies": [{ "hz": 2000 }],
+          "resonance": 0.3
+        }
+      ]
+    },
+    {
+      "id": "tone1",
+      "start_ms": 40,
+      "duration_ms": 250,
+      "source": {
+        "type": "tone",
+        "wave": "triangle",
+        "pitch": {
+          "frequencies": [
+            {
+              "hz": 400,
+              "hold_ms": 0,
+              "transition_ms": 120,
+              "transition_curve": "exponential"
+            },
+            { "hz": 280 }
+          ]
+        }
+      },
+      "volume": {
+        "fade_in_ms": 5,
+        "fade_out_ms": 50,
+        "levels": [
+          {
+            "level": 0.45,
+            "hold_ms": 0,
+            "transition_ms": 30,
+            "transition_curve": "exponential"
+          },
+          { "level": 0.08 }
+        ]
+      },
+      "filters": [
+        {
+          "type": "lowpass",
+          "frequencies": [{ "hz": 1000 }],
+          "resonance": 0
+        }
+      ]
+    },
+    {
+      "id": "tone2",
+      "start_ms": 140,
+      "duration_ms": 200,
+      "source": {
+        "type": "tone",
+        "wave": "triangle",
+        "pitch": {
+          "frequencies": [
+            {
+              "hz": 300,
+              "hold_ms": 0,
+              "transition_ms": 80,
+              "transition_curve": "exponential"
+            },
+            { "hz": 200 }
+          ]
+        }
+      },
+      "volume": {
+        "fade_in_ms": 5,
+        "fade_out_ms": 50,
+        "levels": [
+          {
+            "level": 0.4,
+            "hold_ms": 0,
+            "transition_ms": 30,
+            "transition_curve": "exponential"
+          },
+          { "level": 0.06 }
+        ]
+      },
+      "filters": [
+        {
+          "type": "lowpass",
+          "frequencies": [{ "hz": 1000 }],
+          "resonance": 0
+        }
+      ]
+    }
+  ]
+}

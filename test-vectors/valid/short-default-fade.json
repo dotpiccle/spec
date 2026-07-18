@@ -1,0 +1,16 @@
+{
+  "piccle": "1.0",
+  "description": "A numeric-volume layer shorter than 5 ms clamps its default fade-out to its duration.",
+  "layers": [
+    {
+      "id": "short",
+      "duration_ms": 1,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": { "frequencies": [{ "hz": 440 }] }
+      },
+      "volume": 0.5
+    }
+  ]
+}

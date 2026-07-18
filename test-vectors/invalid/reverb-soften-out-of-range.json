@@ -1,0 +1,11 @@
+{
+  "piccle": "1.0",
+  "reverb": { "amount": 0.2, "tail_ms": 100, "soften_hz": 199 },
+  "layers": [
+    {
+      "id": "noise",
+      "duration_ms": 20,
+      "source": { "type": "noise", "character": "neutral" }
+    }
+  ]
+}

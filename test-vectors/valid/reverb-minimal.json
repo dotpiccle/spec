@@ -1,0 +1,23 @@
+{
+  "piccle": "1.0",
+  "reverb": {
+    "amount": 0.18,
+    "tail_ms": 220,
+    "soften_hz": 4000
+  },
+  "layers": [
+    {
+      "id": "ring",
+      "duration_ms": 150,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [
+            { "hz": 880 }
+          ]
+        }
+      }
+    }
+  ]
+}

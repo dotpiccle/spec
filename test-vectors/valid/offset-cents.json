@@ -1,0 +1,33 @@
+{
+  "piccle": "1.0",
+  "layers": [
+    {
+      "id": "left",
+      "duration_ms": 300,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [
+            { "hz": 528 }
+          ],
+          "offset_cents": 0
+        }
+      }
+    },
+    {
+      "id": "right",
+      "duration_ms": 300,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [
+            { "hz": 528 }
+          ],
+          "offset_cents": 12
+        }
+      }
+    }
+  ]
+}

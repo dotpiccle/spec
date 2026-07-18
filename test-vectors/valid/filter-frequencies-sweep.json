@@ -1,0 +1,23 @@
+{
+  "piccle": "1.0",
+  "layers": [
+    {
+      "id": "sweep",
+      "duration_ms": 200,
+      "source": {
+        "type": "noise",
+        "character": "neutral"
+      },
+      "filters": [
+        {
+          "type": "lowpass",
+          "frequencies": [
+            { "hz": 200, "transition_ms": 150, "transition_curve": "exponential" },
+            { "hz": 8000 }
+          ],
+          "resonance": 0
+        }
+      ]
+    }
+  ]
+}
