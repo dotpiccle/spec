@@ -1,6 +1,8 @@
 # Volume
 
-The `volume` field is the complete loudness description for a layer -- how loud the sound is and how that loudness changes over time. It exists in two forms.
+The `volume` field is the complete loudness description for a **layer** -- how loud the sound is and how that loudness changes over time. It exists in two forms.
+
+> **Note:** The document root has a separate `master_volume_level` field (a single 0–1 number representing final post-mix gain). Unlike layer `volume`, it does **not** accept a contour object. See [Output](08-output.md#root-volume) for the root field's definition. This chapter covers only the layer `volume` field.
 
 ## Form 1: Number shorthand (steady level)
 

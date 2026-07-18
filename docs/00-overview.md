@@ -29,7 +29,7 @@ A Piccle asset should be:
 | Filter chain       | Lowpass, highpass, or bandpass filters in series, each with its own frequency contour and resonance.                         |
 | Balance            | Stereo position from -1 (left) to 1 (right).                                                                                 |
 | Reverb             | Optional whole-sound reverb with amount, tail length, and wet-path softening frequency.                                      |
-| Output shaping     | Final master volume and mandatory safety clipping.                                                                           |
+| Output shaping     | Final master `master_volume_level` and mandatory safety clipping.                                                            |
 | Safety             | Built-in hard clipping, Nyquist-aware frequency handling, validation before allocation, and engine-declared resource limits. |
 
 ## v1 scope boundary

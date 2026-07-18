@@ -3,7 +3,7 @@
   "piccle": "1.0",
   "name": "Whisper",
   "description": "The quietest option — a breathy swell for dense lists.",
-  "volume": 0.4,
+  "master_volume_level": 0.4,
   "layers": [
     {
       "id": "breath",

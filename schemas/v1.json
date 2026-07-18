@@ -31,12 +31,12 @@
       "maximum": 9007199254740991,
       "description": "Total document duration in milliseconds. Optional — if absent, computed from the latest-ending layer. Shorter trims layers; longer pads with silence. With reverb, duration_ms plus tail_ms must remain within the safe-integer bound."
     },
-    "volume": {
+    "master_volume_level": {
       "type": "number",
       "minimum": 0,
       "maximum": 1,
       "default": 1,
-      "description": "Final master gain applied to the dry/wet result before clipping. 0 = silent, 1 = unity gain. Independent of per-layer volume."
+      "description": "Final master gain applied to the dry/wet result before clipping. 0 = silent, 1 = unity gain. A single number, unlike layer `volume` which accepts a contour object. Independent of per-layer volume."
     },
     "reverb": {
       "$ref": "#/$defs/reverb",

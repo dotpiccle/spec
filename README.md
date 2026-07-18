@@ -66,7 +66,7 @@ V1 does not define looping, continuous progress playback, host-controlled parame
 document
 ├── piccle          "1.0"
 ├── duration_ms     optional explicit cutoff
-├── volume          final master gain
+├── master_volume_level  final master gain
 ├── reverb          { amount, tail_ms, soften_hz }
 └── layers[]
     ├── id, start_ms, duration_ms
@@ -81,7 +81,7 @@ document
 The normative signal flow is:
 
 ```text
-source → filters → layer volume → balance → mix → reverb → root volume → hard clip → platform adaptation
+source → filters → layer volume → balance → mix → reverb → root master_volume_level → hard clip → platform adaptation
 ```
 
 ## Quick start

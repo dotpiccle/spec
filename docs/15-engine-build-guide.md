@@ -22,7 +22,7 @@ Read the normative chapters in this order:
 4. [Transition Curves](10-curves.md)
 5. [Sources](03-sources.md) and [Pitch](04-pitch.md)
 6. [Noise and Determinism](09-noise-and-determinism.md)
-7. [Filters](06-filters.md) and [Volume](05-volume.md)
+7. [Filters](06-filters.md) and [Volume](05-layer-volume.md)
 8. [Reverb](07-reverb.md) and [Output](08-output.md)
 9. [Conformance](14-conformance.md)
 
@@ -81,7 +81,7 @@ Use the numeric aids for PCG32 and harmonic coefficients, then implement the com
 
 - Sum layers in the canonical array order without intermediate clipping.
 - Apply the whole-document reverb when present.
-- Apply root volume.
+- Apply root `master_volume_level`.
 - Apply the final hard clip exactly once.
 - Convert canonical samples to binary32 only after clipping.
 

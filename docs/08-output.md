@@ -13,13 +13,13 @@ tone/noise source
   → equal-power balance (mono to stereo)
   → sum all active layers into the dry mix
   → reverb dry/wet crossfade, when present
-  → root volume
+  → root master_volume_level
   → safety hard clipper
   → canonical stereo output
   → platform output adaptation
 ```
 
-Changing the normative stages' order changes the sound and is not conforming. Each layer's filters and envelope state begin at its declared start and are discarded at its declared end or an earlier explicit document cutoff. The mix is an unnormalized sum; root volume and the safety clipper control the final range.
+Changing the normative stages' order changes the sound and is not conforming. Each layer's filters and envelope state begin at its declared start and are discarded at its declared end or an earlier explicit document cutoff. The mix is an unnormalized sum; root master_volume_level and the safety clipper control the final range.
 
 Sample-rate conversion, stereo-to-mono downmixing, hardware channel routing, and device-volume control are platform adaptation. They occur after the normative hard clipper and do not change Piccle asset semantics.
 
@@ -53,7 +53,7 @@ If `duration_ms` is longer than every layer, the dry mix is silent after the lat
 
 ## Root volume
 
-The optional root `volume` is a linear master gain from `0` through `1`, defaulting to `1`. It is applied to the dry/wet result immediately before clipping. Piccle v1 has no root fade fields; fades belong exclusively to layer volume envelopes.
+The optional root `master_volume_level` is a linear master gain from `0` through `1`, defaulting to `1`. It is applied to the dry/wet result immediately before clipping. Unlike layer `volume`, this field accepts only a single number — not a contour object. Piccle v1 has no root fade fields; fades belong exclusively to layer volume envelopes.
 
 ## Safety clipper
 

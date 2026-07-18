@@ -24,7 +24,7 @@ For `linear`, `easeIn`, `easeOut`, and `easeInOut`, the same progress shape appl
 
 The `transition_curve` on one contour entry shapes the movement from that entry's value to the next entry's value. It changes only the intermediate values: it does not change the hold duration, transition duration, start value, or exact target at the segment boundary.
 
-Fade stages (`fade_in.curve` and `fade_out.curve` on a layer volume object) reuse the same five curves and the same `t = j / N` frame convention. The difference is that fades always interpolate between zero and the first/last level, rather than between consecutive contour entries. See [Volume](05-volume.md#curved-fades) for fade-specific guidance.
+Fade stages (`fade_in.curve` and `fade_out.curve` on a layer volume object) reuse the same five curves and the same `t = j / N` frame convention. The difference is that fades always interpolate between zero and the first/last level, rather than between consecutive contour entries. See [Layer Volume](05-layer-volume.md#curved-fades) for fade-specific guidance.
 
 ## Frame scheduling
 

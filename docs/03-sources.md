@@ -100,7 +100,7 @@ These finite series define target harmonic amplitude, sign, and phase. Their sam
 
 An engine MAY use additive synthesis, a band-limited wavetable, polyBLEP, oversampling, or another method. For steady canonical-profile tests, each target harmonic at or above −60 dBFS MUST be within ±1 dB of its reference amplitude and within ±1 degree of its reference phase. DC MUST remain below −80 dBFS. Every non-target or aliased spectral component MUST remain below −60 dBFS. Exact sample equality between permitted implementations is not required.
 
-Measure with a rectangular `N = 48000` frame window beginning at oscillator frame zero at each coherent frequency `375`, `1000`, `3000`, `8000`, and `16000` Hz. These frequencies contain an integer number of cycles in one canonical-profile second. Do not apply layer volume, filters, balance, reverb, root volume, or clipping during the measurement.
+Measure with a rectangular `N = 48000` frame window beginning at oscillator frame zero at each coherent frequency `375`, `1000`, `3000`, `8000`, and `16000` Hz. These frequencies contain an integer number of cycles in one canonical-profile second. Do not apply layer volume, filters, balance, reverb, root `master_volume_level`, or clipping during the measurement.
 
 For measured source samples `x[n]`, define the complex coefficient for bin `k`, where `1 <= k < N/2`, as:
 

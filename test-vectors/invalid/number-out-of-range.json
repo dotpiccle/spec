@@ -1,5 +1,5 @@
 {
   "piccle": "1.0",
-  "volume": 1e400,
+  "master_volume_level": 1e400,
   "layers": []
 }

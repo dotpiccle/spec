@@ -4,16 +4,16 @@ A Piccle document is a single JSON object with the fields below.
 
 ## Root fields
 
-| Field         | Type    | Default  | Required | Description                                                                                                                                                                             |
-| ------------- | ------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `$schema`     | string  | --       | No       | When present, MUST be `https://spec.dotpiccle.com/schema/v1.json`.                                                                                                                      |
-| `piccle`      | string  | --       | **Yes**  | The Piccle format version. MUST be `"1.0"` for this specification.                                                                                                                      |
-| `name`        | string  | --       | No       | Non-empty human-readable name for this sound.                                                                                                                                           |
-| `description` | string  | --       | No       | Non-empty human-readable description of what this sound is for.                                                                                                                         |
-| `duration_ms` | integer | computed | No       | Total document duration in milliseconds. 1 or more. If absent, duration is computed from the latest-ending layer. A shorter duration trims layers; a longer duration pads with silence. |
-| `volume`      | number  | 1        | No       | Final master gain. 0 = silent, 1 = full. Independent of per-layer volume.                                                                                                               |
-| `reverb`      | object  | --       | No       | Optional whole-document reverb applied after layers are mixed.                                                                                                                          |
-| `layers`      | array   | --       | **Yes**  | One or more layers that make up this sound.                                                                                                                                             |
+| Field                 | Type    | Default  | Required | Description                                                                                                                                                                             |
+| --------------------- | ------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `$schema`             | string  | --       | No       | When present, MUST be `https://spec.dotpiccle.com/schema/v1.json`.                                                                                                                      |
+| `piccle`              | string  | --       | **Yes**  | The Piccle format version. MUST be `"1.0"` for this specification.                                                                                                                      |
+| `name`                | string  | --       | No       | Non-empty human-readable name for this sound.                                                                                                                                           |
+| `description`         | string  | --       | No       | Non-empty human-readable description of what this sound is for.                                                                                                                         |
+| `duration_ms`         | integer | computed | No       | Total document duration in milliseconds. 1 or more. If absent, duration is computed from the latest-ending layer. A shorter duration trims layers; a longer duration pads with silence. |
+| `master_volume_level` | number  | 1        | No       | Final master gain. 0 = silent, 1 = full. A single number; unlike layer `volume`, this field does not accept a contour object. Independent of per-layer volume.                          |
+| `reverb`              | object  | --       | No       | Optional whole-document reverb applied after layers are mixed.                                                                                                                          |
+| `layers`              | array   | --       | **Yes**  | One or more layers that make up this sound.                                                                                                                                             |
 
 ## Layer fields
 
@@ -25,7 +25,7 @@ Each layer is an independent sound generator. The fields below define its behavi
 | `start_ms`    | integer          | 0       | No       | When this layer starts playing, in milliseconds from the document start. Default 0 = start at the same time as all other layers.                  |
 | `duration_ms` | integer          | --      | **Yes**  | How long this layer plays, in milliseconds. 1 or more.                                                                                            |
 | `source`      | object           | --      | **Yes**  | The raw sound this layer makes: a `tone` or deterministic `noise`. See [Sources](03-sources.md).                                                  |
-| `volume`      | number or object | 1       | No       | Loudness contour. A number (0–1) or an object with `fade_in`, `fade_out`, and a `levels` array. See [Volume](05-volume.md).                       |
+| `volume`      | number or object | 1       | No       | Loudness contour. A number (0–1) or an object with `fade_in`, `fade_out`, and a `levels` array. See [Layer Volume](05-layer-volume.md).                       |
 | `balance`     | number           | 0       | No       | Stereo position. −1 = full left, 0 = center, 1 = full right.                                                                                      |
 | `filters`     | array            | []      | No       | Filter chain applied in series. Zero or more filters. See [Filters](06-filters.md).                                                               |
 

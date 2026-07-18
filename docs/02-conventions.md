@@ -113,7 +113,7 @@ Layer `volume` is the only polymorphic field in v1:
 1. A number is a constant base level with a default anti-click fade-out.
 2. An object supplies fade stages and one or more `levels` targets.
 
-These forms share the same output-envelope semantics defined in [Volume](05-volume.md).
+These forms share the same output-envelope semantics defined in [Layer Volume](05-layer-volume.md).
 
 ## Forward compatibility
 

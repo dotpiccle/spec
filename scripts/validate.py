@@ -222,12 +222,12 @@ def check_schema_contract(schema: dict[str, Any]) -> list[str]:
             expect(prop.get("default"), default, f"{name} default")
     expect(schema["$schema"], "https://json-schema.org/draft/2019-09/schema", "$schema")
     expect(schema["$id"], CANONICAL_SCHEMA_URI, "$id")
-    expect(set(properties), {"$schema", "piccle", "name", "description", "duration_ms", "volume", "reverb", "layers"}, "root properties")
+    expect(set(properties), {"$schema", "piccle", "name", "description", "duration_ms", "master_volume_level", "reverb", "layers"}, "root properties")
     expect(schema["required"], ["piccle", "layers"], "root required fields")
     expect(properties["$schema"].get("const"), CANONICAL_SCHEMA_URI, "instance $schema")
     expect(properties["piccle"].get("enum"), ["1.0"], "piccle versions")
     expect((properties["duration_ms"].get("type"), properties["duration_ms"].get("minimum")), ("integer", 1), "root duration type/minimum")
-    expect((properties["volume"].get("type"), properties["volume"].get("minimum"), properties["volume"].get("maximum"), properties["volume"].get("default")), ("number", 0, 1, 1), "root volume contract")
+    expect((properties["master_volume_level"].get("type"), properties["master_volume_level"].get("minimum"), properties["master_volume_level"].get("maximum"), properties["master_volume_level"].get("default")), ("number", 0, 1, 1), "root master_volume_level contract")
     expect("safe-integer bound" in properties["duration_ms"]["description"], True, "root duration derived-bound description")
 
     layer = defs["layer"]
@@ -312,10 +312,10 @@ def check_schema_contract(schema: dict[str, Any]) -> list[str]:
 
 def documentation_parity_errors() -> list[str]:
     requirements = {
-        "docs/01-document-structure.md": {"$schema", "piccle", "name", "description", "duration_ms", "volume", "reverb", "layers", "id", "start_ms", "source", "balance", "filters"},
+        "docs/01-document-structure.md": {"$schema", "piccle", "name", "description", "duration_ms", "master_volume_level", "reverb", "layers", "id", "start_ms", "source", "balance", "filters"},
         "docs/03-sources.md": {"type", "wave", "pitch", "character", "seed"},
         "docs/04-pitch.md": {"frequencies", "hz", "hold_ms", "transition_ms", "transition_curve", "offset_cents"},
-        "docs/05-volume.md": {"fade_in", "fade_out", "levels", "level", "hold_ms", "transition_ms", "transition_curve"},
+        "docs/05-layer-volume.md": {"fade_in", "fade_out", "levels", "level", "hold_ms", "transition_ms", "transition_curve"},
         "docs/06-filters.md": {"type", "frequencies", "hz", "hold_ms", "transition_ms", "transition_curve", "resonance"},
         "docs/07-reverb.md": {"amount", "tail_ms", "soften_hz"},
     }
@@ -327,8 +327,8 @@ def documentation_parity_errors() -> list[str]:
                 failures.append(f"documentation parity: {relative} does not document `{field}`")
 
     exact_tokens = {
-        "docs/01-document-structure.md": ["`duration_ms` | integer", "`volume`      | number  | 1        | No"],
-        "docs/05-volume.md": ["`fade_in`  | object | `{\"ms\": 0", "`fade_out` | object | `{\"ms\": 5"],
+        "docs/01-document-structure.md": ["`duration_ms` | integer", "`master_volume_level` | number  | 1        | No"],
+        "docs/05-layer-volume.md": ["`fade_in`  | object | `{\"ms\": 0", "`fade_out` | object | `{\"ms\": 5"],
         "docs/06-filters.md": ["`resonance`   | number | 0", "20-20000 Hz"],
         "docs/07-reverb.md": ["`amount`    | number", "`tail_ms`   | integer | `1` or more", "`soften_hz` | number  | `200`–`12000`"],
         "docs/11-engine-safety.md": ["at least 8000 Hz", "min(20000, 0.49 × sample_rate)", "48000 Hz", "frame(S + b) - frame(S + a)"],
