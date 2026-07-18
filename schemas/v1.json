@@ -31,7 +31,7 @@
       "type": "integer",
       "minimum": 1,
       "maximum": 9007199254740991,
-      "description": "Total document duration in milliseconds. Optional — if absent, computed from the latest-ending layer. Shorter trims layers; longer pads with silence."
+      "description": "Total document duration in milliseconds. Optional — if absent, computed from the latest-ending layer. Shorter trims layers; longer pads with silence. With reverb, duration_ms plus tail_ms must remain within the safe-integer bound."
     },
     "volume": {
       "type": "number",
@@ -156,7 +156,7 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 9007199254740991,
-          "description": "How long this layer plays, in milliseconds."
+          "description": "How long this layer plays, in milliseconds. start_ms plus duration_ms must remain within the safe-integer bound."
         },
         "source": {
           "$ref": "#/$defs/source",
@@ -239,7 +239,7 @@
           "minimum": -1200,
           "maximum": 1200,
           "default": 0,
-          "description": "Small pitch offset in cents (100 cents = 1 semitone). Added to the hz value of every entry. Use to create chorus/beating effects."
+          "description": "Pitch offset in cents (100 cents = 1 semitone). Applied after contour interpolation and before render-profile frequency clamping."
         }
       },
       "required": [
@@ -261,7 +261,7 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 9007199254740991,
-          "description": "Reverb RT60 target and emitted wet-tail duration, in milliseconds. The wet response is automatically windowed to exact zero at its final frame."
+          "description": "Reverb RT60 target and emitted wet-tail duration, in milliseconds. The wet response is automatically windowed to exact zero at its final frame. Document duration plus tail_ms must remain within the safe-integer bound."
         },
         "soften_hz": {
           "type": "number",

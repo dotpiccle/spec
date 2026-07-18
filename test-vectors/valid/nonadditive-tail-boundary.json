@@ -1,0 +1,26 @@
+{
+  "piccle": "1.0",
+  "duration_ms": 4,
+  "reverb": {
+    "amount": 0.25,
+    "tail_ms": 4,
+    "soften_hz": 4000
+  },
+  "layers": [
+    {
+      "id": "short",
+      "duration_ms": 4,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [
+            {
+              "hz": 1000
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

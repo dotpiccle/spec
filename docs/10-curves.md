@@ -26,7 +26,9 @@ The `transition_curve` on one contour entry shapes the movement from that entry'
 
 ## Frame scheduling
 
-Convert every absolute millisecond boundary to a frame using [the canonical timing rule](11-engine-safety.md). Derive each segment length by subtracting consecutive boundary frames; do not round each duration independently.
+Let `S` be the layer's document-time start. Build cumulative contour offsets in milliseconds, beginning at `0`. Convert offset `c` to global frame `frame(S + c)` using [the render-profile timing rule](11-engine-safety.md). Derive every hold and transition length by subtracting consecutive global boundary frames; do not round a hold, transition, or cumulative offset independently.
+
+Pitch and filter contour offsets begin at `0`. Object-form volume contour offsets begin after `fade_in_ms`; the fade-in boundary is therefore `frame(S + fade_in_ms)`. The declared target at any boundary becomes active on that boundary's frame.
 
 At layer frame zero, a contour has entry `0`'s value. For each entry except the last:
 
@@ -42,7 +44,9 @@ t = j / N
 
 The exact target begins at the following frame. A transition with zero frames is an instantaneous jump to the target at its boundary, independent of `transition_curve`.
 
-The last entry's timing members are ignored, and its value remains active through the rest of the effective layer timeline.
+When multiple zero-frame holds or transitions share one boundary, process entries in array order before emitting that boundary frame. The last target reached by zero-frame jumps becomes current. If a positive-length transition also begins there, its first frame uses `j = 0` and therefore emits that current start target.
+
+The last entry's timing members are ignored, and its value remains active through the rest of the declared layer timeline or an earlier document cutoff.
 
 ## Curve formulas
 

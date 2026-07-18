@@ -117,6 +117,7 @@ Optional fields use documented defaults. Schema `default` annotations do not mod
 | Author common UI sounds                        | [Cookbook](docs/12-cookbook.md)                                                               |
 | Review non-normative DSP guidance              | [Implementer Notes](docs/13-implementer-notes.md)                                             |
 | Implement validation and conformance reporting | [Conformance](docs/14-conformance.md)                                                         |
+| Build an engine from the complete specification | [Engine Build Guide](docs/15-engine-build-guide.md)                                           |
 | Propose a format change                        | [Contributing](CONTRIBUTING.md)                                                               |
 | Prepare an RC or stable release                | [Release Checklist](RELEASE_CHECKLIST.md)                                                     |
 
@@ -162,6 +163,16 @@ The command:
 
 CI runs the same command.
 
+## Implementing an engine
+
+Give an implementation agent this complete repository and a target such as:
+
+> Implement a conforming Piccle v1 engine for `<platform>` using `<language and integration constraints>`. Follow the Engine Build Guide, implement canonical mode and every v1 primitive, and provide the required conformance evidence.
+
+The [Engine Build Guide](docs/15-engine-build-guide.md) provides the task order and definition of done. Normative behavior remains in chapters 00–11 and 14. Live, offline, cached, and ahead-of-playback execution are engine choices.
+
+An implementation question that requires inventing Piccle behavior is a specification defect. Resolve it here rather than silently choosing behavior in one engine.
+
 ## Conformance and engine limits
 
 Processing has five distinct outcomes:
@@ -174,7 +185,7 @@ Processing has five distinct outcomes:
 
 Piccle v1 leaves capacity limits to engines. That means format validity is portable, but the ability to render an unusually large valid document is capacity-dependent. Engines must report unsupported documents separately from invalid documents.
 
-The repository document fixtures verify validation behavior, and non-PCM numeric aids check individual formulas. They do not, by themselves, prove audible rendering conformance; see [Conformance](docs/14-conformance.md).
+The repository document fixtures verify validation behavior, non-PCM numeric aids check individual formulas, and behavior aids check document-level frame schedules. They do not, by themselves, prove audible rendering conformance; see [Conformance](docs/14-conformance.md).
 
 ## Versioning
 

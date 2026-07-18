@@ -58,8 +58,11 @@ A tone source produces one mono channel. Its oscillator starts with phase `0` at
 
 ```text
 phase[0] = 0
+source[n] = band_limited_wave(phase[n])
 phase[n + 1] = (phase[n] + 2π × frequency_hz[n] / sample_rate) mod 2π
 ```
+
+Emit `source[n]` from `phase[n]` before advancing to `phase[n+1]`. The first tone sample therefore uses phase zero. `frequency_hz[n]` is the result of the complete pitch operation order in [Pitch](04-pitch.md).
 
 The ideal continuous waveforms are peak-normalized to `[-1, 1]`:
 
@@ -97,7 +100,18 @@ These finite series define target harmonic amplitude, sign, and phase. Their sam
 
 An engine MAY use additive synthesis, a band-limited wavetable, polyBLEP, oversampling, or another method. For steady canonical-profile tests, each target harmonic at or above −60 dBFS MUST be within ±1 dB of its reference amplitude and within ±1 degree of its reference phase. DC MUST remain below −80 dBFS. Every non-target or aliased spectral component MUST remain below −60 dBFS. Exact sample equality between permitted implementations is not required.
 
-Measure with a rectangular 48000-frame window after oscillator initialization at each coherent frequency `375`, `1000`, `3000`, `8000`, and `16000` Hz. These frequencies contain an integer number of cycles in one canonical-profile second. Do not apply layer volume, filters, balance, reverb, root volume, or clipping during the measurement.
+Measure with a rectangular `N = 48000` frame window beginning at oscillator frame zero at each coherent frequency `375`, `1000`, `3000`, `8000`, and `16000` Hz. These frequencies contain an integer number of cycles in one canonical-profile second. Do not apply layer volume, filters, balance, reverb, root volume, or clipping during the measurement.
+
+For measured source samples `x[n]`, define the complex coefficient for bin `k`, where `1 <= k < N/2`, as:
+
+```text
+C[k] = (2/N) × Σ(n = 0 .. N-1) x[n] × exp(-i × 2πkn/N)
+amplitude[k] = |C[k]|
+phase_from_sine[k] = wrap_to_pi(arg(C[k]) + π/2)
+DC = abs((1/N) × Σ(n = 0 .. N-1) x[n])
+```
+
+Use `20 × log10(amplitude)` for harmonic and unintended-component dBFS values and `20 × log10(DC)` for DC dBFS. A zero value is negative infinity dBFS. A positive sine-series coefficient has reference phase `0`; a negative coefficient has reference phase `π`. Measure phase error as the smallest wrapped angular difference. Evaluate every bin from `1` through `N/2 - 1`; target bins are the harmonic frequencies retained by `H`, and every other bin is unintended.
 
 During pitch motion, engines MUST preserve the phase integral and MUST suppress components at or above Nyquist. The steady-frequency spectral tolerances do not require engines to switch harmonic sets with one particular algorithm.
 

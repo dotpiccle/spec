@@ -7,7 +7,7 @@ Use this checklist for `v1.0.0-rc.1` and repeat it before promoting v1 to stable
 - [ ] Run `python3 scripts/validate.py` in a clean checkout.
 - [ ] Confirm CI passes on the release commit.
 - [ ] Confirm `git diff --check` reports no whitespace errors.
-- [ ] Confirm all examples and valid fixtures pass both schema and semantic validation.
+- [ ] Confirm all examples and valid fixtures pass both schema and semantic validation before engine support limits are considered.
 - [ ] Confirm every invalid fixture fails at its documented stage.
 
 ## Canonical publication
@@ -21,6 +21,7 @@ Use this checklist for `v1.0.0-rc.1` and repeat it before promoting v1 to stable
 ## Independent implementation
 
 - [ ] Build a clean-room engine using only the public normative documentation.
+- [ ] Give an implementation agent only this repository, a target platform, and the prompt in README; confirm it can finish without an unanswered format-level question.
 - [ ] Record and resolve every implementation question as a specification issue.
 - [ ] Verify canonical 48 kHz timing, PCG32 sequences, oscillator phase, filter equations, equal-power balance, reverb measurements, and output clipping.
 - [ ] Confirm invalid, unsupported, and internal-render errors remain distinct in the engine API.

@@ -7,7 +7,7 @@ A Piccle document is a single JSON object with the fields below.
 | Field         | Type    | Default  | Required | Description                                                                                                                                                                             |
 | ------------- | ------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `$schema`     | string  | --       | No       | When present, MUST be `https://spec.dotpiccle.com/schema/v1.json`.                                                                                                                      |
-| `piccle`      | string  | --       | **Yes**  | The Piccle format version. Always prefer the latest available version.                                                                                                                  |
+| `piccle`      | string  | --       | **Yes**  | The Piccle format version. MUST be `"1.0"` for this specification.                                                                                                                     |
 | `name`        | string  | --       | No       | Non-empty human-readable name for this sound.                                                                                                                                           |
 | `description` | string  | --       | No       | Non-empty human-readable description of what this sound is for.                                                                                                                         |
 | `duration_ms` | integer | computed | No       | Total document duration in milliseconds. 1 or more. If absent, duration is computed from the latest-ending layer. A shorter duration trims layers; a longer duration pads with silence. |
@@ -63,6 +63,7 @@ Here is a minimal document showing the required fields:
 - If `duration_ms` is present and longer than all layers, the remaining time is silence.
 - Every layer has its own required `duration_ms` (1 or more) which is independent of the document duration.
 - When reverb is present, the output length is the document duration plus `reverb.tail_ms`; see [Reverb](07-reverb.md).
+- Every derived layer end (`start_ms + duration_ms`) and output end (`document duration + reverb.tail_ms`) MUST be no greater than `9007199254740991`. A document that exceeds either bound is semantically invalid.
 
 ## Layer timing
 
@@ -72,7 +73,7 @@ Here is a minimal document showing the required fields:
 - Piccle has **no implicit sequencing**: layers never play "one after the other" by default. To chain a layer after another layer's end, set the later layer's `start_ms` explicitly (for example, layer B's `start_ms` = layer A's `duration_ms`).
 - Layers whose intervals `[start_ms, start_ms + duration_ms)` overlap contribute simultaneously during the overlap; see [Output](08-output.md).
 
-The duration-computation rule above uses the _effective_ layer end, which is `start_ms + duration_ms` per layer.
+The duration-computation rule above uses the declared layer end, which is `start_ms + duration_ms` per layer.
 
 ### Layer identifiers
 
@@ -87,5 +88,5 @@ Every root, layer, source, pitch, volume, filter, frequency-entry, level-entry, 
 Throughout this specification:
 
 - **Bold "Yes"** under Required means the field must be present.
-- **Bold "No"** under Required means the field is optional and has a default value.
+- "No" under Required means the field is optional. Its Default cell states whether omission applies a value or leaves the field absent.
 - **"--"** under Default means the field has no default -- if required, it must be explicitly set; if not required, it is absent when omitted.

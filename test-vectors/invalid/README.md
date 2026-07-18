@@ -9,6 +9,8 @@ Each invalid fixture fails for exactly one primary reason, matching the rule lis
 | `zero-layers.json`                         | Document root: `layers` requires at least 1.      |
 | `duplicate-layer-id.json`                  | Semantic: layer IDs must be unique.               |
 | `duplicate-member.json`                    | JSON parsing: object member names must be unique. |
+| `non-finite-number.json`                   | JSON parsing: `NaN` is not a JSON number.         |
+| `number-out-of-range.json`                 | JSON parsing: number cannot become finite binary64. |
 | `empty-description.json`                   | Root: optional `description` cannot be empty.     |
 | `empty-name.json`                          | Root: optional `name` cannot be empty.            |
 | `layer-missing-duration.json`              | Layer: `duration_ms` required.                    |
@@ -16,6 +18,8 @@ Each invalid fixture fails for exactly one primary reason, matching the rule lis
 | `noise-source-with-pitch-field.json`       | Source: noise variant cannot have `pitch`.        |
 | `tone-without-pitch.json`                  | Source: tone variant requires `pitch`.            |
 | `time-above-safe-integer.json`             | Time values cannot exceed `2^53-1` milliseconds.  |
+| `layer-end-out-of-range.json`              | Semantic: derived layer end exceeds `2^53-1`.     |
+| `output-end-out-of-range.json`             | Semantic: document plus reverb tail exceeds `2^53-1`. |
 | `pitch-frequencies-entry-missing-hz.json`  | Pitch: each `frequencies[]` entry requires `hz`.  |
 | `pitch-timing-exceeds-duration.json`       | Semantic: pitch contour timing must not exceed `duration_ms`. |
 | `frequency-out-of-range.json`              | Pitch: `hz` must be 20–20000.                     |

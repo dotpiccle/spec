@@ -142,7 +142,7 @@ Filter `frequencies` entries follow the standard contour entry timing rules defi
 
 ## Biquad definition (normative)
 
-Each filter is a second-order digital biquad. Its state is all zeroes at the layer start. Filters run in array order and discard their remaining state at the effective layer end.
+Each filter is a second-order digital biquad. Its state is all zeroes at the layer start. Filters run in array order and discard their remaining state at the declared layer end or an earlier explicit document cutoff.
 
 Map `resonance` to Q:
 
@@ -150,7 +150,7 @@ Map `resonance` to Q:
 Q = 0.707 + resonance × 11.293
 ```
 
-For the current per-frame frequency `f` and render sample rate `sample_rate`, calculate:
+At each layer frame, first evaluate the filter-frequency contour, then clamp that result to `[20, render_frequency_max]`, then use the clamped value as `f`. For `f` and render sample rate `sample_rate`, calculate:
 
 ```text
 ω = 2π × f / sample_rate
@@ -173,6 +173,6 @@ y[n] = b0×x[n] + b1×x[n-1] + b2×x[n-2]
        - a1×y[n-1] - a2×y[n-2]
 ```
 
-In the canonical render profile, a moving cutoff is evaluated and the coefficients are recomputed for every sample frame. Other engine render profiles use their clamped render frequency and MAY use a numerically stable optimization when they preserve the declared contour timing and finite, stable output. Guidance for avoiding zipper noise is non-normative; see [Implementer Notes](13-implementer-notes.md).
+In the canonical render profile, evaluate the control for frame `n`, compute that frame's coefficients, and then process input sample `x[n]`. A moving cutoff is recomputed for every sample frame. Other engine render profiles use their clamped render frequency and MAY use a numerically stable optimization when they preserve the declared contour timing and finite, stable output. Guidance for avoiding zipper noise is non-normative; see [Implementer Notes](13-implementer-notes.md).
 
 Frequency clamping and numeric requirements are defined in [Engine Safety and the Canonical Render Profile](11-engine-safety.md).

@@ -106,14 +106,25 @@ The effective fade-out is `min(fade_out_ms, layer.duration_ms)`. The complete sc
 
 For numeric shorthand, the base level is active from layer frame zero and the only envelope stage is a linear `min(5, layer.duration_ms)` fade-out. This rule makes shorthand safe for layers shorter than the normal 5 ms default.
 
-For a layer containing `T` frames and an effective fade-out of `O` frames, fade-out frame gain is:
+Let the layer start at document time `S`, have declared duration `L`, and end at `E = S + L`. Convert the boundaries with `frame()` from [Engine Safety](11-engine-safety.md):
+
+```text
+T = frame(E) - frame(S)
+I = frame(S + fade_in_ms) - frame(S)
+fade_start_ms = E - min(fade_out_ms, L)
+O = frame(E) - frame(fade_start_ms)
+```
+
+This absolute-boundary subtraction is mandatory. Engines MUST NOT calculate `I`, `O`, or `T` by rounding each duration independently.
+
+For local layer frame `n`, where `0 <= n < T`, fade-out gain is:
 
 ```text
 1                 when O = 0 or n < T-O
 (T - n) / O       otherwise
 ```
 
-For a fade-in containing `I > 0` frames, layer frame `n < I` uses `n/I` times the first level. The first level becomes exact at frame `I`. Fade-in and fade-out cannot overlap in an object-form contour because such a schedule is semantically invalid.
+For `I > 0`, local layer frame `n < I` uses `n/I` times the first level. The first level becomes exact at frame `I`. Fade-in and fade-out cannot overlap in an object-form contour because such a schedule is semantically invalid.
 
 If the document root truncates a layer, the layer envelope is evaluated only through the truncation boundary; see [Output](08-output.md).
 

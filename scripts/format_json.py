@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 from typing import Any
@@ -17,6 +18,14 @@ class DuplicateKeyError(ValueError):
     pass
 
 
+class NonFiniteNumberError(ValueError):
+    pass
+
+
+class NumberOutOfRangeError(ValueError):
+    pass
+
+
 def reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     result: dict[str, Any] = {}
     for key, value in pairs:
@@ -24,6 +33,19 @@ def reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
             raise DuplicateKeyError(f"duplicate object member {key!r}")
         result[key] = value
     return result
+
+
+def reject_non_finite_constant(token: str) -> None:
+    raise NonFiniteNumberError(f"non-JSON numeric token {token!r}")
+
+
+def parse_finite_float(token: str) -> float:
+    value = float(token)
+    if not math.isfinite(value):
+        raise NumberOutOfRangeError(
+            f"JSON number is outside finite binary64 range: {token}"
+        )
+    return value
 
 
 def canonical_json(value: Any) -> str:
@@ -37,6 +59,7 @@ def json_paths() -> list[Path]:
     paths.extend(sorted((ROOT / "test-vectors" / "valid").glob("*.json")))
     paths.extend(sorted((ROOT / "test-vectors" / "invalid").glob("*.json")))
     paths.extend(sorted((ROOT / "test-vectors" / "numeric").glob("*.json")))
+    paths.extend(sorted((ROOT / "test-vectors" / "behavior").glob("*.json")))
     return paths
 
 
@@ -49,9 +72,18 @@ def main() -> int:
     for path in json_paths():
         raw = path.read_text(encoding="utf-8")
         try:
-            value = json.loads(raw, object_pairs_hook=reject_duplicate_keys)
-        except DuplicateKeyError:
-            if path.name == "duplicate-member.json":
+            value = json.loads(
+                raw,
+                object_pairs_hook=reject_duplicate_keys,
+                parse_constant=reject_non_finite_constant,
+                parse_float=parse_finite_float,
+            )
+        except (DuplicateKeyError, NonFiniteNumberError, NumberOutOfRangeError):
+            if path.name in {
+                "duplicate-member.json",
+                "non-finite-number.json",
+                "number-out-of-range.json",
+            }:
                 continue
             raise
         expected = canonical_json(value)

@@ -122,7 +122,19 @@ Use `offset_cents` to create chorus or beating effects: two tone layers at the s
 
 _Two identical sine tones at 528 Hz, one shifted up by 12 cents -- creates a warm, drifting chorus effect._
 
-The cents-to-frequency formula is: `freq_with_offset = hz * 2^(offset_cents / 1200)`.
+For every sample frame, engines MUST apply pitch operations in this order:
+
+1. Evaluate the `frequencies` contour to obtain `contour_hz`.
+2. Apply the cents offset:
+
+   ```text
+   offset_hz = contour_hz × 2^(offset_cents / 1200)
+   ```
+
+3. Clamp `offset_hz` to `[20, render_frequency_max]` for the active render profile.
+4. Use the clamped result for oscillator phase integration.
+
+Do not clamp each declared target before interpolation, and do not apply `offset_cents` after the render-profile clamp. This order is observable near the format and Nyquist boundaries.
 
 ## Note-to-Hz quick reference (non-normative)
 

@@ -12,7 +12,9 @@ A Piccle processor evaluates input in this order:
 4. **Semantic validation** — enforce rules that JSON Schema cannot express directly:
    - layer IDs are unique;
    - pitch and filter contour schedules do not exceed their declared layer duration;
-   - object-form layer-volume schedules, including fades, do not exceed their declared layer duration.
+   - object-form layer-volume schedules, including fades, do not exceed their declared layer duration;
+   - every `start_ms + duration_ms` layer end remains within the safe-integer bound; and
+   - the document duration plus `reverb.tail_ms`, when present, remains within the safe-integer bound.
 5. **Engine support check** — compare the valid document with the engine's published resource and output-bandwidth limits.
 
 Failure at stage 1 is a resource-rejected input whose format validity was not established. Failure at stages 2 through 4 produces an invalid document. Failure only at stage 5 produces an unsupported document.
@@ -44,16 +46,19 @@ Input whose byte size or nesting exceeds a processor's published safe parsing li
 A conforming v1 engine:
 
 - performs JSON parsing, schema validation, and semantic validation;
-- accepts every fixture in `test-vectors/valid/`;
+- classifies every fixture in `test-vectors/valid/` as valid through semantic validation, before the engine support check;
 - rejects every fixture in `test-vectors/invalid/` for its documented primary stage, code, and location;
 - does not use engine limits to change format validity;
 - provides the canonical 48 kHz stereo binary64 test mode;
+- renders every document in `examples/` in canonical mode rather than reporting it unsupported;
 - implements every v1 source, contour, filter, balance, reverb, output, and safety rule; and
 - meets each canonical determinism or tolerance requirement.
 
 The machine-readable expected stage, stable code, and JSON path for each invalid fixture are declared in `test-vectors/invalid-expectations.json`.
 
 An engine MAY expose additional render profiles with different sample rates, numeric modes, output bandwidth, and resource limits as defined in [Engine Safety](11-engine-safety.md).
+
+A valid fixture may be reported unsupported after it has been classified as valid when it intentionally exceeds published render limits. The `engine-limit-independent`, long-duration, and many-layer fixtures exercise this distinction. Parser byte-size and nesting limits used for conformance testing MUST be sufficient to parse every checked-in fixture.
 
 Whether the engine renders live, offline, ahead of playback, into a cache, or through another architecture is outside the Piccle format contract. These strategies do not create separate conformance classes.
 
@@ -63,6 +68,6 @@ Piccle rendering ends with clipped stereo samples. Sample-rate conversion, stere
 
 ## Role of repository fixtures
 
-Checked-in document fixtures prove parsing, schema, and semantic-validation behavior. Non-PCM numeric aids help implementers check individual formulas. Neither category proves audible rendering conformance.
+Checked-in document fixtures prove parsing, schema, and semantic-validation behavior. Non-PCM numeric aids help implementers check individual formulas, and behavior aids check document-level schedules. None of these categories proves audible rendering conformance.
 
 Piccle intentionally publishes normative text and formulas rather than normative PCM files or an embedded engine. Engine authors must test implementations against the formulas, measurements, cross-platform qualification matrix, and listening gates in this repository.

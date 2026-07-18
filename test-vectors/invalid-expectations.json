@@ -49,6 +49,11 @@
     "code": "schema.minimum",
     "path": "$.layers[0].duration_ms"
   },
+  "layer-end-out-of-range.json": {
+    "stage": "semantic",
+    "code": "semantic.layer_end_out_of_range",
+    "path": "$.layers[0].duration_ms"
+  },
   "layer-missing-duration.json": {
     "stage": "schema",
     "code": "schema.required",
@@ -94,15 +99,30 @@
     "code": "schema.additionalProperties",
     "path": "$.layers[0].source.gain"
   },
+  "non-finite-number.json": {
+    "stage": "parse",
+    "code": "json.non_finite_number",
+    "path": "$"
+  },
   "noise-source-with-pitch-field.json": {
     "stage": "schema",
     "code": "schema.additionalProperties",
     "path": "$.layers[0].source.pitch"
   },
+  "number-out-of-range.json": {
+    "stage": "parse",
+    "code": "json.number_out_of_range",
+    "path": "$"
+  },
   "offset-cents-out-of-range.json": {
     "stage": "schema",
     "code": "schema.maximum",
     "path": "$.layers[0].source.pitch.offset_cents"
+  },
+  "output-end-out-of-range.json": {
+    "stage": "semantic",
+    "code": "semantic.output_end_out_of_range",
+    "path": "$.reverb.tail_ms"
   },
   "pitch-frequencies-entry-missing-hz.json": {
     "stage": "schema",

@@ -14,14 +14,23 @@ from typing import Any, Iterable
 
 from jsonschema import Draft201909Validator
 
-from format_json import DuplicateKeyError, reject_duplicate_keys
+from format_json import (
+    DuplicateKeyError,
+    NonFiniteNumberError,
+    NumberOutOfRangeError,
+    parse_finite_float,
+    reject_duplicate_keys,
+    reject_non_finite_constant,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT / "schemas" / "v1.json"
 EXPECTATIONS_PATH = ROOT / "test-vectors" / "invalid-expectations.json"
 NUMERIC_PATH = ROOT / "test-vectors" / "numeric" / "dsp-values.json"
+BEHAVIOR_PATH = ROOT / "test-vectors" / "behavior" / "render-cases.json"
 CANONICAL_SCHEMA_URI = "https://spec.dotpiccle.com/schema/v1.json"
+MAX_SAFE_INTEGER = 9007199254740991
 
 
 @dataclass(frozen=True)
@@ -34,7 +43,10 @@ class Issue:
 
 def load_json(path: Path) -> Any:
     return json.loads(
-        path.read_text(encoding="utf-8"), object_pairs_hook=reject_duplicate_keys
+        path.read_text(encoding="utf-8"),
+        object_pairs_hook=reject_duplicate_keys,
+        parse_constant=reject_non_finite_constant,
+        parse_float=parse_finite_float,
     )
 
 
@@ -73,6 +85,13 @@ def semantic_issues(document: dict[str, Any]) -> list[Issue]:
 
     for layer_index, layer in enumerate(layers):
         duration = layer["duration_ms"]
+        start = layer.get("start_ms", 0)
+        if start + duration > MAX_SAFE_INTEGER:
+            issues.append(Issue(
+                "semantic", "semantic.layer_end_out_of_range",
+                f"$.layers[{layer_index}].duration_ms",
+                f"start_ms + duration_ms exceeds {MAX_SAFE_INTEGER}",
+            ))
         source = layer["source"]
         if source["type"] == "tone":
             elapsed = contour_time(source["pitch"]["frequencies"])
@@ -102,6 +121,16 @@ def semantic_issues(document: dict[str, Any]) -> list[Issue]:
                     f"$.layers[{layer_index}].volume",
                     f"scheduled {elapsed} ms exceeds layer duration {duration} ms",
                 ))
+    document_duration = document.get(
+        "duration_ms",
+        max(layer.get("start_ms", 0) + layer["duration_ms"] for layer in layers),
+    )
+    reverb = document.get("reverb")
+    if reverb is not None and document_duration + reverb["tail_ms"] > MAX_SAFE_INTEGER:
+        issues.append(Issue(
+            "semantic", "semantic.output_end_out_of_range", "$.reverb.tail_ms",
+            f"document duration + tail_ms exceeds {MAX_SAFE_INTEGER}",
+        ))
     return issues
 
 
@@ -156,6 +185,10 @@ def first_document_issue(path: Path, validator: Draft201909Validator) -> Issue |
         document = load_json(path)
     except DuplicateKeyError as error:
         return Issue("parse", "json.duplicate_member", "$", str(error))
+    except NonFiniteNumberError as error:
+        return Issue("parse", "json.non_finite_number", "$", str(error))
+    except NumberOutOfRangeError as error:
+        return Issue("parse", "json.number_out_of_range", "$", str(error))
     except (ValueError, UnicodeError) as error:
         return Issue("parse", "json.invalid", "$", str(error))
     errors = list(validator.iter_errors(document))
@@ -195,6 +228,7 @@ def check_schema_contract(schema: dict[str, Any]) -> list[str]:
     expect(properties["piccle"].get("enum"), ["1.0"], "piccle versions")
     expect((properties["duration_ms"].get("type"), properties["duration_ms"].get("minimum")), ("integer", 1), "root duration type/minimum")
     expect((properties["volume"].get("type"), properties["volume"].get("minimum"), properties["volume"].get("maximum"), properties["volume"].get("default")), ("number", 0, 1, 1), "root volume contract")
+    expect("safe-integer bound" in properties["duration_ms"]["description"], True, "root duration derived-bound description")
 
     layer = defs["layer"]
     expect(layer["required"], ["id", "duration_ms", "source"], "layer required fields")
@@ -204,12 +238,14 @@ def check_schema_contract(schema: dict[str, Any]) -> list[str]:
     expect_property(layer, "start_ms", kind="integer", minimum=0, default=0, has_default=True)
     expect_property(layer, "duration_ms", kind="integer", minimum=1)
     expect_property(layer, "balance", kind="number", minimum=-1, maximum=1, default=0, has_default=True)
+    expect("start_ms plus duration_ms" in layer["properties"]["duration_ms"]["description"], True, "layer derived-end description")
     expect(defs["curves"]["enum"], ["linear", "exponential", "easeIn", "easeOut", "easeInOut"], "curve enum")
     expect(defs["filter"]["properties"]["type"]["enum"], ["lowpass", "highpass", "bandpass"], "filter enum")
     expect(defs["filter"]["properties"]["resonance"].get("default"), 0, "resonance default")
     expect(defs["pitch"]["properties"]["offset_cents"].get("default"), 0, "pitch offset default")
     expect(defs["pitch"]["required"], ["frequencies"], "pitch required fields")
     expect_property(defs["pitch"], "offset_cents", kind="integer", minimum=-1200, maximum=1200, default=0, has_default=True)
+    expect("after contour interpolation" in defs["pitch"]["properties"]["offset_cents"]["description"], True, "pitch operation-order description")
 
     pitch_entry = defs["pitch"]["properties"]["frequencies"]["items"]
     filter_entry = defs["filter"]["properties"]["frequencies"]["items"]
@@ -227,6 +263,7 @@ def check_schema_contract(schema: dict[str, Any]) -> list[str]:
     expect_property(reverb, "amount", kind="number", minimum=0, maximum=1)
     expect_property(reverb, "tail_ms", kind="integer", minimum=1)
     expect_property(reverb, "soften_hz", kind="number", minimum=200, maximum=12000)
+    expect("safe-integer bound" in reverb["properties"]["tail_ms"]["description"], True, "reverb derived-end description")
 
     noise = defs["source"]["oneOf"][1]["properties"]
     expect(noise["character"]["enum"], ["soft", "neutral", "sharp"], "noise character enum")
@@ -291,7 +328,12 @@ def documentation_parity_errors() -> list[str]:
         "docs/05-volume.md": ["`fade_in_ms`  | integer | 0", "`fade_out_ms` | integer | 5"],
         "docs/06-filters.md": ["`resonance`   | number | 0", "20-20000 Hz"],
         "docs/07-reverb.md": ["`amount`    | number", "`tail_ms`   | integer | `1` or more", "`soften_hz` | number  | `200`–`12000`"],
-        "docs/11-engine-safety.md": ["at least 8000 Hz", "min(20000, 0.49 × sample_rate)", "48000 Hz"],
+        "docs/11-engine-safety.md": ["at least 8000 Hz", "min(20000, 0.49 × sample_rate)", "48000 Hz", "frame(S + b) - frame(S + a)"],
+        "docs/04-pitch.md": ["Evaluate the `frequencies` contour", "Apply the cents offset", "Clamp `offset_hz`"],
+        "docs/07-reverb.md": ["five_ms_frames", "DSP conformance harness", "1 + floor(0.9 × N)"],
+        "docs/08-output.md": ["Visit active layers in document array order", "[0, F(D + tail_ms))"],
+        "docs/14-conformance.md": ["start_ms + duration_ms", "document duration plus `reverb.tail_ms`"],
+        "docs/15-engine-build-guide.md": ["schemas/v1.json", "test-vectors/invalid-expectations.json", "test-vectors/numeric/dsp-values.json", "test-vectors/behavior/render-cases.json", "Definition of done"],
     }
     for relative, tokens in exact_tokens.items():
         text = (ROOT / relative).read_text(encoding="utf-8")
@@ -378,12 +420,18 @@ def numeric_aid_errors() -> list[str]:
         "status": "non-normative",
         "pcg32": {"seed_0_first_u32": pcg(0), "seed_1_first_u32": pcg(1), "seed_max_first_u32": pcg(4294967295)},
         "curve_progress_at_half": {"linear": .5, "exponential_0_1_to_1": math.sqrt(.1), "easeIn": .25, "easeOut": .75, "easeInOut": .5},
+        "zero_duration_transition_chain": {"declared_targets": [.1, .2, .3], "transition_frames": [0, 0], "first_emitted_target": .3},
         "oscillator_coefficients": {"sine_k1": 1.0, "square_k1": 4/math.pi, "square_k3": 4/(3*math.pi), "saw_k1": 2/math.pi, "saw_k2": -1/math.pi, "triangle_k1": 8/math.pi**2, "triangle_k3": -8/(9*math.pi**2)},
         "balance": {"center_left": math.sqrt(.5), "center_right": math.sqrt(.5), "center_then_mono": 1.0},
         "lowpass_1000_hz_48000_resonance_0": {},
         "render_frequency_max_hz": {str(rate): min(20000, .49*rate) for rate in (8000, 16000, 22050, 44100, 48000)},
+        "absolute_boundary_frames_at_44100": {"frame_4_ms": 176, "frame_8_ms": 353, "span_4_to_8_ms": 177, "independently_rounded_4_ms": 176},
+        "pitch_transform_order": {"20_hz_minus_1200_cents_canonical": 20.0, "20000_hz_plus_1200_cents_canonical": 20000.0, "10000_hz_at_8000_sample_rate": 3920.0},
+        "canonical_mix_order": {"samples_in_array_order": [1.0, 2**-53, -1.0], "binary64_result": 0.0},
+        "dft_sine_reference": {"real": 0.0, "imaginary": -1.0, "amplitude": 1.0, "phase_from_sine": 0.0},
         "reverb_terminal_window_frames_at_48000": {f"tail_{tail}_ms": max(2, min(240, math.ceil((48*tail)/10))) for tail in (1, 10, 20, 500)},
         "reverb_tail_1_ms_terminal_gains": {"window_start_frame_in_tail": 43, "gains": [1.0, .75, .5, .25, 0.0]},
+        "reverb_absolute_tail_frames_at_44100": {"document_duration_ms": 4, "tail_ms": 4, "dry_end_frame": 176, "output_end_frame": 353, "tail_frames": 177},
     }
     omega = 2*math.pi*1000/48000
     c, alpha = math.cos(omega), math.sin(omega)/(2*.707)
@@ -407,6 +455,66 @@ def numeric_aid_errors() -> list[str]:
         elif left != right:
             failures.append(f"numeric aid {path}: {left!r} != {right!r}")
     compare(actual, expected, "$")
+    return failures
+
+
+def behavior_aid_errors() -> list[str]:
+    manifest = load_json(BEHAVIOR_PATH)
+    failures: list[str] = []
+    if manifest.get("status") != "non-normative":
+        failures.append("behavior aids: status must be non-normative")
+
+    for case in manifest.get("cases", []):
+        rate = case["sample_rate"]
+        document_path = (BEHAVIOR_PATH.parent / case["document"]).resolve()
+        if not document_path.is_relative_to(ROOT) or not document_path.exists():
+            failures.append(f"behavior aid {case['id']}: missing document {case['document']}")
+            continue
+        document = load_json(document_path)
+
+        def frame(milliseconds: int | float) -> int:
+            return math.floor(milliseconds * rate / 1000 + 0.5)
+
+        duration = document.get(
+            "duration_ms",
+            max(layer.get("start_ms", 0) + layer["duration_ms"] for layer in document["layers"]),
+        )
+        dry_end = frame(duration)
+        reverb = document.get("reverb")
+        output_end = frame(duration + reverb["tail_ms"]) if reverb else dry_end
+        tail_frames = output_end - dry_end
+        terminal_frames = (
+            max(2, min(frame(5), math.ceil(tail_frames / 10))) if reverb else 0
+        )
+        layers: list[dict[str, Any]] = []
+        for layer in document["layers"]:
+            start = layer.get("start_ms", 0)
+            end = start + layer["duration_ms"]
+            volume = layer.get("volume", 1)
+            fade_ms = volume.get("fade_out_ms", 5) if isinstance(volume, dict) else 5
+            fade_start = end - min(fade_ms, layer["duration_ms"])
+            declared_start_frame = frame(start)
+            declared_end_frame = frame(end)
+            layers.append({
+                "id": layer["id"],
+                "declared_start_frame": declared_start_frame,
+                "declared_end_frame": declared_end_frame,
+                "active_end_frame": min(declared_end_frame, dry_end),
+                "fade_start_frame": frame(fade_start),
+                "fade_frames": declared_end_frame - frame(fade_start),
+            })
+        actual = {
+            "document_duration_ms": duration,
+            "dry_end_frame": dry_end,
+            "output_end_frame": output_end,
+            "tail_frames": tail_frames,
+            "terminal_window_frames": terminal_frames,
+            "layers": layers,
+        }
+        if actual != case["expected"]:
+            failures.append(
+                f"behavior aid {case['id']}: computed {actual!r}, expected {case['expected']!r}"
+            )
     return failures
 
 
@@ -440,6 +548,7 @@ def main() -> int:
     failures.extend(fixture_inventory_errors(ROOT / "test-vectors" / "invalid"))
     failures.extend(link_errors())
     failures.extend(numeric_aid_errors())
+    failures.extend(behavior_aid_errors())
     formatter = subprocess.run([sys.executable, str(ROOT / "scripts" / "format_json.py")], cwd=ROOT, text=True, capture_output=True)
     if formatter.returncode:
         failures.extend(line[2:] for line in formatter.stderr.splitlines() if line.startswith("- "))
@@ -449,7 +558,7 @@ def main() -> int:
         for failure in failures:
             print(f"- {failure}", file=sys.stderr)
         return 1
-    print(f"Piccle validation passed: schema, {len(valid_paths)} accepted documents, {len(invalid_paths)} rejected documents with stable codes and paths, semantic rules, numeric aids, documentation parity, inventories, canonical JSON, anchors, and links.")
+    print(f"Piccle validation passed: schema, {len(valid_paths)} accepted documents, {len(invalid_paths)} rejected documents with stable codes and paths, semantic rules, numeric and behavior aids, documentation parity, inventories, canonical JSON, anchors, and links.")
     return 0
 
 

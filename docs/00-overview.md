@@ -28,7 +28,7 @@ A Piccle asset should be:
 | Volume contour     | A shorthand number (constant level) or an N-level object with fade-in, fade-out, and per-segment timing.                     |
 | Filter chain       | Lowpass, highpass, or bandpass filters in series, each with its own frequency contour and resonance.                         |
 | Balance            | Stereo position from -1 (left) to 1 (right).                                                                                 |
-| Reverb             | Optional whole-sound reverb with amount, tail length, and damping frequency.                                                 |
+| Reverb             | Optional whole-sound reverb with amount, tail length, and wet-path softening frequency.                                      |
 | Output shaping     | Final master volume and mandatory safety clipping.                                                                           |
 | Safety             | Built-in hard clipping, Nyquist-aware frequency handling, validation before allocation, and engine-declared resource limits. |
 
@@ -69,4 +69,4 @@ The engine mixes all layers together, optionally adds a little **reverb** for a 
 | Reverb           | A sense of space around the sound, like playing in a small room.                                                                  |
 | Transition curve | The interpolation shape between contour targets: linear, exponential, easeIn, easeOut, or easeInOut.                              |
 | Offset cents     | A tiny pitch shift measured in cents (100 cents = 1 semitone). Two tones at slightly different cents create a warm chorus effect. |
-| Attack click     | A brief, harsh click that happens when a sound starts or stops abruptly. Piccle's default fade-out of 5 ms prevents this.         |
+| Boundary click   | A brief, harsh click caused by an abrupt non-zero start or stop. Piccle's default fade-out reduces ending clicks; authors control onset shape. |

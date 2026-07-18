@@ -1,0 +1,101 @@
+{
+  "status": "non-normative",
+  "cases": [
+    {
+      "id": "computed-duration-and-default-fade",
+      "document": "../valid/defaults.json",
+      "sample_rate": 48000,
+      "expected": {
+        "document_duration_ms": 200,
+        "dry_end_frame": 9600,
+        "output_end_frame": 9600,
+        "tail_frames": 0,
+        "terminal_window_frames": 0,
+        "layers": [
+          {
+            "id": "layer1",
+            "declared_start_frame": 0,
+            "declared_end_frame": 9600,
+            "active_end_frame": 9600,
+            "fade_start_frame": 9360,
+            "fade_frames": 240
+          }
+        ]
+      }
+    },
+    {
+      "id": "hard-root-truncation-does-not-move-fade",
+      "document": "../valid/root-truncation.json",
+      "sample_rate": 48000,
+      "expected": {
+        "document_duration_ms": 30,
+        "dry_end_frame": 1440,
+        "output_end_frame": 1440,
+        "tail_frames": 0,
+        "terminal_window_frames": 0,
+        "layers": [
+          {
+            "id": "trimmed",
+            "declared_start_frame": 0,
+            "declared_end_frame": 4800,
+            "active_end_frame": 1440,
+            "fade_start_frame": 4560,
+            "fade_frames": 240
+          }
+        ]
+      }
+    },
+    {
+      "id": "simultaneous-half-open-boundary",
+      "document": "../valid/simultaneous-boundary.json",
+      "sample_rate": 44100,
+      "expected": {
+        "document_duration_ms": 100,
+        "dry_end_frame": 4410,
+        "output_end_frame": 4410,
+        "tail_frames": 0,
+        "terminal_window_frames": 0,
+        "layers": [
+          {
+            "id": "first",
+            "declared_start_frame": 0,
+            "declared_end_frame": 2205,
+            "active_end_frame": 2205,
+            "fade_start_frame": 1985,
+            "fade_frames": 220
+          },
+          {
+            "id": "second",
+            "declared_start_frame": 2205,
+            "declared_end_frame": 4410,
+            "active_end_frame": 4410,
+            "fade_start_frame": 4190,
+            "fade_frames": 220
+          }
+        ]
+      }
+    },
+    {
+      "id": "nonadditive-reverb-tail-boundary",
+      "document": "../valid/nonadditive-tail-boundary.json",
+      "sample_rate": 44100,
+      "expected": {
+        "document_duration_ms": 4,
+        "dry_end_frame": 176,
+        "output_end_frame": 353,
+        "tail_frames": 177,
+        "terminal_window_frames": 18,
+        "layers": [
+          {
+            "id": "short",
+            "declared_start_frame": 0,
+            "declared_end_frame": 176,
+            "active_end_frame": 176,
+            "fade_start_frame": 0,
+            "fade_frames": 176
+          }
+        ]
+      }
+    }
+  ]
+}

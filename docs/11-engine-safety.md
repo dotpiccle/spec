@@ -16,13 +16,21 @@ Every conforming engine MUST provide a canonical test mode with:
 
 Canonical mode may be exposed through diagnostics, tests, command-line tooling, or another engine-defined interface. It does not need to be the engine's normal production profile.
 
-Convert a non-negative absolute millisecond boundary `m` to a frame at sample rate `r` with:
+Convert any non-negative document-time boundary `m` in milliseconds to a frame at sample rate `r` with:
 
 ```text
 frame(m) = floor(m × r / 1000 + 0.5)
 ```
 
-At 48 kHz, every integer millisecond is exactly 48 frames. Engines MUST calculate segment lengths by subtracting converted absolute boundaries. Timelines are half-open: `[start_frame, end_frame)`.
+`m` may be a derived rational boundary, such as the 90% point of a reverb tail. Evaluate the formula in binary64 in canonical mode. At 48 kHz, every integer millisecond is exactly 48 frames.
+
+Engines MUST construct one absolute boundary schedule before rendering. For a layer whose declared start is `S`, every local boundary at offset `c` maps to `frame(S + c)`. A segment from offsets `a` through `b` contains:
+
+```text
+frame(S + b) - frame(S + a)
+```
+
+Do not round `a`, `b`, or a segment duration independently. The document cutoff is `frame(D)`, and a reverb output ends at `frame(D + tail_ms)`. Timelines are half-open: `[start_frame, end_frame)`.
 
 Canonical mode processes source values, filter state, reverb state, coefficients, and controls in binary64. After the final hard clip, convert each left and right sample to binary32 using round-to-nearest, ties-to-even.
 

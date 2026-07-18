@@ -10,6 +10,7 @@ Each valid fixture tests acceptance, a default behavior, or a boundary condition
 | `filter-frequencies.json`       | Static bandpass filter with resonance.                                    |
 | `filter-frequencies-sweep.json` | Filter frequency sweep (two entries, exponential curve).                  |
 | `frequency-boundary.json`       | Pitch `hz` at 20 and 20000 (range boundaries).                            |
+| `integer-number-forms.json`     | Integer fields accept mathematically integral JSON numbers such as `1.0`. |
 | `layers-start-together.json`    | Two layers both omit `start_ms` — default to 0, no implicit sequencing.   |
 | `long-duration.json`            | 5000 ms duration with square wave.                                        |
 | `many-layers.json`              | 32 layers (valid under the no-spec-maximum rule).                         |
@@ -19,6 +20,7 @@ Each valid fixture tests acceptance, a default behavior, or a boundary condition
 | `numeric-minimums.json`         | Inclusive lower bounds for bounded numeric fields.                        |
 | `long-seeded-noise.json`        | Deterministic noise streams without buffering or looping.                 |
 | `noise-determinism.json`        | Explicit seeded soft noise with a bandpass filter.                        |
+| `nonadditive-tail-boundary.json`| Absolute 44.1 kHz boundaries where rounded spans are not additive.        |
 | `offset-cents.json`             | Two layers with different `offset_cents` values (0 and 12).               |
 | `pitch-frequencies.json`        | Two-entry pitch glide with exponential curve.                             |
 | `pitch-frequencies-multi.json`  | Three-entry multi-point pitch contour.                                    |

@@ -16,6 +16,12 @@ All notable changes to the Piccle specification are documented here. Piccle v1 h
 - Render-profile frequency adaptation down to declared 8 kHz engine profiles.
 - Measurable oscillator harmonic, phase, DC, and alias tolerances using coherent canonical-profile windows.
 - Normative reverb wet lowpass, energy-decay measurement, and automatic terminal window.
+- Exact absolute-boundary scheduling for layers, contours, fades, document cutoffs, and reverb tails at every render rate.
+- Agent-oriented engine build guide with subsystem order, target-platform decisions, required evidence, and definition of done.
+- Deterministic generated-convolution baseline for a first conforming reverb implementation.
+- Stable semantic errors for derived layer-end and output-end safe-integer overflow.
+- Parser fixtures and stable errors for non-JSON numeric tokens and decimal values outside finite binary64 range.
+- Non-PCM document render cases for computed duration, hard truncation, simultaneous boundaries, fades, and non-additive reverb-tail frame counts.
 
 ### Removed
 
@@ -32,6 +38,9 @@ All notable changes to the Piccle specification are documented here. Piccle v1 h
 - Defined explicit root duration as a hard cutoff that does not relocate a layer's declared fade.
 - Generalized engine behavior from mobile-oriented assumptions to all interactive platforms and declared render rates of 8 kHz or higher.
 - Made live, offline, cached, and ahead-of-playback rendering engine choices rather than separate conformance classes.
+- Defined pitch processing as contour interpolation, cents offset, render-profile clamp, then phase integration.
+- Defined canonical layer accumulation order and the oscillator DFT amplitude and phase measurement convention.
+- Clarified that mathematically integral JSON numbers such as `1.0` satisfy integer fields.
 - Clarified that engine resource limits affect support, never format validity.
 - Reorganized public documentation into normative reference, authoring cookbook, non-normative implementation guidance, and conformance material.
 

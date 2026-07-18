@@ -30,6 +30,18 @@
     "easeOut": 0.75,
     "easeInOut": 0.5
   },
+  "zero_duration_transition_chain": {
+    "declared_targets": [
+      0.1,
+      0.2,
+      0.3
+    ],
+    "transition_frames": [
+      0,
+      0
+    ],
+    "first_emitted_target": 0.3
+  },
   "oscillator_coefficients": {
     "sine_k1": 1.0,
     "square_k1": 1.2732395447351628,
@@ -58,6 +70,31 @@
     "44100": 20000.0,
     "48000": 20000.0
   },
+  "absolute_boundary_frames_at_44100": {
+    "frame_4_ms": 176,
+    "frame_8_ms": 353,
+    "span_4_to_8_ms": 177,
+    "independently_rounded_4_ms": 176
+  },
+  "pitch_transform_order": {
+    "20_hz_minus_1200_cents_canonical": 20.0,
+    "20000_hz_plus_1200_cents_canonical": 20000.0,
+    "10000_hz_at_8000_sample_rate": 3920.0
+  },
+  "canonical_mix_order": {
+    "samples_in_array_order": [
+      1.0,
+      1.1102230246251565e-16,
+      -1.0
+    ],
+    "binary64_result": 0.0
+  },
+  "dft_sine_reference": {
+    "real": 0.0,
+    "imaginary": -1.0,
+    "amplitude": 1.0,
+    "phase_from_sine": 0.0
+  },
   "reverb_terminal_window_frames_at_48000": {
     "tail_1_ms": 5,
     "tail_10_ms": 48,
@@ -73,5 +110,12 @@
       0.25,
       0.0
     ]
+  },
+  "reverb_absolute_tail_frames_at_44100": {
+    "document_duration_ms": 4,
+    "tail_ms": 4,
+    "dry_end_frame": 176,
+    "output_end_frame": 353,
+    "tail_frames": 177
   }
 }

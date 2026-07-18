@@ -11,7 +11,10 @@ A Piccle document MUST be UTF-8 encoded JSON as defined by [RFC 8259](https://ww
 - Unknown properties are invalid at every object level. The schema expresses this with `additionalProperties: false`.
 - Implementations MUST support every integer in the interoperable binary64 range `[-(2^53)+1, (2^53)-1]` while parsing JSON. Individual Piccle fields impose much smaller ranges where required.
 - Implementations MUST parse decimal numbers with at least IEEE-754 binary64 precision for control calculations. Audio sample storage may use binary32 as defined by the canonical render profile.
-- `NaN`, positive infinity, and negative infinity are not JSON numbers and MUST be rejected.
+- When a decimal is converted to binary64, use round-to-nearest, ties-to-even. A parser that retains greater precision MUST produce the same binary64 value before canonical control evaluation.
+- `NaN`, `Infinity`, and `-Infinity` tokens are not JSON and MUST fail JSON parsing with code `json.non_finite_number`.
+- A syntactically valid decimal token whose mathematical value cannot be represented as finite IEEE-754 binary64, such as `1e400`, MUST fail JSON parsing with code `json.number_out_of_range`. An engine MUST NOT silently convert it to infinity before validation.
+- JSON Schema's `integer` type is mathematical, not lexical. A JSON number such as `1`, `1.0`, or `1e0` satisfies an integer field because its value has no fractional part. Engines MUST accept all three forms when the value meets the field's range.
 - Object member order has no semantic meaning. Array order has meaning only where this specification explicitly defines it.
 
 The optional root `$schema` member, when present, MUST equal `https://spec.dotpiccle.com/schema/v1.json`.
@@ -30,7 +33,7 @@ All document time values are integer milliseconds no greater than `9007199254740
 - `transition_ms` — time to move to the next contour value.
 - `tail_ms` — reverb RT60 and emitted-tail duration.
 
-The canonical conversion from milliseconds to sample frames is defined in [Engine Safety and the Canonical Render Profile](11-engine-safety.md).
+The exact conversion of document and layer boundaries to sample frames is defined in [Engine Safety and Render Profiles](11-engine-safety.md).
 
 ### Frequency: Hertz (`*_hz`)
 
@@ -98,6 +101,8 @@ effective_fade_out_ms = min(fade_out_ms, layer.duration_ms)
 ```
 
 The applicable scheduled duration MUST NOT exceed the declared layer `duration_ms`; otherwise the document is semantically invalid. The shorthand numeric volume has no contour transitions and uses `min(5, layer.duration_ms)` as its effective default fade-out. A shorter explicit document duration hard-truncates this declared schedule without relocating the fade.
+
+All sums used to derive layer ends and output ends are exact integer calculations. A layer end or output end greater than `9007199254740991` makes the document semantically invalid even when every individual field is within its schema range.
 
 The precise sample-frame algorithm, including zero-duration transitions and boundaries, is defined in [Transition Curves](10-curves.md).
 

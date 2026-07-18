@@ -12,23 +12,39 @@ This appendix is non-normative. It offers implementation guidance after an engin
 6. [Engine Safety](11-engine-safety.md)
 7. [Conformance](14-conformance.md)
 
-## Reverb starting point
+For a task-ordered implementation checklist, see [Engine Build Guide](15-engine-build-guide.md).
 
-A compact Schroeder-style reverb can satisfy short UI-sound use cases:
+## Baseline reverb implementation
 
-1. Use several parallel comb filters with mutually non-harmonic delay lengths.
-2. Follow them with two or three short allpass stages.
-3. Choose feedback gains for an RT60 near `tail_ms`.
-4. Apply the normative wet-output lowpass and terminal window.
-5. Measure and normalize the final stereo impulse-response energy before applying `amount`.
+An agent or first engine implementation should use the deterministic generated-convolution baseline below unless the platform already has another implementation that passes the normative measurements. This recipe is non-normative: engines may replace it without changing Piccle documents.
 
-For a delay of `delay_samples`, a common RT60 feedback starting point is:
+For one `tail_ms`, `soften_hz`, and sample-rate configuration:
 
-```text
-gain = 10 ^ (-3 × delay_samples / (tail_ms × sample_rate / 1000))
-```
+1. Set `N = floor(tail_ms × sample_rate / 1000 + 0.5)` and allocate a 2-by-2 FIR matrix `hLL`, `hLR`, `hRL`, and `hRR`, each indexed `0..N`.
+2. Initialize four Piccle PCG32 streams for those arrays with seeds `0x50494343`, `0x4C455256`, `0x52455652`, and `0x53544552` respectively. Generate and retain one sign per coefficient. Reuse these same sign arrays for every calibration candidate; do not continue advancing the generators during bisection.
+3. For a provisional decay value `p`, generate every matrix coefficient from its retained sign:
 
-The result still needs to pass the normative RT60, lowpass, energy, terminal-window, and lifetime measurements in [Reverb](07-reverb.md).
+   ```text
+   envelope[n] = 10 ^ (-p × n / N)
+   signXY = -1 when pcgXY_next() < 2^31, otherwise 1
+   hXY[n] = signXY × envelope[n] / 2
+   ```
+
+4. Treat these coefficients as a stereo FIR reverb core:
+
+   ```text
+   wetL = convolve(dryL, hLL) + convolve(dryR, hLR)
+   wetR = convolve(dryL, hRL) + convolve(dryR, hRR)
+   ```
+
+   Do not add a separate dry tap to the wet branch.
+5. Run the normative conformance impulse through the FIR, wet lowpass, and terminal window. Measure its first −60 dB energy crossing.
+6. Starting with the interval `p = [0.5, 6]`, use 32 bisection steps to target crossing frame `1 + floor(0.95 × N)`. If the crossing is earlier than the target, lower `p`; if it is later, raise `p`. A crossing anywhere in the normative final-10% interval is sufficient; exact convergence on the target is not required.
+7. Apply the normative constant wet-energy normalization to the calibrated response. Cache the coefficients and gain by render profile, `tail_ms`, and `soften_hz` when useful.
+
+The FIR is causal, stable, deterministic, linear, time-invariant, dense even for short tails, and finite by construction. Independent signs give stereo decorrelation without introducing an author-facing random parameter. Direct convolution is adequate for short UI tails; partitioned convolution or another mathematically equivalent implementation can reduce cost for long supported tails.
+
+A Schroeder or feedback-delay-network reverb is also permitted, but its delay layout, feedback tuning, stereo mapping, and response calibration become engine responsibilities. It still needs to pass every normative measurement in [Reverb](07-reverb.md).
 
 ## Noise implementation
 

@@ -19,7 +19,7 @@ tone/noise source
   → platform output adaptation
 ```
 
-Changing the normative stages' order changes the sound and is not conforming. Each layer's filters and envelope state begin at its `start_ms` and are discarded at its effective end. The mix is an unnormalized sum; root volume and the safety clipper control the final range.
+Changing the normative stages' order changes the sound and is not conforming. Each layer's filters and envelope state begin at its declared start and are discarded at its declared end or an earlier explicit document cutoff. The mix is an unnormalized sum; root volume and the safety clipper control the final range.
 
 Sample-rate conversion, stereo-to-mono downmixing, hardware channel routing, and device-volume control are platform adaptation. They occur after the normative hard clipper and do not change Piccle asset semantics.
 
@@ -37,11 +37,17 @@ right = mono × right_gain
 
 This gives full left at `-1`, equal-power center at `0`, and full right at `1`. Balance is static for the layer in v1.
 
+## Canonical mixing order
+
+In canonical mode, initialize the dry left and right accumulators to binary64 positive zero for every frame. Visit active layers in document array order and perform one binary64 addition per channel for each layer. Do not clip, normalize, or reorder partial sums. This rule fixes rounding behavior without giving layer order any timing meaning.
+
+Additional engine render profiles MAY use an equivalent parallel or vectorized reduction. Their output need not be sample-identical to canonical mode.
+
 ## Document and output timelines
 
-Let `D` be the explicit root `duration_ms`, or the latest declared layer end when it is omitted. Without reverb, output is defined on `[0, D)`. With reverb, output is defined on `[0, D + tail_ms)` as specified in [Reverb](07-reverb.md).
+Let `D` be the explicit root `duration_ms`, or the latest declared layer end when it is omitted. Let `F(m) = frame(m)` from [Engine Safety](11-engine-safety.md). Without reverb, output frames are `[0, F(D))`. With reverb, output frames are `[0, F(D + tail_ms))` as specified in [Reverb](07-reverb.md).
 
-An explicit `duration_ms` hard-truncates every active layer at `D`. Truncation does not move or create a layer fade. A non-zero sample may therefore be followed by zero at the boundary. Authors who need a smooth explicit cutoff must align each affected layer's declared duration and fade with `D`.
+For a layer starting at `S` and ending at `E = S + layer.duration_ms`, its untruncated global-frame interval is `[F(S), F(E))`. An explicit `duration_ms` changes the active interval to `[F(S), min(F(E), F(D)))`; the interval is empty when its end is not greater than its start. Truncation does not move or create a layer fade. A non-zero sample may therefore be followed by zero at the boundary. Authors who need a smooth explicit cutoff must align each affected layer's declared duration and fade with `D`.
 
 If `duration_ms` is longer than every layer, the dry mix is silent after the latest layer end. Reverb still receives zero input through `D` and its declared tail begins after `D`.
 

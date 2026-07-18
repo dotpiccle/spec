@@ -1,0 +1,21 @@
+{
+  "piccle": "1.0",
+  "layers": [
+    {
+      "id": "overflow",
+      "start_ms": 9007199254740991,
+      "duration_ms": 1,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [
+            {
+              "hz": 440
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
