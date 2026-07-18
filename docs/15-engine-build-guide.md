@@ -12,6 +12,8 @@ The implementation agent should receive this repository in full, not isolated ex
 
 The agent MUST NOT invent a Piccle field, default, DSP stage, timing rule, or validation category. If a normative question cannot be answered from this repository, report it as a specification defect before assigning behavior.
 
+Treat this repository as authoritative. Consume the normative chapters, `schemas/v1.json`, and `test-vectors/*.json` as ground truth.
+
 ## Read before coding
 
 Read the normative chapters in this order:
@@ -41,7 +43,7 @@ Implement these boundaries separately so each can be tested before complete audi
 - Run semantic validation for layer IDs, contour budgets, and derived-time bounds.
 - Report malformed, schema-invalid, semantically invalid, unsupported, and internal failures as distinct outcomes.
 
-Use `test-vectors/invalid-expectations.json` as the expected validation stage, stable code, and JSON path contract.
+Use the file `test-vectors/invalid-expectations.json` (in the repository root) as the expected validation stage, stable code, and JSON path contract. This file maps each fixture in `test-vectors/invalid/` (54 JSON documents that must fail validation) to its expected outcome: the validation stage that must reject it (malformed, schema-invalid, or semantic), the stable error code, and the JSON path where the error is reported. Your engine's validator must produce the same stage, code, and path for every invalid fixture.
 
 ### 2. Resolved document model
 
@@ -53,7 +55,7 @@ Do not change the source document and do not treat schema `default` annotations 
 
 Build one absolute frame-boundary schedule for the selected render profile. Derive layer starts and ends, contour holds and transitions, fades, the document cutoff, and the reverb output end from that schedule.
 
-Do not round individual durations independently. Verify the non-additive 44.1 kHz cases in `test-vectors/numeric/dsp-values.json` before implementing DSP.
+Do not round individual durations independently. Use the non-additive 44.1 kHz boundary cases in `test-vectors/numeric/dsp-values.json` (at `piccle-spec/test-vectors/numeric/dsp-values.json` in this repository) as ground truth when checking the engine's own boundary schedule. This file contains reference timing values computed from the spec's formulas; your engine's frame schedule at 44.1 kHz must match them exactly.
 
 ### 4. Control evaluators
 
@@ -68,7 +70,7 @@ For pitch, preserve the specified order: contour interpolation, cents offset, re
 - Keep source generation mono through the filter and layer-volume stages.
 - Use a band-limited wavetable, polyBLEP, or an equivalent bounded-cost oscillator in the production render path. Do not evaluate the full reference harmonic series for every output sample.
 
-Use the numeric aids for PCG32 and harmonic coefficients, then implement the complete oscillator DFT measurement from [Sources](03-sources.md).
+Use the PCG32 stream values and harmonic oscillator coefficients in `test-vectors/numeric/dsp-values.json` (at `piccle-spec/test-vectors/numeric/dsp-values.json` in this repository) as ground truth for your noise and oscillator implementations. After those match, implement the complete oscillator DFT measurement described in [Sources](03-sources.md) to verify spectral purity.
 
 ### 6. Layer processing
 
@@ -122,19 +124,25 @@ The engine may choose these integration details without changing Piccle semantic
 
 The engine must still expose or make testable the canonical 48 kHz stereo binary64 mode. Platform constraints never change whether a Piccle document is valid.
 
-## Required verification
+## Engine conformance verification
 
-Before calling the implementation conforming:
+These steps verify the engine against this specification. Before calling the implementation conforming:
 
-1. Run `python3 scripts/validate.py` in this repository.
-2. Classify every valid fixture as valid before applying engine support limits, and render every official example in canonical mode.
-3. Reject every invalid fixture at its declared stage, code, and path.
-4. Recompute every value in `test-vectors/numeric/dsp-values.json` and every schedule in `test-vectors/behavior/render-cases.json` independently in the engine test suite.
-5. Test every oscillator at every canonical measurement frequency.
-6. Test every curve, filter type, balance extreme, reverb amount, short tail, seeded-noise boundary, simultaneous boundary, and hard truncation case.
-7. Assert finite output and exact output-frame counts.
-8. Render every official example and complete the listening and platform checks in `RELEASE_CHECKLIST.md`.
-9. Profile the production render path with the engine's maximum supported voices, filters, and reverb tail. Verify that steady rendering performs no memory allocation and has no cost spike when a contour boundary is crossed.
+1. **Accept all valid fixtures.** Load every `.json` file in `test-vectors/valid/` (38 documents covering defaults, boundaries, reverb tails, noise determinism, filter sweeps, etc.) and verify your engine classifies each as valid — before applying any engine-specific support limits. The valid fixture inventory is documented at `test-vectors/valid/README.md`.
+
+2. **Reject all invalid fixtures.** Load every `.json` file in `test-vectors/invalid/` (54 documents, each designed to fail for exactly one reason) and verify your engine rejects each at the precise stage (malformed, schema-invalid, or semantic), error code, and JSON path declared in `test-vectors/invalid-expectations.json`. The invalid fixture inventory is documented at `test-vectors/invalid/README.md`.
+
+3. **Match the DSP reference values.** For every entry in `test-vectors/numeric/dsp-values.json` — which contains pre-computed PCG32 noise streams, oscillator Fourier coefficients, biquad filter coefficients at 48 kHz, reverb baseline delay-line lengths, balance stereo gains, frame-boundary schedules at 44.1 kHz, and other non-audio (non-PCM) reference numbers — recompute the same value using your engine's own primitives in canonical mode (binary64, 48 kHz) and assert exact equality against the JSON data. Do the same for every render-case schedule in `test-vectors/behavior/render-cases.json`.
+
+4. **Test oscillator spectral purity.** For each oscillator waveform (sine, square, saw, triangle), measure its spectrum at every canonical measurement frequency (`375`, `1000`, `3000`, `8000`, and `16000` Hz) using a 48000-sample rectangular window starting at oscillator frame zero. Verify the amplitude and phase match the DFT reference values in `test-vectors/numeric/dsp-values.json`.
+
+5. **Test every control surface and filter extreme.** Run your engine against every curve type (linear, exponential, easeIn, easeOut, easeInOut), every filter type (lowpass, highpass, bandpass), balance extremes (hard-left, center, hard-right), reverb amount values (`0`, partial wet, `1`), short reverb tails (`1`, `10`, `20` ms), seeded-noise boundary cases (seed `0` and `4294967295`), simultaneous-boundary layer overlaps, and hard root-truncation. Use the corresponding valid fixtures in `test-vectors/valid/` as test cases.
+
+6. **Assert finite output and exact output-frame counts.** Compute the document's expected total frame count from `frame(duration_ms + reverb.tail_ms)` using the engine's own frame formula, then verify the rendered output has exactly that many frames and no non-finite (NaN, infinity) samples.
+
+7. **Render every official example.** Load each of the 14 `.json` files in `examples/` (`button-click.json`, `toggle-on.json`, `toggle-off.json`, `success.json`, `error.json`, `notification.json`, `transition.json`, `sparkle.json`, `droplet.json`, `bloom.json`, `loading.json`, `ready.json`, `whisper.json`, `page.json`) in canonical mode. Complete the listening and platform checks in `RELEASE_CHECKLIST.md`.
+
+8. **Profile the production render path.** Run the engine with its maximum supported voices, filters, and reverb tail. Verify that steady rendering performs no memory allocation and has no cost spike when a contour boundary is crossed.
 
 Repository fixture success proves document handling and individual calculations. It does not replace DSP measurements or listening review.
 

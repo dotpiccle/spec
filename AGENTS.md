@@ -209,6 +209,8 @@ Subdirectories may contain their own `AGENTS.md` files with more specific instru
 
 Apply the root instructions first, then the nearest relevant subdirectory instructions next. Treat more specific instructions as overriding broader ones only within their directory scope. Do not copy large sections of this file into nested instruction files.
 
+Subdirectory AGENTS.md files must not re-explain what the project is or what this repository contains. They should be closed in the context they own: a subdirectory AGENTS.md only instructs on how to work within that subdirectory. The root AGENTS.md is the single canonical source for project description, authority hierarchy, repository layout, and design principles.
+
 Add subdirectory AGENTS.md files only when those directories develop specialized workflows that cannot be expressed clearly here.
 
 ## 7. Final principle
