@@ -19,6 +19,23 @@ A Piccle document MUST be UTF-8 encoded JSON as defined by [RFC 8259](https://ww
 
 The optional root `$schema` member, when present, MUST equal `https://spec.dotpiccle.com/schema/v1.json`.
 
+## Normative language
+
+Use the following terms consistently in normative documentation:
+
+- **MUST**: an absolute requirement.
+- **MUST NOT**: an absolute prohibition.
+- **SHOULD**: recommended unless a valid reason exists to do otherwise.
+- **SHOULD NOT**: discouraged unless a valid reason exists.
+- **MAY**: optional behavior.
+- **Undefined behavior**: behavior on which the specification intentionally places no requirements.
+- **Invalid document**: a document that violates a normative format requirement.
+- **Unsupported document**: a valid document using a recognized feature that an implementation does not support.
+
+Use uppercase normative terms only when expressing actual conformance requirements.
+
+Avoid using "should" casually in normative sections. Use ordinary alternatives such as "is intended to" or "typically" for non-normative guidance.
+
 ## Unit conventions
 
 ### Time: milliseconds (`*_ms`)
