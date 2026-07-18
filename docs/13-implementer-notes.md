@@ -14,9 +14,9 @@ This appendix is non-normative. It offers implementation guidance after an engin
 
 For a task-ordered implementation checklist, see [Engine Build Guide](15-engine-build-guide.md).
 
-## Baseline reverb implementation
+## Reference reverb runtime
 
-An agent or first engine implementation should use the diffused eight-line feedback-delay network (FDN) below, not direct convolution. The input diffusers target the immediate, dense, noise-like onset of the earlier generated-convolution baseline; the FDN targets a similar smooth late decay with constant work per rendered frame. This recipe is non-normative: engines may replace it without changing Piccle documents.
+The recommended default reverb runtime is the diffused eight-line feedback-delay network (FDN) below. It produces bit-identical wet output at canonical mode across conforming engines and requires ~94 operations per output sample with ~13 KiB of state independent of `tail_ms` — the cheapest audibly-same path on memory- and CPU-constrained profiles. This recipe is non-normative: engines may replace it with another LTI realization (e.g. convolution against the canonical reference IR in [test-vectors/numeric/reverb-reference-irs/](../test-vectors/numeric/reverb-reference-irs/)) as long as the output meets the strict perceptual-equivalence tolerances in [Reverb](07-reverb.md).
 
 For one `tail_ms` and sample-rate configuration, define the conformance-response length `R` exactly as the reverb harness does:
 
@@ -128,9 +128,9 @@ Measure the final softened, windowed response in every declared render profile. 
 
 ### Perceptual qualification
 
-Passing RT60 and normalization measurements is necessary but does not prove that a lightweight reverb resembles the intended dense response. Before adopting this or another baseline, A/B it against the pre-optimization generated-convolution response at `tail_ms` values `20`, `220`, and `500`, with `soften_hz: 4000`.
+The strict perceptual-equivalence tolerances in [Reverb](07-reverb.md) provide a machine-checkable conformance bar against the published canonical reference IR render. Before adopting this or another baseline, pass those tolerances for every declared render profile.
 
-Listen for:
+Further listening review should confirm:
 
 - immediate wet onset rather than audible predelay;
 - dense, noise-like reflections without discrete echoes;

@@ -6,6 +6,10 @@ All notable changes to the Piccle specification are documented here. Piccle v1 h
 
 ### Added
 
+- Canonical reference IR render fixtures for the reverb perceptual-equivalence gate (five binary64 stereo PCM files at 48 kHz with 4 kHz soften, 1, 10, 20, 220, and 500 ms tails, SHA-256 manifest) at `test-vectors/numeric/reverb-reference-irs/`.
+- Strict normative perceptual-equivalence tolerances for reverb across non-canonical render profiles: RT60 crossing window, total wet energy ±0.5 dB, echo density ±10% of reference, modal resonance floor ≤ −40 dB, L/R correlation ±0.15, spectral centroid ±10%, onset within ±1 sample.
+- Bit-identical wet reverb output at canonical (binary64, 48 kHz) mode across conforming engines — matching the PCG32 noise determinism pact — because the FDN hot path contains no transcendentals.
+- Author-facing note in `docs/07-reverb.md` clarifying that the equivalence tolerances constrain engine conformance, not author intent.
 - Canonical 48 kHz stereo render profile with binary64 control calculations, binary32 output samples, half-open timelines, and exact millisecond-to-frame conversion.
 - Deterministic PCG32 noise generation and optional unsigned 32-bit `source.seed`, defaulting to `0`.
 - Normative oscillator phase, waveform, anti-aliasing, signal-flow, equal-power balance, filter-coefficient, fade, clipping, and reverb-normalization rules.
@@ -30,6 +34,9 @@ All notable changes to the Piccle specification are documented here. Piccle v1 h
 
 ### Changed
 
+- **Reverb determinism-class row promoted** from "Published lowpass, terminal window, measured response, normalization, and lifetime" to "Bit-identical wet response at canonical mode; published reference IR generator, lowpass, terminal window, measured response, normalization, lifetime, and strict perceptual-equivalence tolerances at additional render profiles."
+- **FDN recipe elevated from "first-implementation suggestion" to "recommended default runtime topology"** in `docs/13-implementer-notes.md`; convolution against the published reference IR is permitted but not the recommended default.
+- **Soft "comparable" wording in RELEASE_CHECKLIST.md replaced** with the strict perceptual-equivalence tolerances against the published reference IR render. A/B listening remains a release gate but is no longer the sole cross-engine equivalence gate.
 - **AGENTS.md refactored to agent-orientation-only file.** Removed duplicated process, normative, and schema-authoring content that had other canonical homes. Moved contribution/process sections to `CONTRIBUTING.md` (change categories, compatibility checklist, synchronized updates matrix, changelog rules, definition of done). Created `schemas/AGENTS.md`, `examples/AGENTS.md`, `test-vectors/AGENTS.md`, and `docs/AGENTS.md` as dedicated sub-instruction files. Added normative-language glossary to `docs/02-conventions.md`. No format, validation, schema, or playback behavior changed.
 - **Narrative:** Reframed the repository as the specification for the Piccle product (which ships an open-source reference engine), rather than as an open standard primarily for third-party engine implementers. Building an independent engine remains a fully supported path via the Engine Build Guide and conformance gates. No format, validation, schema, or playback behavior changed.
 - **Root `volume` renamed to `master_volume_level` (breaking, pre-rc.1).** The root `volume` field is a single 0–1 master gain and never accepted a contour object, unlike the layer `volume` field which accepts a number shorthand or a `{ fade_in, fade_out, levels }` object. The shared name invited authors and generators to assume root `volume` could take a contour. Renamed to `master_volume_level` to make the contract self-evident — `master` signals whole-document post-mix gain, `level` signals a single amplitude value (consistent with the per-entry `level` field in the layer contour). Mechanical migration: `"volume": X` → `"master_volume_level": X`. Layer `volume` is unchanged.

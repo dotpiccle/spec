@@ -46,8 +46,8 @@ Use this checklist for `v1.0.0-rc.1` and repeat it before promoting v1 to stable
 - [ ] Listen on full-range speakers and at least one small-device speaker.
 - [ ] Listen through the lowest-bandwidth supported output path.
 - [ ] Check recognizability, onset clicks, ending clicks, clipping, loudness consistency, oscillator aliasing, filter instability, and reverb cutoff.
-- [ ] A/B the lightweight reverb against the pre-optimization generated-convolution response at 20, 220, and 500 ms tails with 4 kHz softening.
-- [ ] Confirm comparable wet onset, echo density, early-to-late energy, stereo decorrelation, brightness, and decay without metallic ringing or discrete echoes; RT60 agreement alone is insufficient.
+- [ ] Pass the reverb perceptual-equivalence tolerances in [Reverb](docs/07-reverb.md) at every declared render profile against the canonical reference IR in [test-vectors/numeric/reverb-reference-irs/](test-vectors/numeric/reverb-reference-irs/) for tails 1, 10, 20, 220, and 500 ms.
+- [ ] A/B confirm wet onset, echo density, early-to-late energy, stereo decorrelation, brightness, and decay without metallic ringing or discrete echoes; RT60 and tolerance agreement alone is insufficient without listening review.
 - [ ] Profile the examples and the engine's published maximum supported document on the lowest supported device; document render throughput, peak CPU, state memory, and simultaneous voices.
 - [ ] Confirm the production render path performs no JSON work, schema traversal, sorting, table construction, impulse measurement, or memory allocation.
 - [ ] Confirm output can be streamed in bounded blocks without retaining whole-document PCM.

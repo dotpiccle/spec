@@ -68,12 +68,18 @@ Do not fragment schemas into tiny files that make the format harder to understan
 
 ### Schema descriptions
 
-Descriptions should explain the field's meaning, not merely restate its type.
+Descriptions must speak to the person creating audio. That person must not need to know anything about the engine or how it works. The description should tell them what the field does and how to use it.
 
-Bad:
+Engine implementation details (topology, determinism, arithmetic, tolerances, normalization, windowing) belong in `docs/` — never in the schema description.
 
-> A number representing duration.
+Bad (engine-focused):
 
-Better:
+> The wet-path first-order lowpass corner frequency. An engine clamps it to render_frequency_max before coefficient calculation.
 
-> The event duration in milliseconds. It MUST be greater than zero and MUST not extend beyond the document timeline unless the event explicitly permits truncation.
+Bad (merely restates type):
+
+> A number representing frequency.
+
+Better (author-focused):
+
+> How much to soften the reverb tail. Higher values (up to 12000 Hz) make the space sound warmer; lower values (down to 200 Hz) make it brighter and clearer.

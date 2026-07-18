@@ -91,9 +91,13 @@ Platform sample-rate conversion, hardware channel routing, mono adaptation, and 
 
 ### 8. Reverb
 
-Use the diffused eight-line FDN baseline in [Implementer Notes](13-implementer-notes.md) for a first implementation. It targets the dense onset and smooth decay of the convolution baseline while performing constant work per output frame with bounded circular-delay storage. A different topology is acceptable only after its final softened, windowed, and normalized wet response passes every measurement in [Reverb](07-reverb.md) and receives the same perceptual qualification.
+**Recommended path — diffused eight-line FDN runtime** (the algorithm in [Implementer Notes](13-implementer-notes.md) §Reference reverb runtime). At ~94 ops per output sample and ~13 KiB of state at 500 ms tail, this is the cheapest conformant path on memory- and CPU-constrained profiles. It is constant-work per frame independent of `tail_ms`. At canonical mode it produces bit-identical wet output across conforming engines.
 
-Test `amount` values `0`, partial wet, and `1`, plus `tail_ms` values `1`, `10`, `20`, `220`, and `500`. Verify the final emitted wet frame is exactly zero. A/B the baseline at `20`, `220`, and `500` ms as described in Implementer Notes; matching RT60 alone is insufficient.
+**Permitted alternative — convolution against the reference IR.** Engines with offline render pipelines or existing FFT infrastructure may convolve the dry stereo mix against the canonical reference IR published in [test-vectors/numeric/reverb-reference-irs/](../test-vectors/numeric/reverb-reference-irs/). The convolution kernel is implementation-defined. Memory at 500 ms is ~2.6 MiB binary64 or ~1.4 MiB binary32 — confirm against the engine's published render limits.
+
+Either path MUST pass the strict perceptual-equivalence tolerances defined in [Reverb](07-reverb.md) at every declared render profile. A metallic or ringing wet response will fail the echo-density and modal-resonance-floor tolerances regardless of topology.
+
+Test `amount` values `0`, partial wet, and `1`, plus `tail_ms` values `1`, `10`, `20`, `220`, and `500`. Verify the final emitted wet frame is exactly zero. For each canonical tail, render the conformance impulse and assert each tolerance against the published fixture. Matching RT60 alone is insufficient.
 
 ### 9. Production render path
 
@@ -138,11 +142,20 @@ These steps verify the engine against this specification. Before calling the imp
 
 5. **Test every control surface and filter extreme.** Run your engine against every curve type (linear, exponential, easeIn, easeOut, easeInOut), every filter type (lowpass, highpass, bandpass), balance extremes (hard-left, center, hard-right), reverb amount values (`0`, partial wet, `1`), short reverb tails (`1`, `10`, `20` ms), seeded-noise boundary cases (seed `0` and `4294967295`), simultaneous-boundary layer overlaps, and hard root-truncation. Use the corresponding valid fixtures in `test-vectors/valid/` as test cases.
 
-6. **Assert finite output and exact output-frame counts.** Compute the document's expected total frame count from `frame(duration_ms + reverb.tail_ms)` using the engine's own frame formula, then verify the rendered output has exactly that many frames and no non-finite (NaN, infinity) samples.
+6. **Verify reverb cross-engine equivalence.** For each published canonical reference IR fixture in `test-vectors/numeric/reverb-reference-irs/manifest.json` (tails 1, 10, 20, 220, and 500 ms), feed the conformance impulse (one frame at `L=R=sqrt(0.5)` followed by zeroes) through your engine's reverb in canonical mode and:
 
-7. **Render every official example.** Load each of the 14 `.json` files in `examples/` (`button-click.json`, `toggle-on.json`, `toggle-off.json`, `success.json`, `error.json`, `notification.json`, `transition.json`, `sparkle.json`, `droplet.json`, `bloom.json`, `loading.json`, `ready.json`, `whisper.json`, `page.json`) in canonical mode. Complete the listening and platform checks in `RELEASE_CHECKLIST.md`.
+    - **If your engine uses the recommended FDN runtime:** assert the wet output PCM (captured as N+1 stereo frames of binary64 output) is **bit-identical** to the fixture's `.bin` file. This is the strongest test: two engines implementing the same generator at canonical mode produce the same bytes.
+    - **If your engine uses a different topology (e.g. convolution against the IR, another FDN realization):** compute the seven perceptual-equivalence metrics from `docs/07-reverb.md` §Reference IR and cross-engine equivalence on your wet output and assert each stays within its tolerance against the reference fixture.
 
-8. **Profile the production render path.** Run the engine with its maximum supported voices, filters, and reverb tail. Verify that steady rendering performs no memory allocation and has no cost spike when a contour boundary is crossed.
+    Then, for each additional declared render profile (other sample rates, binary32 production mode, etc.), render the same conformance impulse through your engine's reverb and assert only the seven perceptual-equivalence tolerances. Bit-exactness is not required outside canonical mode.
+
+    This single test replaces the earlier loose "comparable" gate. The full A/B listening review in RELEASE_CHECKLIST.md remains a separate release gate; the metric-based bar catches the common failure modes (metallic ringing, discrete echoes, wrong loudness, wrong stereo decorrelation) algorithmically.
+
+7. **Assert finite output and exact output-frame counts.** Compute the document's expected total frame count from `frame(duration_ms + reverb.tail_ms)` using the engine's own frame formula, then verify the rendered output has exactly that many frames and no non-finite (NaN, infinity) samples.
+
+8. **Render every official example.** Load each of the 14 `.json` files in `examples/` (`button-click.json`, `toggle-on.json`, `toggle-off.json`, `success.json`, `error.json`, `notification.json`, `transition.json`, `sparkle.json`, `droplet.json`, `bloom.json`, `loading.json`, `ready.json`, `whisper.json`, `page.json`) in canonical mode. Complete the listening and platform checks in `RELEASE_CHECKLIST.md`.
+
+9. **Profile the production render path.** Run the engine with its maximum supported voices, filters, and reverb tail. Verify that steady rendering performs no memory allocation and has no cost spike when a contour boundary is crossed.
 
 Repository fixture success proves document handling and individual calculations. It does not replace DSP measurements or listening review.
 

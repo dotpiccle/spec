@@ -52,7 +52,7 @@ A conforming v1 engine:
 - provides the canonical 48 kHz stereo binary64 test mode;
 - renders every document in `examples/` in canonical mode rather than reporting it unsupported;
 - implements every v1 source, contour, filter, balance, reverb, output, and safety rule; and
-- meets each canonical determinism or tolerance requirement.
+- meets each canonical determinism or tolerance requirement, including the reverb perceptual-equivalence tolerances in [Reverb](07-reverb.md) measured against the canonical reference IR fixtures in [test-vectors/numeric/reverb-reference-irs/](../test-vectors/numeric/reverb-reference-irs/);
 
 The machine-readable expected stage, stable code, and JSON path for each invalid fixture are declared in `test-vectors/invalid-expectations.json`.
 

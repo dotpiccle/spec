@@ -1,0 +1,81 @@
+{
+  "status": "non-normative",
+  "description": "Canonical reference IR render fixtures for the reverb perceptual-equivalence gate. Generated from the docs/13 FDN generator algorithm at binary64 48 kHz canonical mode. These files record the full wet pipeline: FDN core \u2192 wet lowpass \u2192 terminal window \u2192 normalization.",
+  "fixtures": [
+    {
+      "filename": "tail_001_ms_soften_4000_hz_at_48000.bin",
+      "sample_count": 49,
+      "channels": 2,
+      "sample_rate": 48000,
+      "soften_hz": 4000.0,
+      "tail_ms": 1,
+      "dtype": "binary64le",
+      "sha256": "8949af1303031976c668f51a389c6c2d8ad9c21128e61a6bf9f1c2ebbaf8faf0",
+      "generator": "docs/13-implementer-notes.md \u00a7Reference reverb runtime",
+      "conformance_impulse": {
+        "left": "sqrt(0.5)",
+        "right": "sqrt(0.5)"
+      }
+    },
+    {
+      "filename": "tail_010_ms_soften_4000_hz_at_48000.bin",
+      "sample_count": 481,
+      "channels": 2,
+      "sample_rate": 48000,
+      "soften_hz": 4000.0,
+      "tail_ms": 10,
+      "dtype": "binary64le",
+      "sha256": "b27b21a60e71dab607ff03e917b542adbaa846a8cf32f38acc9f0d58059f8993",
+      "generator": "docs/13-implementer-notes.md \u00a7Reference reverb runtime",
+      "conformance_impulse": {
+        "left": "sqrt(0.5)",
+        "right": "sqrt(0.5)"
+      }
+    },
+    {
+      "filename": "tail_020_ms_soften_4000_hz_at_48000.bin",
+      "sample_count": 961,
+      "channels": 2,
+      "sample_rate": 48000,
+      "soften_hz": 4000.0,
+      "tail_ms": 20,
+      "dtype": "binary64le",
+      "sha256": "1d6ddeac98c4e25b2a8013399f4d89773970d91be50720958c48e35c3f071d02",
+      "generator": "docs/13-implementer-notes.md \u00a7Reference reverb runtime",
+      "conformance_impulse": {
+        "left": "sqrt(0.5)",
+        "right": "sqrt(0.5)"
+      }
+    },
+    {
+      "filename": "tail_220_ms_soften_4000_hz_at_48000.bin",
+      "sample_count": 10561,
+      "channels": 2,
+      "sample_rate": 48000,
+      "soften_hz": 4000.0,
+      "tail_ms": 220,
+      "dtype": "binary64le",
+      "sha256": "aac0bf724f0b12f7d4e4d272b6dc0b6581cfa5083d27c66660fbc6cb3a840865",
+      "generator": "docs/13-implementer-notes.md \u00a7Reference reverb runtime",
+      "conformance_impulse": {
+        "left": "sqrt(0.5)",
+        "right": "sqrt(0.5)"
+      }
+    },
+    {
+      "filename": "tail_500_ms_soften_4000_hz_at_48000.bin",
+      "sample_count": 24001,
+      "channels": 2,
+      "sample_rate": 48000,
+      "soften_hz": 4000.0,
+      "tail_ms": 500,
+      "dtype": "binary64le",
+      "sha256": "1ebaf38c62a760f94d4226e809194fca0a373175a78f38c22acbf6c074bac374",
+      "generator": "docs/13-implementer-notes.md \u00a7Reference reverb runtime",
+      "conformance_impulse": {
+        "left": "sqrt(0.5)",
+        "right": "sqrt(0.5)"
+      }
+    }
+  ]
+}

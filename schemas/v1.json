@@ -239,7 +239,7 @@
       "additionalProperties": false
     },
     "reverb": {
-      "description": "Optional whole-document reverb. All three fields are required; topology is implementation-defined, while wet softening, normalization, RT60 measurement, and terminal windowing are normative.",
+      "description": "Optional whole-document reverb that adds a brief sense of space. All three fields are required. The wet response softens high frequencies according to soften_hz, decays to silence within tail_ms, and is automatically normalized.",
       "type": "object",
       "properties": {
         "amount": {

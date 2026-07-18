@@ -115,8 +115,28 @@ output = (1 - amount) × dry + amount × wet
 
 `amount: 0` is fully dry and `amount: 1` is fully wet. Reverb presence still defines the complete output timeline even when the amount is zero.
 
+## Reference IR and cross-engine equivalence
+
+Piccle publishes canonical reference IR render fixtures for the reverb perceptual-equivalence gate at [test-vectors/numeric/reverb-reference-irs/](../test-vectors/numeric/reverb-reference-irs/). These fixtures are generated from the deterministic FDN algorithm in [Implementer Notes](13-implementer-notes.md) §Reference reverb runtime, running at canonical mode (binary64, 48 kHz) and following the conformance-harness procedure in this chapter. They record the full wet pipeline — reverb core, wet lowpass, terminal window, and normalization — as binary64 stereo PCM.
+
+At canonical mode, a conforming engine implementing the diffused eight-line FDN generator at the published arithmetic ordering produces bit-identical wet output to every other conforming engine — the same guarantee Piccle gives for seeded noise via PCG32. This is the strongest cross-engine reverb equivalence Piccle can provide: two engines fed the same dry input produce the same wet samples, not merely comparable ones.
+
+At additional render profiles (other sample rates, numeric modes, or runtime topologies), the wet output MUST meet these strict perceptual-equivalence tolerances against the published reference IR render, measured using the conformance harness (one frame of `L=R=sqrt(0.5)` followed by zeroes, through the engine's full wet pipeline):
+
+| Metric | Tolerance | Captures |
+|---|---|---|
+| RT60 crossing frame `c` (`EDC_dB[c] <= -60 dB`) | `1 + floor(0.9 × N) <= c <= N` (existing, preserved) | Bulk decay timing |
+| Total wet energy `Σ(L² + R²)` after normalization | Within `±0.5 dB` of the reference fixture's value | Overall loudness |
+| Echo density — fraction of zero-crossing intervals below `sample_rate / 1000` in the first `min(N, 0.05 × sample_rate)` frames | Within `±10%` of the reference fixture's density | No metallic ringing or discrete echoes |
+| Modal resonance floor — strongest sustained sinusoidal mode in any contiguous `0.1 × tail_ms` window, relative to the wet peak | `≤ −40 dB` | Single ringing frequency mode |
+| L/R correlation across the tail (Pearson) | Within `±0.15` of the reference fixture's measured correlation | Stereo decorrelation |
+| Spectral centroid of the post-softened wet response | Within `±10%` of the reference fixture's centroid | Brightness and damping beyond the normative lowpass corner |
+| Onset frame — index of first wet sample exceeding `0.1 × peak_wet_sample` | Within `±1 sample` at canonical mode; within `±1 frame` at the active sample rate for additional profiles | No spurious predelay or different early-reflection patterns |
+
+**Note.** These tolerances constrain engine conformance, not author intent. They require that a conforming engine's wet response matches the reference IR render for the *same* reverb configuration the author declared. They do not restrict what reverb configurations an author may select — an engine must reproduce whatever character the author's chosen `amount`, `tail_ms`, and `soften_hz` produce in the reference render, including the metallic or resonant character of a very short tail at high `soften_hz`.
+
 ## Implementation freedom
 
-Schroeder, feedback-delay-network, generated-convolution, and other linear time-invariant implementations are permitted when they meet the response, normalization, and lifetime requirements above. Exact cross-engine reverb samples are not required.
+Schroeder, feedback-delay-network, generated-convolution, and other linear time-invariant implementations are permitted when they meet the response, normalization, equivalence tolerances, and lifetime requirements above.
 
-The suggested implementation in [Implementer Notes](13-implementer-notes.md) is non-normative.
+The implementation in [Implementer Notes](13-implementer-notes.md) §Reference reverb runtime is the recommended default.

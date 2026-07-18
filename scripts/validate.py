@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import re
@@ -29,6 +30,7 @@ SCHEMA_PATH = ROOT / "schemas" / "v1.json"
 EXPECTATIONS_PATH = ROOT / "test-vectors" / "invalid-expectations.json"
 NUMERIC_PATH = ROOT / "test-vectors" / "numeric" / "dsp-values.json"
 BEHAVIOR_PATH = ROOT / "test-vectors" / "behavior" / "render-cases.json"
+REVERB_REF_IR_DIR = ROOT / "test-vectors" / "numeric" / "reverb-reference-irs"
 CANONICAL_SCHEMA_URI = "https://spec.dotpiccle.com/schema/v1.json"
 MAX_SAFE_INTEGER = 9007199254740991
 
@@ -542,6 +544,30 @@ def behavior_aid_errors() -> list[str]:
     return failures
 
 
+def reverb_reference_ir_errors() -> list[str]:
+    failures: list[str] = []
+    manifest_path = REVERB_REF_IR_DIR / "manifest.json"
+    if not manifest_path.exists():
+        failures.append(f"reverb reference IR manifest not found: {manifest_path}")
+        return failures
+    manifest = load_json(manifest_path)
+    if manifest.get("status") != "non-normative":
+        failures.append("reverb reference IR manifest: status must be non-normative")
+    for entry in manifest.get("fixtures", []):
+        path = REVERB_REF_IR_DIR / entry["filename"]
+        if not path.exists():
+            failures.append(f"reverb reference IR fixture missing: {path}")
+            continue
+        data = path.read_bytes()
+        actual_sha = hashlib.sha256(data).hexdigest()
+        if actual_sha != entry["sha256"]:
+            failures.append(f"reverb reference IR fixture {entry['filename']}: SHA-256 mismatch (expected {entry['sha256']}, got {actual_sha})")
+        expected_size = entry["sample_count"] * entry["channels"] * 8
+        if len(data) != expected_size:
+            failures.append(f"reverb reference IR fixture {entry['filename']}: size {len(data)} != expected {expected_size}")
+    return failures
+
+
 def main() -> int:
     failures: list[str] = []
     schema = load_json(SCHEMA_PATH)
@@ -572,6 +598,7 @@ def main() -> int:
     failures.extend(fixture_inventory_errors(ROOT / "test-vectors" / "invalid"))
     failures.extend(link_errors())
     failures.extend(numeric_aid_errors())
+    failures.extend(reverb_reference_ir_errors())
     failures.extend(behavior_aid_errors())
     formatter = subprocess.run([sys.executable, str(ROOT / "scripts" / "format_json.py")], cwd=ROOT, text=True, capture_output=True)
     if formatter.returncode:
