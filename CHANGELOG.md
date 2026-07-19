@@ -75,6 +75,7 @@ All notable changes to the Piccle specification are documented here. Piccle v1 h
 
 ### Fixed
 
+- Fixed the relative-tolerance checker in `scripts/reverb_metrics.py::check_metric` computing the lower bound as `ref / 1.1 ≈ 0.909 × ref` instead of the normative `0.9 × ref` for `echo_density` and `spectral_centroid_hz`. The script was ~1% stricter than `docs/07-reverb.md` at the lower bound, rejecting valid engine values between `0.9 × ref` and `ref / 1.1`. The `TOLERANCE_SPEC` now uses explicit `lower_factor: 0.9` and `upper_factor: 1.1` matching the normative text. Added `scripts/test_reverb_metrics_tolerances.py` with boundary tests at exactly `0.9 × ref`, `1.1 × ref`, and just outside both bounds.
 - Fixed broken cross-document links and malformed README navigation.
 - Corrected the documented layer `volume` type from “number or array” to “number or object.”
 - Synchronized schema defaults, closed-object behavior, metadata constraints, noise semantics, examples, and validation fixtures.

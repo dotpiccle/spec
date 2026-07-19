@@ -336,10 +336,10 @@ MODAL_FLOOR_ABSOLUTE_GATE = -30.0  # worst non-degenerate ref (-32.8) + 2.8 dB h
 TOLERANCE_SPEC: dict[str, dict] = {
     "rt60_crossing_frame": {"type": "exact"},
     "total_wet_energy": {"type": "db", "max_abs": 0.5},
-    "echo_density": {"type": "relative", "factor": 1.1},
+    "echo_density": {"type": "relative", "lower_factor": 0.9, "upper_factor": 1.1},
     "modal_resonance_floor_db": {"type": "hybrid_db", "max_excess": 6.0, "absolute_gate": MODAL_FLOOR_ABSOLUTE_GATE},
     "lr_correlation": {"type": "absolute", "max_abs": 0.15},
-    "spectral_centroid_hz": {"type": "relative", "factor": 1.1},
+    "spectral_centroid_hz": {"type": "relative", "lower_factor": 0.9, "upper_factor": 1.1},
     "onset_frame": {"type": "absolute", "max_abs": 1},
 }
 
@@ -373,12 +373,13 @@ def check_metric(key: str, engine: float | None, ref: float | None) -> tuple[boo
         return ok, f"{key}: engine={engine}, ref={ref}, |diff|={abs(engine - ref):.4g}, max={max_abs} — {'pass' if ok else 'FAIL'}"
 
     if tol_type == "relative":
-        factor = spec.get("factor", 1.0)
+        lower_factor = spec.get("lower_factor", 0.9)
+        upper_factor = spec.get("upper_factor", 1.1)
         if ref == 0.0:
             ok = engine == 0.0
             return ok, f"{key}: engine={engine}, ref=0 — {'pass' if ok else 'FAIL (must be 0)'}"
-        lower = ref / factor
-        upper = ref * factor
+        lower = ref * lower_factor
+        upper = ref * upper_factor
         ok = lower <= engine <= upper
         return ok, f"{key}: engine={engine}, ref={ref}, [{lower:.6g}, {upper:.6g}] — {'pass' if ok else 'FAIL'}"
 
