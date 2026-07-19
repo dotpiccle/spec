@@ -35,6 +35,7 @@ NUMERIC_PATH = ROOT / "test-vectors" / "numeric" / "dsp-values.json"
 BEHAVIOR_PATH = ROOT / "test-vectors" / "behavior" / "render-cases.json"
 REVERB_REF_IR_DIR = ROOT / "test-vectors" / "numeric" / "reverb-reference-irs"
 NUMERIC_DIR = ROOT / "test-vectors" / "numeric"
+MATRIX_PATH = NUMERIC_DIR / "reverb-qualification-matrix.json"
 CANONICAL_SCHEMA_URI = "https://spec.dotpiccle.com/schema/v1.json"
 MAX_SAFE_INTEGER = 9007199254740991
 
@@ -674,6 +675,54 @@ def reverb_matrix_vector_errors() -> list[str]:
     return failures
 
 
+def reverb_qualification_matrix_errors() -> list[str]:
+    """Verify every entry in the qualification matrix generates finite output and metrics."""
+    failures: list[str] = []
+    if not MATRIX_PATH.exists():
+        failures.append(f"missing qualification matrix: {MATRIX_PATH}")
+        return failures
+    matrix = load_json(MATRIX_PATH)
+    entries = matrix.get("entries", [])
+    if not entries:
+        failures.append("qualification matrix: no entries found")
+        return failures
+    for entry in entries:
+        tail_ms = entry["tail_ms"]
+        soften_hz = entry["soften_hz"]
+        sample_rate = entry["sample_rate"]
+        from generate_reverb_reference_irs import FDN
+        try:
+            fdn = FDN(tail_ms, soften_hz, sample_rate)
+            L, R_chan = fdn.generate()
+            T = len(L)
+        except Exception as e:
+            failures.append(f"qualification matrix ({tail_ms}, {soften_hz}, {sample_rate}): generator exception: {e}")
+            continue
+        if any(not math.isfinite(v) for v in L + R_chan):
+            failures.append(f"qualification matrix ({tail_ms}, {soften_hz}, {sample_rate}): non-finite samples")
+            continue
+        if T <= 1:
+            failures.append(f"qualification matrix ({tail_ms}, {soften_hz}, {sample_rate}): output too short: {T}")
+            continue
+        metrics = reverb_metrics.compute_all(L, R_chan, {
+            "sample_count": T,
+            "tail_ms": tail_ms,
+            "sample_rate": sample_rate,
+        })
+        for key in ["rt60_crossing_frame", "total_wet_energy", "echo_density",
+                     "lr_correlation", "spectral_centroid_hz", "onset_frame"]:
+            val = metrics.get(key)
+            if val is not None and not math.isfinite(val):
+                failures.append(f"qualification matrix ({tail_ms}, {soften_hz}, {sample_rate}): metric {key} not finite: {val}")
+        mrf = metrics.get("modal_resonance_floor_db")
+        if mrf is not None and not math.isfinite(mrf):
+            failures.append(f"qualification matrix ({tail_ms}, {soften_hz}, {sample_rate}): modal_resonance_floor_db not finite: {mrf}")
+    # Verify property_test section exists
+    if "property_test" not in matrix:
+        failures.append("qualification matrix: missing property_test section")
+    return failures
+
+
 def main() -> int:
     failures: list[str] = []
     schema = load_json(SCHEMA_PATH)
@@ -707,6 +756,7 @@ def main() -> int:
     failures.extend(reverb_reference_ir_errors())
     failures.extend(reverb_reference_ir_metrics_errors())
     failures.extend(reverb_matrix_vector_errors())
+    failures.extend(reverb_qualification_matrix_errors())
     failures.extend(behavior_aid_errors())
     formatter = subprocess.run([sys.executable, str(ROOT / "scripts" / "format_json.py")], cwd=ROOT, text=True, capture_output=True)
     if formatter.returncode:

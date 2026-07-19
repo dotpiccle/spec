@@ -1,0 +1,90 @@
+{
+  "status": "non-normative",
+  "description": "Finite mandatory qualification matrix for reverb conformance. Each entry is a (tail_ms, soften_hz, sample_rate) triple that an engine MUST verify against the normative FDN generator. Non-normative as format definition (derivable from the spec); normatively referenced by docs/15-engine-build-guide.md step 6.",
+  "property_test": {
+    "recommendation": "SHOULD",
+    "minimum_count": 100,
+    "tail_ms_range": [
+      1,
+      2000
+    ],
+    "soften_hz_range": [
+      200,
+      12000
+    ],
+    "sample_rates": [
+      8000,
+      16000,
+      22050,
+      24000,
+      32000,
+      44100,
+      48000,
+      96000
+    ],
+    "seed": "engine-chosen",
+    "note": "Results are informative and do not affect conformance. The seed and count SHOULD be documented in the engine's release notes."
+  },
+  "entries": [
+    {
+      "tail_ms": 37,
+      "soften_hz": 8000,
+      "sample_rate": 44100,
+      "rationale": "non-canonical configuration (also covers matrix-construction vector)"
+    },
+    {
+      "tail_ms": 1,
+      "soften_hz": 200,
+      "sample_rate": 8000,
+      "rationale": "minimum tail, minimum soften, minimum rate"
+    },
+    {
+      "tail_ms": 1,
+      "soften_hz": 12000,
+      "sample_rate": 8000,
+      "rationale": "Nyquist clamp (12000 clamped to 3920 at 8 kHz)"
+    },
+    {
+      "tail_ms": 2,
+      "soften_hz": 4000,
+      "sample_rate": 44100,
+      "rationale": "minimum+1 tail, 44.1 kHz rounding boundary"
+    },
+    {
+      "tail_ms": 100,
+      "soften_hz": 200,
+      "sample_rate": 48000,
+      "rationale": "medium tail, minimum soften, canonical rate"
+    },
+    {
+      "tail_ms": 100,
+      "soften_hz": 12000,
+      "sample_rate": 48000,
+      "rationale": "medium tail, maximum soften, canonical rate"
+    },
+    {
+      "tail_ms": 500,
+      "soften_hz": 12000,
+      "sample_rate": 48000,
+      "rationale": "long tail, maximum soften"
+    },
+    {
+      "tail_ms": 2000,
+      "soften_hz": 4000,
+      "sample_rate": 48000,
+      "rationale": "long FFT sizing (T=96001 > 65536, tests N_fft scaling)"
+    },
+    {
+      "tail_ms": 37,
+      "soften_hz": 4000,
+      "sample_rate": 8000,
+      "rationale": "non-canonical tail at minimum rate"
+    },
+    {
+      "tail_ms": 37,
+      "soften_hz": 4000,
+      "sample_rate": 96000,
+      "rationale": "non-canonical tail at high rate"
+    }
+  ]
+}

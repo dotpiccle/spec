@@ -504,37 +504,64 @@ def check_integrity() -> list[str]:
     return errors
 
 
-def test_arbitrary_config() -> list[str]:
-    """Verify the generator and metrics work for a non-canonical configuration."""
+def test_qualification_matrix() -> list[str]:
+    """Verify the generator works for every entry in the qualification matrix."""
     errors: list[str] = []
-    tail_ms = 37
-    soften_hz = 8000.0
-    sample_rate = 44100
-    print(f"  Testing config: tail_ms={tail_ms}, soften_hz={soften_hz}, sample_rate={sample_rate}...")
-    fdn = FDN(tail_ms, soften_hz, sample_rate)
-    L, R_chan = fdn.generate()
-    T = len(L)
-    if any(not math.isfinite(v) for v in L + R_chan):
-        errors.append("output contains non-finite samples")
-    if T <= 1:
-        errors.append(f"output too short: {T}")
-    metrics = reverb_metrics.compute_all(L, R_chan, {
-        "sample_count": T,
-        "tail_ms": tail_ms,
-        "sample_rate": sample_rate,
-    })
-    for key in ["rt60_crossing_frame", "total_wet_energy", "echo_density",
-                 "lr_correlation", "spectral_centroid_hz", "onset_frame"]:
-        val = metrics.get(key)
-        if val is not None and not math.isfinite(val):
-            errors.append(f"metric {key} not finite: {val}")
-    mrf = metrics.get("modal_resonance_floor_db")
-    if mrf is not None and not math.isfinite(mrf):
-        errors.append(f"metric modal_resonance_floor_db not finite: {mrf}")
-    print(f"    T={T}, metrics: rt60={metrics.get('rt60_crossing_frame')}, "
-          f"energy={metrics.get('total_wet_energy'):.4f}, echo={metrics.get('echo_density')}, "
-          f"modal={metrics.get('modal_resonance_floor_db')}, "
-          f"centroid={metrics.get('spectral_centroid_hz'):.1f}")
+    matrix_path = ROOT / "test-vectors" / "numeric" / "reverb-qualification-matrix.json"
+    if not matrix_path.exists():
+        errors.append(f"missing qualification matrix: {matrix_path}")
+        return errors
+    matrix = json.loads(matrix_path.read_text())
+    entries = matrix.get("entries", [])
+    if not entries:
+        errors.append("qualification matrix: no entries found")
+        return errors
+    print(f"  Testing {len(entries)} qualification matrix entries...")
+    for entry in entries:
+        tail_ms = entry["tail_ms"]
+        soften_hz = entry["soften_hz"]
+        sample_rate = entry["sample_rate"]
+        rationale = entry.get("rationale", "")
+        print(f"    tail_ms={tail_ms:4d}, soften_hz={soften_hz:6.1f}, "
+              f"sample_rate={sample_rate:5d} ({rationale})...", end=" ")
+        try:
+            fdn = FDN(tail_ms, soften_hz, sample_rate)
+            L, R_chan = fdn.generate()
+            T = len(L)
+            if any(not math.isfinite(v) for v in L + R_chan):
+                errors.append(f"  {entry}: output contains non-finite samples")
+                print("FAIL (non-finite)")
+                continue
+            if T <= 1:
+                errors.append(f"  {entry}: output too short: {T}")
+                print("FAIL (short)")
+                continue
+            metrics = reverb_metrics.compute_all(L, R_chan, {
+                "sample_count": T,
+                "tail_ms": tail_ms,
+                "sample_rate": sample_rate,
+            })
+            for key in ["rt60_crossing_frame", "total_wet_energy", "echo_density",
+                         "lr_correlation", "spectral_centroid_hz", "onset_frame"]:
+                val = metrics.get(key)
+                if val is not None and not math.isfinite(val):
+                    errors.append(f"  {entry}: metric {key} not finite: {val}")
+                    print(f"FAIL ({key})")
+                    break
+            else:
+                mrf = metrics.get("modal_resonance_floor_db")
+                if mrf is not None and not math.isfinite(mrf):
+                    errors.append(f"  {entry}: modal_resonance_floor_db not finite: {mrf}")
+                    print("FAIL (modal)")
+                    continue
+                print(f"T={T}, rt60={metrics.get('rt60_crossing_frame')}, "
+                      f"energy={metrics.get('total_wet_energy'):.4f}, "
+                      f"echo={metrics.get('echo_density')}, "
+                      f"modal={metrics.get('modal_resonance_floor_db')}, "
+                      f"centroid={metrics.get('spectral_centroid_hz'):.1f}")
+        except Exception as e:
+            errors.append(f"  {entry}: exception: {e}")
+            print(f"FAIL ({e})")
     return errors
 
 
@@ -546,20 +573,20 @@ def main() -> int:
         help="verify existing fixtures without regenerating",
     )
     parser.add_argument(
-        "--test-config",
+        "--qualification-matrix",
         action="store_true",
-        help="test generation for a non-canonical configuration",
+        help="test the generator against every entry in the qualification matrix",
     )
     args = parser.parse_args()
 
-    if args.test_config:
-        print("Testing non-canonical reverb configuration...")
-        errors = test_arbitrary_config()
+    if args.qualification_matrix:
+        print("Testing qualification matrix...")
+        errors = test_qualification_matrix()
         if errors:
             for e in errors:
                 print(f"  ERROR: {e}")
             return 1
-        print("  Non-canonical config test passed.")
+        print("  Qualification matrix test passed.")
         return 0
 
     if args.check:
