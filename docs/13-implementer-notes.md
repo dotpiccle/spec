@@ -16,7 +16,7 @@ For a task-ordered implementation checklist, see [Engine Build Guide](15-engine-
 
 ## Reference reverb runtime
 
-The recommended default reverb runtime is the diffused eight-line feedback-delay network (FDN) below. It produces bit-identical wet output at canonical mode across conforming engines and requires ~94 operations per output sample with ~13 KiB of state independent of `tail_ms` — the cheapest audibly-same path on memory- and CPU-constrained profiles. This recipe is non-normative: engines may replace it with another LTI realization (e.g. convolution against the canonical reference IR in [test-vectors/numeric/reverb-reference-irs/](../test-vectors/numeric/reverb-reference-irs/)) as long as the output meets the strict perceptual-equivalence tolerances in [Reverb](07-reverb.md).
+The recommended default reverb runtime is the diffused eight-line feedback-delay network (FDN) below. It produces perceptually equivalent wet output at canonical mode across conforming engines and requires ~94 operations per output sample with ~13 KiB of state independent of `tail_ms` — the cheapest audibly-same path on memory- and CPU-constrained profiles. This recipe is non-normative: engines may replace it with another LTI realization (e.g. convolution against the canonical reference IR in [test-vectors/numeric/reverb-reference-irs/](../test-vectors/numeric/reverb-reference-irs/)) as long as the output meets the strict perceptual-equivalence tolerances in [Reverb](07-reverb.md).
 
 For one `tail_ms` and sample-rate configuration, define the conformance-response length `R` exactly as the reverb harness does:
 

@@ -3,7 +3,7 @@
 
 Implements the deterministic diffused eight-line FDN from
 docs/13-implementer-notes.md and the wet harness from docs/07-reverb.md.
-At binary64 48 kHz canonical mode the output is bit-identical across
+At binary64 48 kHz canonical mode the output is perceptually equivalent across
 conforming implementations.
 
 Usage:

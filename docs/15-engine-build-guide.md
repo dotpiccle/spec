@@ -91,7 +91,7 @@ Platform sample-rate conversion, hardware channel routing, mono adaptation, and 
 
 ### 8. Reverb
 
-**Recommended path — diffused eight-line FDN runtime** (the algorithm in [Implementer Notes](13-implementer-notes.md) §Reference reverb runtime). At ~94 ops per output sample and ~13 KiB of state at 500 ms tail, this is the cheapest conformant path on memory- and CPU-constrained profiles. It is constant-work per frame independent of `tail_ms`. At canonical mode it produces bit-identical wet output across conforming engines.
+**Recommended path — diffused eight-line FDN runtime** (the algorithm in [Implementer Notes](13-implementer-notes.md) §Reference reverb runtime). At ~94 ops per output sample and ~13 KiB of state at 500 ms tail, this is the cheapest conformant path on memory- and CPU-constrained profiles. It is constant-work per frame independent of `tail_ms`. At canonical mode it produces perceptually equivalent wet output across conforming engines.
 
 **Permitted alternative — convolution against the reference IR.** Engines with offline render pipelines or existing FFT infrastructure may convolve the dry stereo mix against the canonical reference IR published in [test-vectors/numeric/reverb-reference-irs/](../test-vectors/numeric/reverb-reference-irs/). The convolution kernel is implementation-defined. Memory at 500 ms is ~2.6 MiB binary64 or ~1.4 MiB binary32 — confirm against the engine's published render limits.
 
@@ -144,10 +144,10 @@ These steps verify the engine against this specification. Before calling the imp
 
 6. **Verify reverb cross-engine equivalence.** For each published canonical reference IR fixture in `test-vectors/numeric/reverb-reference-irs/manifest.json` (tails 1, 10, 20, 220, and 500 ms), feed the conformance impulse (one frame at `L=R=sqrt(0.5)` followed by zeroes) through your engine's reverb in canonical mode and:
 
-    - **If your engine uses the recommended FDN runtime:** assert the wet output PCM (captured as N+1 stereo frames of binary64 output) is **bit-identical** to the fixture's `.bin` file. This is the strongest test: two engines implementing the same generator at canonical mode produce the same bytes.
-    - **If your engine uses a different topology (e.g. convolution against the IR, another FDN realization):** compute the seven perceptual-equivalence metrics from `docs/07-reverb.md` §Reference IR and cross-engine equivalence on your wet output and assert each stays within its tolerance against the reference fixture.
+    - For every engine topology (FDN runtime, convolution against the IR, or another LTI realization), compute the seven perceptual-equivalence metrics from `docs/07-reverb.md` §Reference IR and cross-engine equivalence on your wet output and assert each stays within its tolerance against the reference fixture. Bit-identical output to the fixture is not required: the reverb configuration constants depend on platform transcendentals, which Piccle does not require to be correctly-rounded across processors.
+    - As a non-normative stronger check, engines whose platform `libm` matches the fixture's MAY also assert bit-identical output. This is a convenience test, not a conformance requirement.
 
-    Then, for each additional declared render profile (other sample rates, binary32 production mode, etc.), render the same conformance impulse through your engine's reverb and assert only the seven perceptual-equivalence tolerances. Bit-exactness is not required outside canonical mode.
+    Then, for each additional declared render profile (other sample rates, binary32 production mode, etc.), render the same conformance impulse through your engine's reverb and assert the same seven perceptual-equivalence tolerances.
 
     This single test replaces the earlier loose "comparable" gate. The full A/B listening review in RELEASE_CHECKLIST.md remains a separate release gate; the metric-based bar catches the common failure modes (metallic ringing, discrete echoes, wrong loudness, wrong stereo decorrelation) algorithmically.
 

@@ -8,7 +8,7 @@ All notable changes to the Piccle specification are documented here. Piccle v1 h
 
 - Canonical reference IR render fixtures for the reverb perceptual-equivalence gate (five binary64 stereo PCM files at 48 kHz with 4 kHz soften, 1, 10, 20, 220, and 500 ms tails, SHA-256 manifest) at `test-vectors/numeric/reverb-reference-irs/`.
 - Strict normative perceptual-equivalence tolerances for reverb across non-canonical render profiles: RT60 crossing window, total wet energy ±0.5 dB, echo density ±10% of reference, modal resonance floor ≤ −40 dB, L/R correlation ±0.15, spectral centroid ±10%, onset within ±1 sample.
-- Bit-identical wet reverb output at canonical (binary64, 48 kHz) mode across conforming engines — matching the PCG32 noise determinism pact — because the FDN hot path contains no transcendentals.
+- Perceptually equivalent wet reverb output at canonical (binary64, 48 kHz) mode across conforming engines, verified by seven strict numeric tolerances against the canonical reference IR fixtures. The FDN hot path contains no transcendentals, but configuration-preparation constants (feedback gains, wet lowpass) use `pow` and `exp`, which IEEE-754 does not require to be correctly-rounded across processors.
 - Author-facing note in `docs/07-reverb.md` clarifying that the equivalence tolerances constrain engine conformance, not author intent.
 - Canonical 48 kHz stereo render profile with binary64 control calculations, binary32 output samples, half-open timelines, and exact millisecond-to-frame conversion.
 - Deterministic PCG32 noise generation and optional unsigned 32-bit `source.seed`, defaulting to `0`.

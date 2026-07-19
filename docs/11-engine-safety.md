@@ -80,7 +80,7 @@ Conformance does not prescribe whether rendering happens during playback, before
 | Seeded PCG32 raw noise                                                         | Exact unsigned sequence and source values                                          |
 | Tone oscillators                                                               | Exact phase semantics and the harmonic tolerances in [Sources](03-sources.md)      |
 | Filters                                                                        | Published coefficients, zero state, and per-frame updates                          |
-| Reverb                                                                         | Bit-identical wet response at canonical mode; published reference IR generator, lowpass, terminal window, measured response, normalization, lifetime, and strict perceptual-equivalence tolerances at additional render profiles |
+| Reverb                                                                         | Perceptually equivalent wet response at canonical and additional render profiles, measured against the canonical reference IR fixtures using the tolerances in [Reverb](07-reverb.md); published reference IR generator, lowpass, terminal window, measured response, normalization, and lifetime |
 
 “Exact semantics” does not require bit-identical transcendentals across processors. Canonical implementations MUST use binary64 calculations.
 
