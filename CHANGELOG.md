@@ -78,6 +78,7 @@ All notable changes to the Piccle specification are documented here. Piccle v1 h
 - Synchronized schema defaults, closed-object behavior, metadata constraints, noise semantics, examples, and validation fixtures.
 - Defined previously ambiguous filter state, bandpass gain, coefficient update, panning, fade-overlap, truncation, and reverb wet-gain behavior.
 - Replaced ambiguous reverb damping and tail-cutoff behavior with an exact wet lowpass, Schroeder energy-decay rule, and zero-valued final wet frame.
+- Fixed stale `reverb_baseline_at_48000` FDN delay lengths in `test-vectors/numeric/dsp-values.json` for `tail_220_ms` and `tail_500_ms`. Commit `e8cc4fc` (issue #6) removed the FDN delay caps from `docs/13` and the reference IR generator but missed `dsp-values.json` and the validator's `baseline_lengths` helper, which still passed the old caps. The validator now passes `None` (uncapped) for the FDN, matching the generator and `reverb_metrics.py`.
 
 ### Release gates
 

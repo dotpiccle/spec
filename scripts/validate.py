@@ -442,12 +442,16 @@ def numeric_aid_errors() -> list[str]:
         "reverb_absolute_tail_frames_at_44100": {"document_duration_ms": 4, "tail_ms": 4, "dry_end_frame": 176, "output_end_frame": 353, "tail_frames": 177},
     }
 
-    def baseline_lengths(tail_ms: int, caps_ms: list[float], ratios: list[float]) -> list[int]:
+    def baseline_lengths(tail_ms: int, caps_ms: list[float] | None, ratios: list[float]) -> list[int]:
         response_frames = 48 * tail_ms
         lengths: list[int] = []
-        for cap_ms, ratio in zip(caps_ms, ratios):
-            cap_frames = math.floor(cap_ms * 48 + .5)
-            raw = max(1, min(cap_frames, math.floor(response_frames * ratio + .5)))
+        for i, ratio in enumerate(ratios):
+            proportional = math.floor(response_frames * ratio + .5)
+            if caps_ms is not None:
+                cap_frames = math.floor(caps_ms[i] * 48 + .5)
+                raw = max(1, min(cap_frames, proportional))
+            else:
+                raw = max(1, proportional)
             lengths.append(min(response_frames, max(raw, lengths[-1] + 1 if lengths else 1)))
         return lengths
 
@@ -458,7 +462,7 @@ def numeric_aid_errors() -> list[str]:
         baseline[f"tail_{tail_ms}_ms"] = {
             "allpass_left_frames": baseline_lengths(tail_ms, [.17, .31, .53, .89], allpass_ratios),
             "allpass_right_frames": baseline_lengths(tail_ms, [.23, .41, .67, 1.07], allpass_ratios),
-            "fdn_frames": baseline_lengths(tail_ms, [1.49, 1.87, 2.29, 2.83, 3.49, 4.33, 5.39, 6.71], fdn_ratios),
+            "fdn_frames": baseline_lengths(tail_ms, None, fdn_ratios),
             "direct_gain": min(1.5, max(.7, .7 * math.sqrt(220 / tail_ms))),
         }
     expected["reverb_baseline_at_48000"] = baseline
