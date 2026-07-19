@@ -484,6 +484,11 @@ def numeric_aid_errors() -> list[str]:
             if left != right:
                 failures.append(f"numeric aid {path}: values differ")
         elif isinstance(right, float) and isinstance(left, (int, float)):
+            # Float comparison uses isclose to accommodate last-bit differences in
+            # sin/cos-derived entries (lowpass coefficients). All other floats are
+            # deterministic (sqrt is correctly-rounded per IEEE-754; constants are exact)
+            # and pass isclose trivially. See docs/15-engine-build-guide.md step 3
+            # and docs/14-conformance.md §Role of repository fixtures.
             if not math.isclose(float(left), right, rel_tol=1e-14, abs_tol=1e-15):
                 failures.append(f"numeric aid {path}: {left!r} != {right!r}")
         elif left != right:
