@@ -128,7 +128,7 @@ At every render profile (canonical and additional), the wet output MUST meet the
 | RT60 crossing frame `c` (`EDC_dB[c] <= -60 dB`) | `1 + floor(0.9 × N) <= c <= N` (existing, preserved) | Bulk decay timing |
 | Total wet energy `Σ(L² + R²)` after normalization | Within `±0.5 dB` of the reference fixture's value | Overall loudness |
 | Echo density — fraction of zero-crossing intervals below `sample_rate / 1000` in the first `min(N, 0.05 × sample_rate)` frames | Within `±10%` of the reference fixture's density | No metallic ringing or discrete echoes |
-| Modal resonance floor — strongest sustained sinusoidal mode in any Schroeder-aware `max(0.15 × tail_ms, M)` window (excluding onset), relative to the wet peak | `engine ≤ ref + 6` AND `engine ≤ −25` dB (hybrid) | Single ringing frequency mode |
+| Modal resonance floor — strongest sustained sinusoidal mode in any Schroeder-aware `min(late_tail, max(0.15 × tail_ms, 2 × M))` window (excluding onset), relative to the wet peak | `engine ≤ ref + 6` AND `engine ≤ −30` dB (hybrid) | Single ringing frequency mode |
 | L/R correlation across the tail (Pearson) | Within `±0.15` of the reference fixture's measured correlation | Stereo decorrelation |
 | Spectral centroid of the post-softened wet response | Within `±10%` of the reference fixture's centroid | Brightness and damping beyond the normative lowpass corner |
 | Onset frame — index of first wet sample exceeding `0.1 × peak_wet_sample` | Within `±1 sample` at canonical mode; within `±1 frame` at the active sample rate for additional profiles | No spurious predelay or different early-reflection patterns |
@@ -193,15 +193,16 @@ Exclude the onset from analysis. The onset (direct path plus diffuser output) is
 onset_skip = max(frame(5), frame(0.05 × tail_ms))
 ```
 
-Define the analysis window length as the Schroeder-aware maximum of the Schroeder minimum modal-density criterion and the FDN's total delay `M = Σ d[i]`:
+Define the analysis window length as the Schroeder-aware Nyquist-resolution maximum of the Schroeder minimum modal-density criterion and twice the FDN's total delay `M = Σ d[i]`, bounded by the available late tail:
 
 ```text
 schroeder_min = floor(0.15 × tail_ms × sample_rate / 1000 + 0.5)
 M = Σ d[i]  (the FDN's total delay; see [Implementer Notes](13-implementer-notes.md) §Reference reverb runtime)
-W_m = max(schroeder_min, M)
+late_tail = T − onset_skip
+W_m = min(late_tail, max(schroeder_min, 2 × M))
 ```
 
-The Schroeder minimum (`0.15 × T₆₀ × Fs`) is the minimum window length to resolve modes at the Schroeder modal-density criterion. The FDN's total delay `M` may exceed the Schroeder minimum (e.g., for short tails where the proportional delays and the `prev + 1` distinctness constraint produce M > 0.15 × T₆₀ × Fs); using `max` ensures the window can resolve modes at the FDN's actual modal density, not just the theoretical minimum.
+The Schroeder minimum (`0.15 × T₆₀ × Fs`) is the minimum window length to resolve modes at the Schroeder modal-density criterion. The `2 × M` factor is a Nyquist-like resolution criterion: to resolve modes spaced at `Fs / M` Hz, the window must span at least `2 × M / Fs` seconds. Using `max(schroeder_min, 2 × M)` ensures the window can resolve modes at the FDN's actual modal density, not just the theoretical minimum; the `min(late_tail, ...)` bound ensures the window fits in the available late tail after onset exclusion.
 
 Use hop size `hop = max(1, floor(W_m / 4))`. For every window start position `start = onset_skip, onset_skip + hop, onset_skip + 2·hop, ...` where `start + W_m ≤ T`:
 
@@ -231,13 +232,13 @@ modal_floor = 20 × log10(strongest / peak_wet)
 **Tolerance:** hybrid. The engine's modal floor MUST satisfy BOTH clauses:
 
 1. `engine ≤ ref + 6` dB (character match — no more than 6 dB worse than the reference)
-2. `engine ≤ −25` dB (absolute quality floor — no single sustained mode louder than −25 dB relative to the wet peak)
+2. `engine ≤ −30` dB (absolute quality floor — no single sustained mode louder than −30 dB relative to the wet peak)
 
-Both clauses must be satisfied. The absolute floor of `−25 dB` is derived from the worst non-degenerate reference fixture's modal floor (`−27.7 dB` for `tail_ms = 20`) plus 3 dB headroom. An engine that produces a single sustained resonator above `−25 dB` fails the absolute clause regardless of the reference; an engine that exceeds the reference by more than 6 dB fails the relative clause.
+Both clauses must be satisfied. The absolute floor of `−30 dB` is derived from the worst non-degenerate reference fixture's modal floor (`−32.8 dB` for `tail_ms = 20` with the `2 × M` Nyquist-resolution window) plus 3 dB headroom. An engine that produces a single sustained resonator above `−30 dB` fails the absolute clause regardless of the reference; an engine that exceeds the reference by more than 6 dB fails the relative clause.
 
-**Note on the tolerance history.** The original specification used an absolute `≤ −40 dB` gate. That gate was not achievable by any reasonable FDN under this algorithm: the canonical reference fixtures measure in the −28 to −43 dB range (the `−40 dB` figure had no literature basis). Issue #5 replaced the absolute gate with a one-sided `engine ≤ ref + 6 dB` transitional tolerance. This issue (#6) supplements the one-sided tolerance with an absolute `−25 dB` quality floor, yielding the current hybrid gate. The reference FDN has been improved (delay caps removed so `M` scales with `tail_ms`, random orthogonal feedback matrix replacing the Walsh-Hadamard transform) to meet Schroeder's modal-density criterion at ~113% for all valid tails; the improved reference's long-tail modal floors are `−30.7 dB` (220 ms) and `−35.9 dB` (500 ms), tightening the effective relative bar for long tails. The 20 ms fixture's modal floor (`−27.7 dB`) is the bottleneck for the absolute floor; it is determined by the intrinsic mode count at short tails (`M ≈ 162`, barely above the Schroeder minimum of 144) and cannot be improved further without changing the FDN topology for short tails (out of scope; tracked as a potential follow-up).
+**Note on the tolerance history.** The original specification used an absolute `≤ −40 dB` gate. That gate was not achievable by any reasonable FDN under this algorithm (the `−40 dB` figure had no literature basis). Issue #5 replaced the absolute gate with a one-sided `engine ≤ ref + 6 dB` transitional tolerance. Issue #6 supplemented the one-sided tolerance with an absolute `−25 dB` quality floor and improved the reference FDN (delay caps removed so `M` scales with `tail_ms`, random orthogonal feedback matrix replacing the Walsh-Hadamard transform) to meet Schroeder's modal-density criterion at ~113% for all valid tails. Issue #7 identified that the 20 ms fixture's previous modal floor (`−27.7 dB`) was a Rayleigh resolution artifact: the previous `W_m = max(schroeder_min, M)` window (162 frames, 3.4 ms) could not resolve modes spaced at 296 Hz. The window length was changed to `W_m = min(late_tail, max(schroeder_min, 2 × M))`, giving a 324-frame (6.75 ms) window for the 20 ms fixture. This resolved the artifact and revealed the true modal floor of `−32.8 dB`, allowing the absolute gate to tighten from `−25 dB` to `−30 dB` without any FDN change. No fixtures were regenerated; the FDN output is identical.
 
-The analysis window is Schroeder-aware: `W_m = max(0.15 × T₆₀ × Fs, M)`, per Schroeder & Logan, 1961, and JOS *Physical Audio Signal Processing*, §Mode Density Requirement. The onset exclusion prevents measuring onset spectral coloration rather than sustained ringing.
+The analysis window is Schroeder-aware with Nyquist resolution: `W_m = min(late_tail, max(0.15 × T₆₀ × Fs, 2 × M))`, per Schroeder & Logan, 1961, and JOS *Physical Audio Signal Processing*, §Mode Density Requirement. The onset exclusion prevents measuring onset spectral coloration rather than sustained ringing.
 
 **Published baseline:** the measured `modal_floor` in dB per fixture. For the 1 ms fixture at 48 kHz, the published value is `null` (degenerate — onset_skip exceeds the response length).
 
@@ -304,7 +305,7 @@ The onset frame is the smallest `n ≥ 0` where `max(|L[n]|, |R[n]|) ≥ 0.1 × 
 | RT60 crossing frame `c` | Range | `1 + floor(0.9 × N) ≤ c ≤ N` |
 | Total wet energy | Relative dB | `\|20 × log10(E / ref)\| ≤ 0.5` dB (ref is `1.0`) |
 | Echo density | Relative | `0.9 × ref ≤ engine ≤ 1.1 × ref` (`engine == 0` when `ref == 0`) |
-| Modal resonance floor | Hybrid dB | `engine ≤ ref + 6` AND `engine ≤ −25` dB (`null` ref is degenerate — trivially passes) |
+| Modal resonance floor | Hybrid dB | `engine ≤ ref + 6` AND `engine ≤ −30` dB (`null` ref is degenerate — trivially passes) |
 | L/R Pearson correlation | Absolute | `\|engine − ref\| ≤ 0.15` |
 | Spectral centroid | Relative | `0.9 × ref ≤ engine ≤ 1.1 × ref` (`engine == 0` when `ref == 0`) |
 | Onset frame | Absolute | `\|engine − ref\| ≤ 1` frame |

@@ -178,7 +178,9 @@ def _fdn_total_delay(tail_ms: int, rate: int = SAMPLE_RATE) -> int:
     """Compute the FDN total delay M = Σ d[i] for the uncapped proportional formula.
 
     Matches the generator's _build_late_network (cap_ms=None) and docs/13.
-    Used by the Schroeder-aware analysis window: W_m = max(Schroeder_min, M).
+    Used by the Schroeder-aware analysis window: W_m = min(T - onset_skip, max(Schroeder_min, 2*M)).
+    The 2× factor is a Nyquist-like resolution criterion: to resolve modes spaced at
+    Fs/M Hz, the window must span at least 2×M/Fs seconds.
     """
     R = int(math.floor(tail_ms * rate / 1000 + 0.5))
     ratios = [0.004, 0.006, 0.009, 0.013, 0.019, 0.027, 0.038, 0.053]
@@ -198,9 +200,11 @@ def modal_resonance_floor(
 ) -> float | None:
     """Strongest sustained sinusoidal mode in any Schroeder-aware window.
 
-    The window length is W_m = max(0.15 × tail_ms × Fs, M) where M is the FDN's
-    total delay. This ensures the window can resolve modes at the FDN's actual
-    modal density, not just the Schroeder minimum.
+    The window length is W_m = min(T - onset_skip, max(0.15 × tail_ms × Fs, 2 × M))
+    where M is the FDN's total delay. The 2×M factor is a Nyquist-like resolution
+    criterion: to resolve modes spaced at Fs/M Hz, the window must span at least
+    2×M/Fs seconds. The min(T - onset_skip, ...) bound ensures the window fits
+    in the available late tail.
 
     Returns dB value, or None if no analysis window fits (degenerate: tail too short).
     See docs/07-reverb.md metric 4.
@@ -213,7 +217,8 @@ def modal_resonance_floor(
     onset_skip = max(frame(5, rate), frame(0.05 * tail_ms, rate))
     schroeder_min = frame(0.15 * tail_ms, rate)
     M = _fdn_total_delay(tail_ms, rate)
-    W_m = max(schroeder_min, M)
+    late_tail = T - onset_skip
+    W_m = min(late_tail, max(schroeder_min, 2 * M))
     if onset_skip + W_m > T or W_m < 2:
         return None
 
@@ -311,7 +316,7 @@ def onset_frame(L: list[float], R: list[float], T: int) -> int:
 # Tolerance comparisons matching docs/07-reverb.md exactly
 # Modal floor uses a HYBRID tolerance: engine ≤ ref + 6 (relative) AND
 # engine ≤ MODAL_FLOOR_ABSOLUTE_GATE (absolute quality floor). Both must pass.
-MODAL_FLOOR_ABSOLUTE_GATE = -25.0  # worst non-degenerate ref (-27.7) + 3 dB headroom
+MODAL_FLOOR_ABSOLUTE_GATE = -30.0  # worst non-degenerate ref (-32.8) + 3 dB headroom
 
 TOLERANCE_SPEC: dict[str, dict] = {
     "rt60_crossing_frame": {"type": "exact"},
