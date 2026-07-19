@@ -636,6 +636,7 @@ def main() -> int:
         print(f"Piccle validation failed with {len(failures)} issue(s):", file=sys.stderr)
         for failure in failures:
             print(f"- {failure}", file=sys.stderr)
+        return 1
     print(f"Piccle validation passed: schema, {len(valid_paths)} accepted documents, {len(invalid_paths)} rejected documents with stable codes and paths, semantic rules, numeric and behavior aids, documentation parity, inventories, canonical JSON, anchors, and links.")
     return 0
 
