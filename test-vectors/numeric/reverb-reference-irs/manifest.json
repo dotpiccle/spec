@@ -10,7 +10,7 @@
       "soften_hz": 4000.0,
       "tail_ms": 1,
       "dtype": "binary64le",
-      "sha256": "8949af1303031976c668f51a389c6c2d8ad9c21128e61a6bf9f1c2ebbaf8faf0",
+      "sha256": "9433ebbec369fdbf3c0ed1aa378e6f567d69d120b70f4eec7a88eb1e85f06441",
       "generator": "docs/13-implementer-notes.md \u00a7Reference reverb runtime",
       "conformance_impulse": {
         "left": "sqrt(0.5)",
@@ -25,7 +25,7 @@
       "soften_hz": 4000.0,
       "tail_ms": 10,
       "dtype": "binary64le",
-      "sha256": "b27b21a60e71dab607ff03e917b542adbaa846a8cf32f38acc9f0d58059f8993",
+      "sha256": "2975be81a3c5773b0c46245059c592b935512faa3b8bd81237e261746c960d97",
       "generator": "docs/13-implementer-notes.md \u00a7Reference reverb runtime",
       "conformance_impulse": {
         "left": "sqrt(0.5)",
@@ -40,7 +40,7 @@
       "soften_hz": 4000.0,
       "tail_ms": 20,
       "dtype": "binary64le",
-      "sha256": "1d6ddeac98c4e25b2a8013399f4d89773970d91be50720958c48e35c3f071d02",
+      "sha256": "17baaf5ce01667aa3386dbffc34a7161ea03ee53e781b1b9a87725270f5ceb50",
       "generator": "docs/13-implementer-notes.md \u00a7Reference reverb runtime",
       "conformance_impulse": {
         "left": "sqrt(0.5)",
@@ -55,7 +55,7 @@
       "soften_hz": 4000.0,
       "tail_ms": 220,
       "dtype": "binary64le",
-      "sha256": "aac0bf724f0b12f7d4e4d272b6dc0b6581cfa5083d27c66660fbc6cb3a840865",
+      "sha256": "3cdbac03c61a00bf8ea06818fcb9b45355890424d6278f308bdef2562a887a6c",
       "generator": "docs/13-implementer-notes.md \u00a7Reference reverb runtime",
       "conformance_impulse": {
         "left": "sqrt(0.5)",
@@ -70,7 +70,7 @@
       "soften_hz": 4000.0,
       "tail_ms": 500,
       "dtype": "binary64le",
-      "sha256": "1ebaf38c62a760f94d4226e809194fca0a373175a78f38c22acbf6c074bac374",
+      "sha256": "b4d5f1b289c2372c39ab0dffe6c9cbaf66dbf0824efc951284b4e6e061eff797",
       "generator": "docs/13-implementer-notes.md \u00a7Reference reverb runtime",
       "conformance_impulse": {
         "left": "sqrt(0.5)",

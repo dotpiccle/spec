@@ -140,9 +140,9 @@ class FDN:
             p = (lo + hi) / 2.0
             crossing = self._measure_crossing(p)
             if crossing < target:
-                lo = p
-            else:
                 hi = p
+            else:
+                lo = p
         self.p = (lo + hi) / 2.0
         self._set_feedback_gains(self.p)
 

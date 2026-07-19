@@ -7,6 +7,7 @@ import hashlib
 import json
 import math
 import re
+import struct
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -565,6 +566,33 @@ def reverb_reference_ir_errors() -> list[str]:
         expected_size = entry["sample_count"] * entry["channels"] * 8
         if len(data) != expected_size:
             failures.append(f"reverb reference IR fixture {entry['filename']}: size {len(data)} != expected {expected_size}")
+
+        N = entry["sample_count"] - 1
+        T = N + 1
+        samples = struct.unpack(f"<{T * 2}d", data)
+        L = list(samples[0::2])
+        R = list(samples[1::2])
+        E = [L[k] ** 2 + R[k] ** 2 for k in range(T)]
+        suffix = [0.0] * T
+        s = 0.0
+        for k in range(T - 1, -1, -1):
+            s += E[k]
+            suffix[k] = s
+        E0 = suffix[0] if T > 0 else 0.0
+        crossing = T - 1
+        for k in range(T - 1):
+            if suffix[k] <= 1e-6 * E0:
+                crossing = k
+                break
+        min_c = 1 + int(math.floor(0.9 * N))
+        if not (min_c <= crossing <= N):
+            tail_ms = entry["tail_ms"]
+            failures.append(
+                f"reverb reference IR fixture {entry['filename']}: "
+                f"RT60 crossing frame {crossing} outside permitted range "
+                f"[{min_c}, {N}] (tail_ms={tail_ms}, N={N}, "
+                f"docs/07-reverb.md requires 1 + floor(0.9 · N) <= c <= N)"
+            )
     return failures
 
 
