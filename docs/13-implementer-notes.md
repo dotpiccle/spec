@@ -128,7 +128,7 @@ Measure the final softened, windowed response in every declared render profile. 
 
 ### Perceptual qualification
 
-The strict perceptual-equivalence tolerances in [Reverb](07-reverb.md) provide a machine-checkable conformance bar against the published canonical reference IR render. Before adopting this or another baseline, pass those tolerances for every declared render profile.
+The strict perceptual-equivalence tolerances in [Reverb](07-reverb.md) §Perceptual-equivalence metric algorithms provide the machine-checkable conformance bar against the published canonical reference IR render. Each of the seven metrics has a normatively pinned measurement algorithm, and the baseline values per canonical fixture are published in `manifest.json`. Before adopting this or another baseline, pass those tolerances for every declared render profile.
 
 Further listening review should confirm:
 
@@ -139,7 +139,7 @@ Further listening review should confirm:
 - low left/right correlation without unstable image movement; and
 - comparable brightness after the normative lowpass.
 
-Also inspect the impulse response, backward-integrated energy curve, short-window echo density, left/right correlation, and spectral flatness. No single metric substitutes for listening. A candidate that only matches RT60 is not an acceptable replacement for the baseline.
+Also inspect each metric from the [normative algorithm specification](07-reverb.md#perceptual-equivalence-metric-algorithms). No single metric substitutes for listening. A candidate that only matches RT60 is not an acceptable replacement for the baseline.
 
 At 48 kHz, the capped FDN and diffuser delays retain about 1,570 samples in total. The eight-line transform, eight feedback gains, eight all-pass stages, and stereo input/output matrices require constant work independent of `tail_ms`. A 500 ms generated 2-by-2 FIR would instead retain about 96,000 coefficients and direct convolution would perform work proportional to the tail length for every output frame.
 

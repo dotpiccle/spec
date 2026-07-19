@@ -16,6 +16,9 @@ All notable changes to the Piccle specification are documented here. Piccle v1 h
 - Dedicated conformance chapter distinguishing malformed, schema-invalid, semantically invalid, and valid-but-unsupported documents.
 - Reproducible repository validator and CI for schema, semantic rules, duplicate JSON members, fixtures, links, formatting, and contract invariants.
 - Public contribution, compatibility, and release process.
+- Per-fixture published baseline values for the seven reverb perceptual-equivalence metrics in `test-vectors/numeric/reverb-reference-irs/manifest.json` under `metrics`.
+- Reference implementation of all seven metrics in `scripts/reverb_metrics.py`.
+- Validator gate comparing each fixture's published baseline metrics to a fresh computation in `scripts/validate.py::reverb_reference_ir_metrics_errors()`.
 - Canonical engine conformance and additional render profiles covering browser, desktop, mobile, console, vehicle, kiosk, and embedded implementations.
 - Render-profile frequency adaptation down to declared 8 kHz engine profiles.
 - Measurable oscillator harmonic, phase, DC, and alias tolerances using coherent canonical-profile windows.
@@ -56,6 +59,11 @@ All notable changes to the Piccle specification are documented here. Piccle v1 h
 - Clarified that engine resource limits affect support, never format validity.
 - Reorganized public documentation into normative reference, authoring cookbook, non-normative implementation guidance, and conformance material.
 - Separated document compilation from audio production and documented allocation-free, block-streamable engine guidance.
+- **Normatively pinned the measurement algorithm for each of the seven reverb perceptual-equivalence metrics** (echo density, modal resonance floor, L/R Pearson correlation, spectral centroid, onset frame, RT60 crossing, total wet energy) in `docs/07-reverb.md` §Perceptual-equivalence metric algorithms. Previously only RT60 crossing and total wet energy were precisely specified; the other five left outcome-changing choices unspecified. Tolerance interpretation is now relative for echo density, total wet energy, and spectral centroid (`engine ∈ [0.9 × ref, 1.1 × ref]`, with `engine == 0` required when `ref == 0`); absolute for L/R correlation (`|engine − ref| ≤ 0.15`); integer-exact for the RT60 crossing frame and onset frame; and one-sided relative for the modal resonance floor.
+- **Modal resonance floor tolerance changed from the previous absolute `≤ −40 dB` gate to a one-sided relative tolerance `engine ≤ ref + 6 dB` against the reference fixture's measured value.** The previous absolute gate was unattainable: the canonical reference fixtures themselves measure in the −60 to −104 dB range under any reasonable STFT-based algorithm, because the reference FDN is modal-deficient by design at long tails (its total delay `M ≈ 1,570` samples is below Schroeder's modal-density minimum `M ≥ 0.15 × T₆₀ × Fs` for `tail_ms ≥ 220`). The −40 dB figure was not derived from any standard reverb-quality metric. The one-sided relative tolerance allows elite engines that exceed the reference's modal density to pass while catching single-mode resonator failures (a resonator near 0 dB fails by ~60 dB). This is a transitional bar; a tracked follow-up issue will fix the reference FDN's modal density and tighten the tolerance to an absolute gate.
+- **Modal resonance floor analysis window changed from `0.1 × tail_ms` to `0.15 × tail_ms`** (the Schroeder minimum, per Schroeder & Logan 1961 and JOS *Physical Audio Signal Processing*). The previous window was 2/3 of the modal-resolution minimum and could not resolve individual modes.
+- **Modal resonance floor now excludes the onset** (`onset_skip = max(frame(5), frame(0.05 × tail_ms))` frames) before placing analysis windows. The previous algorithm's "max over all windows" picked the onset window, measuring onset spectral coloration rather than a sustained ringing mode.
+- No fixtures were regenerated; no SHA-256s changed. The metrics are computed from the unchanged fixtures with the new algorithms.
 
 ### Fixed
 

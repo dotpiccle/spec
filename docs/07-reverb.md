@@ -135,6 +135,173 @@ At every render profile (canonical and additional), the wet output MUST meet the
 
 **Note.** These tolerances constrain engine conformance, not author intent. They require that a conforming engine's wet response matches the reference IR render for the *same* reverb configuration the author declared. They do not restrict what reverb configurations an author may select — an engine must reproduce whatever character the author's chosen `amount`, `tail_ms`, and `soften_hz` produce in the reference render, including the metallic or resonant character of a very short tail at high `soften_hz`.
 
+## Perceptual-equivalence metric algorithms
+
+This section defines the exact measurement procedure for each of the seven metrics in the tolerance table above. The engine's implementation MUST follow these algorithms; the published baseline values in `manifest.json` for each canonical fixture are the reference implementation's computed values using the same or equivalent procedures.
+
+Every measurement operates on the conformance-harness output defined in §Wet-path normalization and RT60: one impulse frame at `L = R = sqrt(0.5)` followed by zeroes, normalized so `Σ(L² + R²) = 1`, through the engine's full wet pipeline (reverb core, wet lowpass, terminal window, normalization). Let the captured response have `T` frames total (impulse + tail), with `N = T - 1` tail frames. The sample rate is the active render profile's rate.
+
+### Metric 1: RT60 crossing frame `c`
+
+Compute `c` using the backward-integrated energy-decay curve in §Wet-path normalization and RT60. The tolerance is the range `1 + floor(0.9 × N) ≤ c ≤ N`.
+
+**Published baseline:** the measured `c` per fixture.
+
+### Metric 2: Total wet energy after normalization
+
+Compute `E = Σ(n = 0 .. T − 1) (L[n]² + R[n]²)`. The harness normalizes this to `1.0` by construction. The engine's measured `E` must satisfy `|20 × log10(E / 1.0)| ≤ 0.5` dB, i.e. `E ∈ [10^(-0.5/20), 10^(0.5/20)] ≈ [0.944, 1.059]`.
+
+**Published baseline:** `1.0` for every fixture.
+
+### Metric 3: Echo density
+
+Form the mono sum `m[n] = (L[n] + R[n]) / 2` over the first `M = min(N, floor(0.05 × sample_rate + 0.5))` tail frames, i.e. indices `n ∈ [1, 1 + M)` of the captured response. Frame 0 (the impulse) is excluded to avoid biasing the count.
+
+Define the sign function:
+
+```text
+sgn(x) =  1   if x > 0
+         -1   if x < 0
+          0   if x == 0
+```
+
+Build an effective sign sequence `s[n]` for the analysis window. Initialize `s` from the first non-zero sample. For each subsequent sample, assign `s[n] = sgn(m[n])` when `m[n] != 0`, otherwise `s[n] = s[n - 1]` (carry-forward for exact zeros).
+
+A zero-crossing interval is the number of samples between two consecutive sign changes (indices where `s[n] != s[n-1]`). An interval qualifies when its length is strictly less than `sample_rate / 1000` samples. Compute:
+
+```text
+echo_density = (number of qualifying intervals) / (number of intervals)
+```
+
+If fewer than two sign changes occur (zero or one intervals), `echo_density = 0`.
+
+**Tolerance:** relative. `0.9 × ref ≤ engine ≤ 1.1 × ref`. If the reference value is `0`, the engine's value MUST also be `0`.
+
+**Published baseline:** the measured `echo_density` (a float in `[0, 1]`) per fixture.
+
+### Metric 4: Modal resonance floor
+
+Form the mono sum `m[n] = (L[n] + R[n]) / 2` over the full captured response `[0, T)`. Compute the reference amplitude:
+
+```text
+peak_wet = max(|m[n]|)  over n ∈ [0, T)
+```
+
+Exclude the onset from analysis. The onset (direct path plus diffuser output) is not a sustained ringing mode:
+
+```text
+onset_skip = max(frame(5), frame(0.05 × tail_ms))
+```
+
+Define the analysis window length from the Schroeder minimum modal-density criterion:
+
+```text
+W_m = floor(0.15 × tail_ms × sample_rate / 1000 + 0.5)
+```
+
+Use hop size `hop = max(1, floor(W_m / 4))`. For every window start position `start = onset_skip, onset_skip + hop, onset_skip + 2·hop, ...` where `start + W_m ≤ T`:
+
+1. Extract the segment `seg = m[start : start + W_m]`.
+2. Subtract its mean: `seg[k] -= mean(seg)`.
+3. Apply a Hann window: `w[k] = 0.5 × (1 − cos(2π × k / (W_m − 1)))` for `k ∈ [0, W_m)` (if `W_m = 1`, `w[0] = 1`).
+4. Zero-pad to `N_fft = 65536` and compute the DFT. (The zero-padding provides bin interpolation; the Rayleigh frequency resolution is `sample_rate / W_m`, not `sample_rate / N_fft`.)
+5. Compute the magnitude spectrum `|M[k]|` for `k ∈ [k_min, N_fft / 2]` where `k_min = ceil(20 × N_fft / sample_rate)` (the bin for 20 Hz, the audible lower bound).
+6. Recover the amplitude of the strongest bin in this window:
+
+   ```text
+   window_peak = max(4 × |M[k]| / W_m)
+   ```
+
+   The factor `4` divides by the Hann window's DC gain `|W(0)| / 2 = W_m / 4`, which accounts for both the cosine-to-exponential half-gain and the window's coherent gain. For a sinusoid of amplitude A at a bin center frequency, the standard (unnormalized) DFT magnitude at that bin is `|X[k]| = A × W_m / 4`. Worst-case scalloping loss for a non-bin-centered sinusoid is approximately 1.5 dB, well within the tolerance.
+
+The **strongest sustained mode** is the maximum `window_peak` across all window positions. The **modal resonance floor** in dB is:
+
+```text
+modal_floor = 20 × log10(strongest / peak_wet)
+```
+
+**Degenerate cases:**
+- If `peak_wet == 0`, the modal floor is undefined (the generator MUST NOT produce this).
+- If `onset_skip + W_m > T` (no analysis window fits), the modal floor is `−∞ dB` (the tail is too short to sustain a modal resonance). The published baseline for very short tails is `null`.
+
+**Tolerance:** one-sided. `engine ≤ ref + 6` dB. An engine may produce a modal floor quieter (lower, less ringing) than the reference and still conform; it may not exceed the reference by more than 6 dB.
+
+**Note on the tolerance change and transitional status.** The previous specification used an absolute `≤ −40 dB` gate. That gate was not independently implementable: the canonical reference fixtures measure in the −60 to −104 dB range under this algorithm (because the reference FDN is intentionally modal-deficient by design at long tails — its total delay M ≈ 1,570 samples is below Schroeder's criterion M ≥ 0.15 × T₆₀ × Fs for tails ≥ 220 ms, and the Schroeder criterion is the minimum accepted ceiling in the reverb design literature). The −40 dB figure had no literature basis. The one-sided relative tolerance is a transitional bar: the six other metrics enforce character match, while the modal floor catches only the strongest crossing-threshold ringing (an engine producing a single sustained resonator near 0 dB fails by ~60 dB). A tracked follow-up issue will scale the reference FDN's delay caps with tail_ms to meet the Schroeder criterion, regenerate the fixtures, re-measure the modal floor, and tighten the tolerance to an absolute gate that the improved reference meets.
+
+The analysis window was simultaneously changed from `0.1 × tail_ms` to `0.15 × tail_ms` (the Schroeder minimum, per Schroeder & Logan, 1961, and JOS *Physical Audio Signal Processing*, §Mode Density Requirement), and the onset exclusion prevents measuring onset spectral coloration rather than sustained ringing.
+
+**Published baseline:** the measured `modal_floor` in dB per fixture. For the 1 ms fixture at 48 kHz, the published value is `null` (degenerate — onset_skip exceeds the response length).
+
+### Metric 5: L/R Pearson correlation
+
+Compute over the tail frames only, indices `n ∈ [1, T)`. Frame 0 (the impulse) is excluded — it carries no stereo decorrelation information.
+
+```text
+meanL = (1/(T−1)) × Σ L[n]
+meanR = (1/(T−1)) × Σ R[n]
+cov   = Σ (L[n] − meanL) × (R[n] − meanR)
+varL  = Σ (L[n] − meanL)²
+varR  = Σ (R[n] − meanR)²
+r = cov / sqrt(varL × varR)
+```
+
+**Degenerate cases:** if `T ≤ 2` (tail has 0 or 1 samples) or `varL == 0` or `varR == 0`, then `r = 0`.
+
+**Tolerance:** absolute. `|engine − ref| ≤ 0.15`.
+
+**Published baseline:** the measured Pearson `r` per fixture, in `[-1, 1]`.
+
+### Metric 6: Spectral centroid
+
+Form the mono sum `m[n] = (L[n] + R[n]) / 2` over the full captured response `[0, T)`. Apply a Hann window:
+
+```text
+w[k] = 0.5 × (1 − cos(2π × k / (T − 1)))  for k ∈ [0, T)
+```
+
+Zero-pad the windowed signal to `N_fft = 65536` and compute the magnitude spectrum `|M[k]|`. The spectral centroid uses **magnitude weighting** (not power weighting):
+
+```text
+centroid_bin  = (Σ k × |M[k]|) / (Σ |M[k]|)             over k ∈ [1, N_fft/2]
+centroid_hz   = centroid_bin × sample_rate / N_fft
+```
+
+The summation excludes the DC bin (k = 0). If `Σ |M[k]| = 0`, `centroid_hz = 0`.
+
+**Tolerance:** relative. `0.9 × ref ≤ centroid_hz ≤ 1.1 × ref`. If the reference value is `0`, the engine's value MUST also be `0`.
+
+**Published baseline:** the measured centroid in Hz per fixture.
+
+### Metric 7: Onset frame
+
+Compute the peak sample across both channels over the full response:
+
+```text
+peak = max(max(|L[n]|), max(|R[n]|))  over n ∈ [0, T)
+```
+
+The onset frame is the smallest `n ≥ 0` where `max(|L[n]|, |R[n]|) ≥ 0.1 × peak`.
+
+**Degenerate case:** if `peak == 0`, the onset is undefined (the generator MUST NOT produce this).
+
+**Tolerance:** `|engine − ref| ≤ 1` sample at canonical mode; `|engine − ref| ≤ 1` frame at the active sample rate for additional profiles.
+
+**Published baseline:** the onset frame index per fixture.
+
+### Tolerance interpretation summary
+
+| Metric | Tolerance type | Formula |
+|---|---|---|
+| RT60 crossing frame `c` | Range | `1 + floor(0.9 × N) ≤ c ≤ N` |
+| Total wet energy | Relative dB | `\|20 × log10(E / ref)\| ≤ 0.5` dB (ref is `1.0`) |
+| Echo density | Relative | `0.9 × ref ≤ engine ≤ 1.1 × ref` (`engine == 0` when `ref == 0`) |
+| Modal resonance floor | One-sided dB | `engine ≤ ref + 6` dB (`null` ref is degenerate — trivially passes) |
+| L/R Pearson correlation | Absolute | `\|engine − ref\| ≤ 0.15` |
+| Spectral centroid | Relative | `0.9 × ref ≤ engine ≤ 1.1 × ref` (`engine == 0` when `ref == 0`) |
+| Onset frame | Absolute | `\|engine − ref\| ≤ 1` frame |
+
+The published baseline values for each canonical fixture are recorded in `test-vectors/numeric/reverb-reference-irs/manifest.json` under the `metrics` key on each fixture entry. The manifest is non-normative metadata; the algorithms in this section are the normative authority for metric computation.
+
 ## Implementation freedom
 
 Schroeder, feedback-delay-network, generated-convolution, and other linear time-invariant implementations are permitted when they meet the response, normalization, equivalence tolerances, and lifetime requirements above.

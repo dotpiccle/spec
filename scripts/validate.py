@@ -25,6 +25,8 @@ from format_json import (
     reject_non_finite_constant,
 )
 
+import reverb_metrics
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT / "schemas" / "v1.json"
@@ -336,7 +338,7 @@ def documentation_parity_errors() -> list[str]:
         "docs/07-reverb.md": ["`amount`    | number", "`tail_ms`   | integer | `1` or more", "`soften_hz` | number  | `200`–`12000`"],
         "docs/11-engine-safety.md": ["at least 8000 Hz", "min(20000, 0.49 × sample_rate)", "48000 Hz", "frame(S + b) - frame(S + a)"],
         "docs/04-pitch.md": ["Evaluate the `frequencies` contour", "Apply the cents offset", "Clamp `offset_hz`"],
-        "docs/07-reverb.md": ["five_ms_frames", "DSP conformance harness", "1 + floor(0.9 × N)"],
+        "docs/07-reverb.md": ["five_ms_frames", "DSP conformance harness", "1 + floor(0.9 × N)", "Perceptual-equivalence metric algorithms", "N_fft = 65536", "hop = max(1, floor(W_m / 4))", "is excluded", "magnitude weighting"],
         "docs/08-output.md": ["Visit active layers in document array order", "[0, F(D + tail_ms))"],
         "docs/14-conformance.md": ["start_ms + duration_ms", "document duration plus `reverb.tail_ms`"],
         "docs/15-engine-build-guide.md": ["schemas/v1.json", "test-vectors/invalid-expectations.json", "test-vectors/numeric/dsp-values.json", "test-vectors/behavior/render-cases.json", "Definition of done"],
@@ -596,6 +598,35 @@ def reverb_reference_ir_errors() -> list[str]:
     return failures
 
 
+def reverb_reference_ir_metrics_errors() -> list[str]:
+    failures: list[str] = []
+    manifest_path = REVERB_REF_IR_DIR / "manifest.json"
+    if not manifest_path.exists():
+        return failures
+    manifest = load_json(manifest_path)
+    for entry in manifest.get("fixtures", []):
+        if "metrics" not in entry:
+            failures.append(f"{entry['filename']}: no metrics block in manifest")
+            continue
+        path = REVERB_REF_IR_DIR / entry["filename"]
+        if not path.exists():
+            continue
+        data = path.read_bytes()
+        T = entry["sample_count"]
+        samples = struct.unpack(f"<{T * 2}d", data)
+        L = list(samples[0::2])
+        R = list(samples[1::2])
+        computed = reverb_metrics.compute_all(L, R, entry)
+        published = entry["metrics"]
+        for key in sorted(computed):
+            engine_val = computed[key]
+            ref_val = published.get(key)
+            ok, desc = reverb_metrics.check_metric(key, engine_val, ref_val)
+            if not ok:
+                failures.append(f"{entry['filename']}: {desc}")
+    return failures
+
+
 def main() -> int:
     failures: list[str] = []
     schema = load_json(SCHEMA_PATH)
@@ -627,6 +658,7 @@ def main() -> int:
     failures.extend(link_errors())
     failures.extend(numeric_aid_errors())
     failures.extend(reverb_reference_ir_errors())
+    failures.extend(reverb_reference_ir_metrics_errors())
     failures.extend(behavior_aid_errors())
     formatter = subprocess.run([sys.executable, str(ROOT / "scripts" / "format_json.py")], cwd=ROOT, text=True, capture_output=True)
     if formatter.returncode:
@@ -637,7 +669,7 @@ def main() -> int:
         for failure in failures:
             print(f"- {failure}", file=sys.stderr)
         return 1
-    print(f"Piccle validation passed: schema, {len(valid_paths)} accepted documents, {len(invalid_paths)} rejected documents with stable codes and paths, semantic rules, numeric and behavior aids, documentation parity, inventories, canonical JSON, anchors, and links.")
+    print(f"Piccle validation passed: schema, {len(valid_paths)} accepted documents, {len(invalid_paths)} rejected documents with stable codes and paths, semantic rules, numeric and behavior aids, reverb metric baselines, documentation parity, inventories, canonical JSON, anchors, and links.")
     return 0
 
 

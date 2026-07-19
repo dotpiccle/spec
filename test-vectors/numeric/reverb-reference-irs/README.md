@@ -20,6 +20,21 @@ Each fixture is raw little-endian binary64 IEEE-754 interleaved stereo PCM, gene
 | `sha256`              | string | SHA-256 hex digest of the raw `.bin` file                                                           |
 | `generator`           | string | Pointer to the normative algorithm document                                                         |
 | `conformance_impulse` | object | The input impulse used (one frame: `{"left": "sqrt(0.5)", "right": "sqrt(0.5)"}`)                   |
+| `metrics`             | object | Published baseline values for the seven perceptual-equivalence metrics (see `docs/07-reverb.md` §Perceptual-equivalence metric algorithms) |
+
+Each `metrics` object contains the following keys:
+
+| Key | Type | Meaning |
+|---|---|---|
+| `rt60_crossing_frame` | int | The first frame whose backward-integrated energy is ≤ −60 dB from the total |
+| `total_wet_energy` | float | `Σ(L² + R²)` after harness normalization (always `1.0` by construction) |
+| `echo_density` | float | Fraction of zero-crossing intervals below `sample_rate / 1000` in the first 50 ms of the tail |
+| `modal_resonance_floor_db` | float or `null` | Strongest sustained sinusoidal mode in any `0.15 × tail_ms` window, relative to the wet peak (dB). `null` when the tail is too short for analysis |
+| `lr_correlation` | float | Pearson correlation across the tail (excluding the impulse frame) |
+| `spectral_centroid_hz` | float | Magnitude-weighted spectral centroid (Hz) of the full wet response |
+| `onset_frame` | int | Index of first sample exceeding `0.1 × peak` across both channels |
+
+The measurement algorithms are normative and defined in `docs/07-reverb.md`. The published values are reference baselines for engine conformance comparison; the manifest itself is non-normative metadata.
 
 ## Usage
 

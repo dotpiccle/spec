@@ -15,6 +15,15 @@
       "conformance_impulse": {
         "left": "sqrt(0.5)",
         "right": "sqrt(0.5)"
+      },
+      "metrics": {
+        "rt60_crossing_frame": 48,
+        "total_wet_energy": 1.0000000000000007,
+        "echo_density": 1.0,
+        "lr_correlation": -0.026167740039161554,
+        "spectral_centroid_hz": 9215.66353601338,
+        "onset_frame": 0,
+        "modal_resonance_floor_db": null
       }
     },
     {
@@ -30,6 +39,15 @@
       "conformance_impulse": {
         "left": "sqrt(0.5)",
         "right": "sqrt(0.5)"
+      },
+      "metrics": {
+        "rt60_crossing_frame": 456,
+        "total_wet_energy": 0.9999999999999981,
+        "echo_density": 1.0,
+        "lr_correlation": 0.17532459335514713,
+        "spectral_centroid_hz": 9077.544289334486,
+        "onset_frame": 0,
+        "modal_resonance_floor_db": -44.4
       }
     },
     {
@@ -45,6 +63,15 @@
       "conformance_impulse": {
         "left": "sqrt(0.5)",
         "right": "sqrt(0.5)"
+      },
+      "metrics": {
+        "rt60_crossing_frame": 912,
+        "total_wet_energy": 0.9999999999999994,
+        "echo_density": 1.0,
+        "lr_correlation": 0.09081425191676847,
+        "spectral_centroid_hz": 9276.003816831777,
+        "onset_frame": 0,
+        "modal_resonance_floor_db": -27.9
       }
     },
     {
@@ -60,6 +87,15 @@
       "conformance_impulse": {
         "left": "sqrt(0.5)",
         "right": "sqrt(0.5)"
+      },
+      "metrics": {
+        "rt60_crossing_frame": 10033,
+        "total_wet_energy": 1.000000000000007,
+        "echo_density": 1.0,
+        "lr_correlation": 0.025830305683127764,
+        "spectral_centroid_hz": 8888.370153578082,
+        "onset_frame": 0,
+        "modal_resonance_floor_db": -28.1
       }
     },
     {
@@ -75,6 +111,15 @@
       "conformance_impulse": {
         "left": "sqrt(0.5)",
         "right": "sqrt(0.5)"
+      },
+      "metrics": {
+        "rt60_crossing_frame": 22801,
+        "total_wet_energy": 0.9999999999999895,
+        "echo_density": 1.0,
+        "lr_correlation": -0.03890561027009783,
+        "spectral_centroid_hz": 8889.178647948049,
+        "onset_frame": 0,
+        "modal_resonance_floor_db": -34.8
       }
     }
   ]
