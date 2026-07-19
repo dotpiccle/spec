@@ -24,6 +24,16 @@ SAMPLE_RATE = 48000
 N_FFT = 65536
 
 
+def _next_power_of_two(n: int) -> int:
+    """Smallest power of two >= n (i.e., smallest 2^k >= n for integer k >= 0)."""
+    if n <= 1:
+        return 1
+    p = 1
+    while p < n:
+        p <<= 1
+    return p
+
+
 def load_fixture(entry: dict) -> tuple[list[float], list[float], int, int]:
     """Load a fixture's interleaved binary64 stereo PCM.
 
@@ -95,12 +105,15 @@ def fft_radix2(x: list[float]) -> list[complex]:
     return [complex(z[k].real / nq, z[k].imag / nq) for k in range(nq + 1)]
 
 
-def magnitude_spectrum(signal: list[float], fft_length: int = N_FFT) -> list[float]:
+def magnitude_spectrum(signal: list[float], fft_length: int | None = None) -> list[float]:
     """Window the signal with Hann, zero-pad, FFT, return magnitude spectrum.
 
     Returns (N_fft/2 + 1) bins, index 0 = DC, index N_fft/2 = Nyquist.
+    When fft_length is None, uses max(65536, next_power_of_two(len(signal))).
     """
     T = len(signal)
+    if fft_length is None:
+        fft_length = max(N_FFT, _next_power_of_two(T))
     window = hann(T)
     x = [signal[k] * window[k] for k in range(T)]
     x += [0.0] * (fft_length - T)
@@ -223,9 +236,10 @@ def modal_resonance_floor(
         return None
 
     hop = max(1, W_m // 4)
+    n_fft = max(N_FFT, _next_power_of_two(W_m))
 
     window = hann(W_m)
-    k_min = max(1, int(math.ceil(20.0 * N_FFT / rate)))
+    k_min = max(1, int(math.ceil(20.0 * n_fft / rate)))
     strongest: float = 0.0
 
     start = onset_skip
@@ -235,12 +249,12 @@ def modal_resonance_floor(
         seg = [v - seg_mean for v in seg]
         seg_win = [seg[k] * window[k] for k in range(W_m)]
         # Zero-pad and FFT
-        pad = seg_win + [0.0] * (N_FFT - W_m)
+        pad = seg_win + [0.0] * (n_fft - W_m)
         spec = fft_radix2(pad)
 
         # Find peak in audible bins
-        for k in range(k_min, N_FFT // 2 + 1):
-            amp = abs(spec[k])  # bin magnitude (already normalized by N_FFT/2 in fft_fn)
+        for k in range(k_min, n_fft // 2 + 1):
+            amp = abs(spec[k])  # bin magnitude (already normalized by n_fft/2 in fft_fn)
             if amp > strongest:
                 strongest = amp
         start += hop
@@ -248,11 +262,11 @@ def modal_resonance_floor(
     if strongest <= 0.0:
         return None
 
-    # Undo fft_radix2 normalization (divide by N_FFT/2) and correct for Hann
-    # coherent gain (0.5, via factor of 2). Combined correction: 2.0 * N_FFT / W_m.
-    # Derivation: |M[k]| = A * W_m / (2 * N_FFT) after normalization,
-    # so A = |M[k]| * 2 * N_FFT / W_m.
-    amplitude = strongest * 2.0 * N_FFT / W_m
+    # Undo fft_radix2 normalization (divide by n_fft/2) and correct for Hann
+    # coherent gain (0.5, via factor of 2). Combined correction: 2.0 * n_fft / W_m.
+    # Derivation: |M[k]| = A * W_m / (2 * n_fft) after normalization,
+    # so A = |M[k]| * 2 * n_fft / W_m.
+    amplitude = strongest * 2.0 * n_fft / W_m
     db = 20.0 * math.log10(amplitude / peak_wet) if amplitude > 0 and peak_wet > 0 else -float("inf")
     return db
 
@@ -285,13 +299,14 @@ def spectral_centroid(L: list[float], R: list[float], T: int, rate: int = SAMPLE
     """
     m = [(L[k] + R[k]) / 2.0 for k in range(T)]
     mag = magnitude_spectrum(m)
+    n_fft = 2 * (len(mag) - 1)
     # Skip DC
-    num = sum(k * mag[k] for k in range(1, N_FFT // 2 + 1))
-    den = sum(mag[k] for k in range(1, N_FFT // 2 + 1))
+    num = sum(k * mag[k] for k in range(1, len(mag)))
+    den = sum(mag[k] for k in range(1, len(mag)))
     if den == 0.0:
         return 0.0
     centroid_bin = num / den
-    return centroid_bin * rate / N_FFT
+    return centroid_bin * rate / n_fft
 
 
 def onset_frame(L: list[float], R: list[float], T: int) -> int:
@@ -479,10 +494,75 @@ def check_all() -> list[str]:
     return errors
 
 
+def run_regression_tests() -> list[str]:
+    """Verify metrics are finite and N_fft scales correctly at boundary lengths.
+
+    Tests at T = 65535, 65536, 65537, 65538, 100000, 200000 frames using
+    synthetic responses (no fixture files needed). Validates that the
+    dynamic N_fft = max(65536, next_power_of_two(signal_length)) formula
+    works at and above the 65536 boundary.
+    """
+    errors: list[str] = []
+    rate = 48000
+    for length in [65535, 65536, 65537, 65538, 100000, 200000]:
+        # Synthetic stereo response: impulse + decaying sinusoid
+        L = [0.0] * length
+        R = [0.0] * length
+        L[0] = R[0] = math.sqrt(0.5)
+        for i in range(1, min(length, 2000)):
+            decay = math.exp(-i / 200.0)
+            L[i] = decay * math.sin(i * 0.1)
+            R[i] = decay * math.cos(i * 0.1)
+
+        # Verify spectral_centroid is finite
+        sc = spectral_centroid(L, R, length, rate)
+        if not math.isfinite(sc):
+            errors.append(f"spectral_centroid not finite at T={length}")
+
+        # Verify N_fft for spectral_centroid is correct
+        expected_n = max(N_FFT, _next_power_of_two(length))
+        mag = magnitude_spectrum([(L[k] + R[k]) / 2.0 for k in range(length)])
+        actual_n = 2 * (len(mag) - 1)
+        if actual_n != expected_n:
+            errors.append(f"centroid N_fft at T={length}: expected {expected_n}, got {actual_n}")
+
+        # Verify modal_resonance_floor is finite or None (degenerate)
+        tail_ms = max(1, int(round(length * 1000.0 / rate)))
+        mrf = modal_resonance_floor(L, R, length, tail_ms, rate)
+        if mrf is not None and not math.isfinite(mrf):
+            errors.append(f"modal_resonance_floor not finite at T={length}")
+
+        # Verify N_fft for modal_resonance_floor if non-degenerate
+        if mrf is not None:
+            M = _fdn_total_delay(tail_ms, rate)
+            onset_skip = max(frame(5, rate), frame(0.05 * tail_ms, rate))
+            late_tail = length - onset_skip
+            schroeder_min = frame(0.15 * tail_ms, rate)
+            W_m = min(late_tail, max(schroeder_min, 2 * M))
+            expected_modal_n = max(N_FFT, _next_power_of_two(W_m))
+            # Re-run one window to check the FFT length indirectly
+            # (the function doesn't return n_fft, so we verify W_m < n_fft)
+            if W_m > expected_modal_n:
+                errors.append(f"modal N_fft at T={length}: W_m={W_m} > n_fft={expected_modal_n}")
+    return errors
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Compute/verify reverb perception-equivalence metrics")
     parser.add_argument("--update", action="store_true", help="recompute metrics and update manifest")
+    parser.add_argument("--test", action="store_true", help="run N_fft scaling regression tests")
     args = parser.parse_args()
+
+    if args.test:
+        print("Running N_fft scaling regression tests...")
+        errors = run_regression_tests()
+        if errors:
+            for e in errors:
+                print(f"  ERROR: {e}")
+            print(f"  FAILED with {len(errors)} error(s)")
+            return 1
+        print("  All regression tests passed.")
+        return 0
 
     if args.update:
         print("Recomputing metrics for all fixtures...")

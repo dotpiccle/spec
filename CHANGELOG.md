@@ -79,6 +79,7 @@ All notable changes to the Piccle specification are documented here. Piccle v1 h
 - Defined previously ambiguous filter state, bandpass gain, coefficient update, panning, fade-overlap, truncation, and reverb wet-gain behavior.
 - Replaced ambiguous reverb damping and tail-cutoff behavior with an exact wet lowpass, Schroeder energy-decay rule, and zero-valued final wet frame.
 - Fixed stale `reverb_baseline_at_48000` FDN delay lengths in `test-vectors/numeric/dsp-values.json` for `tail_220_ms` and `tail_500_ms`. Commit `e8cc4fc` (issue #6) removed the FDN delay caps from `docs/13` and the reference IR generator but missed `dsp-values.json` and the validator's `baseline_lengths` helper, which still passed the old caps. The validator now passes `None` (uncapped) for the FDN, matching the generator and `reverb_metrics.py`.
+- Fixed reverb perceptual-equivalence metrics (modal resonance floor and spectral centroid) being undefined when the captured response `T` or modal analysis window `W_m` exceeds `N_fft = 65536`. The FFT length is now `N_fft = max(65536, next_power_of_two(signal_length))` per metric, covering the full valid tail range. The 65536 minimum preserves all published baselines (the 5 canonical fixtures all have `T` and `W_m` below 65536). Added `--test` regression mode to `reverb_metrics.py` verifying metrics at boundary lengths (65535, 65536, 65537, 65538, 100K, 200K frames).
 
 ### Release gates
 

@@ -338,7 +338,7 @@ def documentation_parity_errors() -> list[str]:
         "docs/07-reverb.md": ["`amount`    | number", "`tail_ms`   | integer | `1` or more", "`soften_hz` | number  | `200`–`12000`"],
         "docs/11-engine-safety.md": ["at least 8000 Hz", "min(20000, 0.49 × sample_rate)", "48000 Hz", "frame(S + b) - frame(S + a)"],
         "docs/04-pitch.md": ["Evaluate the `frequencies` contour", "Apply the cents offset", "Clamp `offset_hz`"],
-        "docs/07-reverb.md": ["five_ms_frames", "DSP conformance harness", "1 + floor(0.9 × N)", "Perceptual-equivalence metric algorithms", "N_fft = 65536", "hop = max(1, floor(W_m / 4))", "is excluded", "magnitude weighting"],
+        "docs/07-reverb.md": ["five_ms_frames", "DSP conformance harness", "1 + floor(0.9 × N)", "Perceptual-equivalence metric algorithms", "next_power_of_two", "hop = max(1, floor(W_m / 4))", "is excluded", "magnitude weighting"],
         "docs/08-output.md": ["Visit active layers in document array order", "[0, F(D + tail_ms))"],
         "docs/14-conformance.md": ["start_ms + duration_ms", "document duration plus `reverb.tail_ms`"],
         "docs/15-engine-build-guide.md": ["schemas/v1.json", "test-vectors/invalid-expectations.json", "test-vectors/numeric/dsp-values.json", "test-vectors/behavior/render-cases.json", "Definition of done"],

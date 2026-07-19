@@ -209,7 +209,7 @@ Use hop size `hop = max(1, floor(W_m / 4))`. For every window start position `st
 1. Extract the segment `seg = m[start : start + W_m]`.
 2. Subtract its mean: `seg[k] -= mean(seg)`.
 3. Apply a Hann window: `w[k] = 0.5 × (1 − cos(2π × k / (W_m − 1)))` for `k ∈ [0, W_m)` (if `W_m = 1`, `w[0] = 1`).
-4. Zero-pad to `N_fft = 65536` and compute the DFT. (The zero-padding provides bin interpolation; the Rayleigh frequency resolution is `sample_rate / W_m`, not `sample_rate / N_fft`.)
+4. Zero-pad to `N_fft = max(65536, next_power_of_two(W_m))` and compute the DFT. Here `next_power_of_two(n)` is the smallest `2^k ≥ n` for integer `k ≥ 0`. (The zero-padding provides bin interpolation; the Rayleigh frequency resolution is `sample_rate / W_m`, not `sample_rate / N_fft`.)
 5. Compute the magnitude spectrum `|M[k]|` for `k ∈ [k_min, N_fft / 2]` where `k_min = ceil(20 × N_fft / sample_rate)` (the bin for 20 Hz, the audible lower bound).
 6. Recover the amplitude of the strongest bin in this window:
 
@@ -269,7 +269,7 @@ Form the mono sum `m[n] = (L[n] + R[n]) / 2` over the full captured response `[0
 w[k] = 0.5 × (1 − cos(2π × k / (T − 1)))  for k ∈ [0, T)
 ```
 
-Zero-pad the windowed signal to `N_fft = 65536` and compute the magnitude spectrum `|M[k]|`. The spectral centroid uses **magnitude weighting** (not power weighting):
+Zero-pad the windowed signal to `N_fft = max(65536, next_power_of_two(T))` and compute the magnitude spectrum `|M[k]|`. The spectral centroid uses **magnitude weighting** (not power weighting):
 
 ```text
 centroid_bin  = (Σ k × |M[k]|) / (Σ |M[k]|)             over k ∈ [1, N_fft/2]
@@ -281,6 +281,8 @@ The summation excludes the DC bin (k = 0). If `Σ |M[k]| = 0`, `centroid_hz = 0`
 **Tolerance:** relative. `0.9 × ref ≤ centroid_hz ≤ 1.1 × ref`. If the reference value is `0`, the engine's value MUST also be `0`.
 
 **Published baseline:** the measured centroid in Hz per fixture.
+
+**Note on `N_fft` scaling.** Metrics 4 and 6 both use `N_fft = max(65536, next_power_of_two(signal_length))`, where `signal_length` is `W_m` (Metric 4) or `T` (Metric 6). The 65536 minimum ensures stable bin interpolation for short responses and preserves all published baselines (the 5 canonical fixtures all have `T` and `W_m` below 65536). For responses or windows longer than 65536 frames, `N_fft` is the next power of two above the input length, preserving the zero-padding interpolation behavior. At 48 kHz, the 65536 minimum covers tails up to ~1365 ms; the next-power-of-two rule covers the full valid tail range up to the engine's published ceiling. The amplitude recovery formula (`4 × |M[k]| / W_m`) and the centroid formula (`centroid_bin × sample_rate / N_fft`) are both correct for any `N_fft` because the unnormalized DFT magnitude is independent of zero-padding length and the bin-to-Hz conversion scales with `1 / N_fft`.
 
 ### Metric 7: Onset frame
 
