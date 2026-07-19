@@ -86,7 +86,14 @@ side_sign = [ 1, -1,  1,  1, -1,  1, -1, -1] / sqrt(8)
 u[i] = mid_sign[i] × mid + side_sign[i] × side
 ```
 
-Apply the **per-configuration random orthogonal feedback matrix** to `q[i] = g[i] × z[i]`. The matrix `Q` is an 8×8 orthogonal matrix (`Qᵀ Q = I`), generated once at configuration time via modified Gram-Schmidt orthonormalization of a matrix seeded by a deterministic hash of `(tail_ms, soften_hz)` using PCG32 (see [Noise and Determinism](09-noise-and-determinism.md)). The matrix is cached per reverb configuration and reused for every frame:
+Apply the **per-configuration random orthogonal feedback matrix** to `q[i] = g[i] × z[i]`. The matrix `Q` is an 8×8 orthogonal matrix (`Qᵀ Q = I`), generated once at configuration time via modified Gram-Schmidt orthonormalization of a matrix seeded by the normative seed function:
+
+```text
+soften_mhz = floor(soften_hz × 1000 + 0.5)
+seed = (tail_ms × 2654435769 + soften_mhz) mod 2^32
+```
+
+where `2654435769 = 0x9E3779B9` is the 32-bit golden ratio constant (2^32 / φ). The multiplication is unsigned 32-bit wrapping (`mod 2^32`). The seed initializes PCG32 (see [Noise and Determinism](09-noise-and-determinism.md)), which generates the random entries for the matrix before orthonormalization. The matrix is cached per reverb configuration and reused for every frame:
 
 ```text
 v = Q × q     (8×8 dense matrix-vector multiply: 64 mults + 56 adds)

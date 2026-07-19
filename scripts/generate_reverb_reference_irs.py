@@ -27,6 +27,8 @@ import struct
 import sys
 from pathlib import Path
 
+import reverb_metrics
+
 SCRIPT_DIR = Path(__file__).resolve().parent
 ROOT = SCRIPT_DIR.parent
 FIXTURE_DIR = ROOT / "test-vectors" / "numeric" / "reverb-reference-irs"
@@ -39,12 +41,12 @@ MASK64 = (1 << 64) - 1
 MASK32 = (1 << 32) - 1
 
 
-def frame(ms: float) -> int:
-    return int(math.floor(ms * SAMPLE_RATE / 1000 + 0.5))
+def frame(ms: float, rate: int = SAMPLE_RATE) -> int:
+    return int(math.floor(ms * rate / 1000 + 0.5))
 
 
-def five_ms_frames() -> int:
-    return int(math.floor(5 * SAMPLE_RATE / 1000 + 0.5))
+def five_ms_frames(rate: int = SAMPLE_RATE) -> int:
+    return int(math.floor(5 * rate / 1000 + 0.5))
 
 
 def _pcg32(seed: int):
@@ -65,14 +67,20 @@ def _pcg32(seed: int):
 
 
 def _config_seed(tail_ms: int, soften_hz: float) -> int:
-    """Deterministic seed from reverb configuration (tail_ms, soften_hz)."""
-    return hash((tail_ms, int(soften_hz * 1000))) & MASK32
+    """Language-neutral 32-bit seed from reverb configuration.
+
+    seed = (tail_ms × 0x9E3779B9 + floor(soften_hz × 1000 + 0.5)) mod 2^32
+    where 0x9E3779B9 = 2654435769 is the 32-bit golden ratio constant.
+    Defined normatively in docs/13-implementer-notes.md.
+    """
+    soften_mhz = int(math.floor(soften_hz * 1000 + 0.5))
+    return (tail_ms * 2654435769 + soften_mhz) & 0xFFFFFFFF
 
 
 def _random_orthogonal_matrix(n: int, seed: int) -> list[list[float]]:
     """Generate an n×n random orthogonal matrix via modified Gram-Schmidt.
 
-    Seeded by a deterministic hash of the reverb configuration (tail_ms, soften_hz).
+    Seeded by the normative `_config_seed(tail_ms, soften_hz)` function per docs/13.
     The matrix is computed once at configuration time and cached. It is LTI
     (fixed for the render), lossless (orthogonal → eigenvalues on unit circle),
     and deterministic (same seed → same matrix → same reverb output).
@@ -127,9 +135,10 @@ class FDN:
     Schroeder's modal-density criterion at ~113%.
     """
 
-    def __init__(self, tail_ms: int):
-        self.sample_rate = SAMPLE_RATE
-        self.R = frame(float(tail_ms))  # conformance response length
+    def __init__(self, tail_ms: int, soften_hz: float = 4000.0, sample_rate: int = 48000):
+        self.sample_rate = sample_rate
+        self.soften_hz = soften_hz
+        self.R = frame(float(tail_ms), self.sample_rate)  # conformance response length
         self.tail_ms = tail_ms
         self._build_diffusers()
         self._build_late_network()
@@ -145,7 +154,7 @@ class FDN:
         if cap_ms is None:
             raw = max(1, proportional)
         else:
-            raw = max(1, min(frame(cap_ms), proportional))
+            raw = max(1, min(frame(cap_ms, self.sample_rate), proportional))
         if prev is None:
             return raw
         return min(self.R, max(raw, prev + 1))
@@ -185,7 +194,7 @@ class FDN:
         self.fdn_buffers = [[0.0] * l for l in self.fdn_lengths]
         self.fdn_indices = [0] * self.num_lines
         self.feedback_gains = [0.0] * self.num_lines
-        seed = _config_seed(self.tail_ms, SOFTEN_HZ)
+        seed = _config_seed(self.tail_ms, self.soften_hz)
         self.feedback_matrix = _random_orthogonal_matrix(self.num_lines, seed)
 
     def _reset(self):
@@ -273,7 +282,7 @@ class FDN:
             L[n] = coreL
             R_chan[n] = coreR
 
-        a = math.exp(-2.0 * math.pi * SOFTEN_HZ / SAMPLE_RATE)
+        a = math.exp(-2.0 * math.pi * self.soften_hz / self.sample_rate)
         yL, yR = 0.0, 0.0
         for n in range(T):
             L[n] = a * yL + (1.0 - a) * L[n]
@@ -281,7 +290,7 @@ class FDN:
             R_chan[n] = a * yR + (1.0 - a) * R_chan[n]
             yR = R_chan[n]
 
-        five_ms = five_ms_frames()
+        five_ms = five_ms_frames(self.sample_rate)
         W = max(2, min(five_ms, int(math.ceil(N / 10.0))))
         for n in range(T):
             if n >= T - W:
@@ -382,7 +391,7 @@ class FDN:
             L[n] = coreL
             R_chan[n] = coreR
 
-        a = math.exp(-2.0 * math.pi * SOFTEN_HZ / SAMPLE_RATE)
+        a = math.exp(-2.0 * math.pi * self.soften_hz / self.sample_rate)
         yL, yR = 0.0, 0.0
         for n in range(T):
             L[n] = a * yL + (1.0 - a) * L[n]
@@ -390,7 +399,7 @@ class FDN:
             R_chan[n] = a * yR + (1.0 - a) * R_chan[n]
             yR = R_chan[n]
 
-        five_ms = five_ms_frames()
+        five_ms = five_ms_frames(self.sample_rate)
         W = max(2, min(five_ms, int(math.ceil(N / 10.0))))
         for n in range(T):
             if n >= T - W:
@@ -421,14 +430,14 @@ def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def generate_fixture(tail_ms: int, output_dir: Path) -> dict:
-    fdn = FDN(tail_ms)
-    L, R = fdn.generate()
+def generate_fixture(tail_ms: int, soften_hz: float, sample_rate: int, output_dir: Path) -> dict:
+    fdn = FDN(tail_ms, soften_hz, sample_rate)
+    L, R_chan = fdn.generate()
     T = len(L)
     N = T - 1
-    data = pack_stereo_interleaved(L, R)
+    data = pack_stereo_interleaved(L, R_chan)
 
-    filename = f"tail_{tail_ms:03d}_ms_soften_4000_hz_at_48000.bin"
+    filename = f"tail_{tail_ms:03d}_ms_soften_{int(soften_hz)}_hz_at_{sample_rate}.bin"
     filepath = output_dir / filename
     filepath.write_bytes(data)
 
@@ -436,8 +445,8 @@ def generate_fixture(tail_ms: int, output_dir: Path) -> dict:
         "filename": filename,
         "sample_count": T,
         "channels": 2,
-        "sample_rate": SAMPLE_RATE,
-        "soften_hz": SOFTEN_HZ,
+        "sample_rate": sample_rate,
+        "soften_hz": soften_hz,
         "tail_ms": tail_ms,
         "dtype": "binary64le",
         "sha256": sha256(data),
@@ -452,7 +461,7 @@ def regenerate_all() -> list[dict]:
     entries = []
     for tail in tails:
         print(f"  Generating tail {tail} ms...")
-        entry = generate_fixture(tail, FIXTURE_DIR)
+        entry = generate_fixture(tail, 4000.0, 48000, FIXTURE_DIR)
         entries.append(entry)
         print(f"    → {entry['filename']}  ({entry['sample_count']} frames, SHA-256: {entry['sha256']})")
     entries.sort(key=lambda e: e["tail_ms"])
@@ -495,6 +504,40 @@ def check_integrity() -> list[str]:
     return errors
 
 
+def test_arbitrary_config() -> list[str]:
+    """Verify the generator and metrics work for a non-canonical configuration."""
+    errors: list[str] = []
+    tail_ms = 37
+    soften_hz = 8000.0
+    sample_rate = 44100
+    print(f"  Testing config: tail_ms={tail_ms}, soften_hz={soften_hz}, sample_rate={sample_rate}...")
+    fdn = FDN(tail_ms, soften_hz, sample_rate)
+    L, R_chan = fdn.generate()
+    T = len(L)
+    if any(not math.isfinite(v) for v in L + R_chan):
+        errors.append("output contains non-finite samples")
+    if T <= 1:
+        errors.append(f"output too short: {T}")
+    metrics = reverb_metrics.compute_all(L, R_chan, {
+        "sample_count": T,
+        "tail_ms": tail_ms,
+        "sample_rate": sample_rate,
+    })
+    for key in ["rt60_crossing_frame", "total_wet_energy", "echo_density",
+                 "lr_correlation", "spectral_centroid_hz", "onset_frame"]:
+        val = metrics.get(key)
+        if val is not None and not math.isfinite(val):
+            errors.append(f"metric {key} not finite: {val}")
+    mrf = metrics.get("modal_resonance_floor_db")
+    if mrf is not None and not math.isfinite(mrf):
+        errors.append(f"metric modal_resonance_floor_db not finite: {mrf}")
+    print(f"    T={T}, metrics: rt60={metrics.get('rt60_crossing_frame')}, "
+          f"energy={metrics.get('total_wet_energy'):.4f}, echo={metrics.get('echo_density')}, "
+          f"modal={metrics.get('modal_resonance_floor_db')}, "
+          f"centroid={metrics.get('spectral_centroid_hz'):.1f}")
+    return errors
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate/verify reverb reference IR fixtures")
     parser.add_argument(
@@ -502,7 +545,22 @@ def main() -> int:
         action="store_true",
         help="verify existing fixtures without regenerating",
     )
+    parser.add_argument(
+        "--test-config",
+        action="store_true",
+        help="test generation for a non-canonical configuration",
+    )
     args = parser.parse_args()
+
+    if args.test_config:
+        print("Testing non-canonical reverb configuration...")
+        errors = test_arbitrary_config()
+        if errors:
+            for e in errors:
+                print(f"  ERROR: {e}")
+            return 1
+        print("  Non-canonical config test passed.")
+        return 0
 
     if args.check:
         print("Checking reverb reference IR fixtures...")
