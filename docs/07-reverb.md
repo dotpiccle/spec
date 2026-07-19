@@ -132,7 +132,7 @@ At every render profile (canonical and additional), the wet output MUST meet the
 | RT60 crossing frame `c` (`EDC_dB[c] <= -60 dB`) | `1 + floor(0.9 × N) <= c <= N` (existing, preserved) | Bulk decay timing |
 | Total wet energy `Σ(L² + R²)` after normalization | Within `±0.5 dB` of the reference fixture's value | Overall loudness |
 | Echo density — fraction of zero-crossing intervals below `sample_rate / 1000` in the first `min(N, 0.05 × sample_rate)` frames | Within `±10%` of the reference fixture's density | No metallic ringing or discrete echoes |
-| Modal resonance floor — strongest sustained sinusoidal mode in any Schroeder-aware `min(late_tail, max(0.15 × T₆₀ × Fs, 2 × M))` window (excluding onset), relative to the wet peak | `engine ≤ ref + 6` AND `engine ≤ −30` dB (hybrid) | Single ringing frequency mode |
+| Modal resonance floor — strongest sustained sinusoidal mode in any Schroeder-aware `min(late_tail, max(0.15 × T₆₀ × Fs, 2 × M))` window (excluding onset), relative to the wet peak | Always `engine ≤ ref + 6` dB; additionally `engine ≤ −30` dB when `ref ≤ −30` dB | Single ringing frequency mode |
 | L/R correlation across the tail (Pearson) | Within `±0.15` of the reference fixture's measured correlation | Stereo decorrelation |
 | Spectral centroid of the post-softened wet response | Within `±10%` of the reference fixture's centroid | Brightness and damping beyond the normative lowpass corner |
 | Onset frame — index of first wet sample exceeding `0.1 × peak_wet_sample` | Within `±1 sample` at canonical mode; within `±1 frame` at the active sample rate for additional profiles | No spurious predelay or different early-reflection patterns |
@@ -233,12 +233,12 @@ modal_floor = 20 × log10(strongest / peak_wet)
 - If `peak_wet == 0`, the modal floor is undefined (the generator MUST NOT produce this).
 - If `onset_skip + W_m > T` (no analysis window fits), the modal floor is `−∞ dB` (the tail is too short to sustain a modal resonance). The published baseline for very short tails is `null`.
 
-**Tolerance:** hybrid. The engine's modal floor MUST satisfy BOTH clauses:
+**Tolerance:** reference-qualified hybrid. The engine's modal floor MUST satisfy the relative clause, and the absolute clause applies when the reference itself meets the quality floor:
 
 1. `engine ≤ ref + 6` dB (character match — no more than 6 dB worse than the reference)
-2. `engine ≤ −30` dB (absolute quality floor — no single sustained mode louder than −30 dB relative to the wet peak)
+2. If `ref ≤ −30` dB, then `engine ≤ −30` dB (absolute quality floor)
 
-Both clauses must be satisfied. The absolute floor of `−30 dB` is derived from the worst non-degenerate reference fixture's modal floor (published in [manifest.json](../test-vectors/numeric/reverb-reference-irs/manifest.json) under [test-vectors/numeric/reverb-reference-irs/](../test-vectors/numeric/reverb-reference-irs/)) plus a small headroom, rounded to a clean gate value. The reference must pass its own absolute clause; this is enforced by the existing `reverb_reference_ir_metrics_errors` validation gate. An engine that produces a single sustained resonator above `−30 dB` fails the absolute clause regardless of the reference; an engine that exceeds the reference by more than 6 dB fails the relative clause.
+The absolute floor of `−30 dB` is derived from the worst non-degenerate canonical reference fixture's modal floor in [the reference manifest](../test-vectors/numeric/reverb-reference-irs/manifest.json), plus a small headroom rounded to a clean gate value. Some valid low-rate or high-corner configurations intentionally produce a reference response above that canonical quality floor. Such a reference cannot fail against itself: for those configurations the relative clause remains mandatory and the absolute clause is not applicable. When the same-configuration reference meets `−30 dB`, an engine above `−30 dB` fails even if it remains within 6 dB of the reference.
 
 **Note on the tolerance history.** The original specification used an absolute `≤ −40 dB` gate. That gate was not achievable by any reasonable FDN under this algorithm (the `−40 dB` figure had no literature basis). Issue #5 replaced the absolute gate with a one-sided `engine ≤ ref + 6 dB` transitional tolerance. Issue #6 supplemented the one-sided tolerance with an absolute `−25 dB` quality floor and improved the reference FDN (delay caps removed so `M` scales with `tail_ms`, random orthogonal feedback matrix replacing the Walsh-Hadamard transform) to meet Schroeder's modal-density criterion at ~113% for all valid tails. Issue #7 identified that the 20 ms fixture's previous modal floor (`−27.7 dB`) was a Rayleigh resolution artifact: the previous `W_m = max(schroeder_min, M)` window (162 frames, 3.4 ms) could not resolve modes spaced at 296 Hz. The window length was changed to `W_m = min(late_tail, max(schroeder_min, 2 × M))`, giving a 324-frame (6.75 ms) window for the 20 ms fixture. This resolved the artifact and revealed the true modal floor of `−32.8 dB`, allowing the absolute gate to tighten from `−25 dB` to `−30 dB` without any FDN change. No fixtures were regenerated; the FDN output is identical. Issue #11's normative seed function subsequently regenerated all canonical fixtures; the 20 ms modal floor shifted slightly (see [manifest.json](../test-vectors/numeric/reverb-reference-irs/manifest.json) for the current value). The absolute gate remains `−30 dB`.
 
@@ -311,7 +311,7 @@ The onset frame is the smallest `n ≥ 0` where `max(|L[n]|, |R[n]|) ≥ 0.1 × 
 | RT60 crossing frame `c` | Range | `1 + floor(0.9 × N) ≤ c ≤ N` |
 | Total wet energy | Relative dB | `\|20 × log10(E / ref)\| ≤ 0.5` dB (ref is `1.0`) |
 | Echo density | Relative | `0.9 × ref ≤ engine ≤ 1.1 × ref` (`engine == 0` when `ref == 0`) |
-| Modal resonance floor | Hybrid dB | `engine ≤ ref + 6` AND `engine ≤ −30` dB (`null` ref is degenerate — trivially passes) |
+| Modal resonance floor | Reference-qualified hybrid dB | Always `engine ≤ ref + 6`; additionally `engine ≤ −30` dB when `ref ≤ −30` dB (`null` ref is degenerate — trivially passes) |
 | L/R Pearson correlation | Absolute | `\|engine − ref\| ≤ 0.15` |
 | Spectral centroid | Relative | `0.9 × ref ≤ engine ≤ 1.1 × ref` (`engine == 0` when `ref == 0`) |
 | Onset frame | Absolute | `\|engine − ref\| ≤ 1` frame |

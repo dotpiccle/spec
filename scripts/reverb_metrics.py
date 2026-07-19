@@ -329,8 +329,9 @@ def onset_frame(L: list[float], R: list[float], T: int) -> int:
 
 
 # Tolerance comparisons matching docs/07-reverb.md exactly
-# Modal floor uses a HYBRID tolerance: engine ≤ ref + 6 (relative) AND
-# engine ≤ MODAL_FLOOR_ABSOLUTE_GATE (absolute quality floor). Both must pass.
+# Modal floor always uses the one-sided engine ≤ ref + 6 bound. The
+# absolute quality floor additionally applies when the same-configuration
+# reference itself satisfies it.
 MODAL_FLOOR_ABSOLUTE_GATE = -30.0  # derived from worst non-degenerate ref modal floor + headroom; see docs/07-reverb.md and test-vectors/numeric/reverb-reference-irs/manifest.json
 
 TOLERANCE_SPEC: dict[str, dict] = {
@@ -393,14 +394,19 @@ def check_metric(key: str, engine: float | None, ref: float | None) -> tuple[boo
         max_excess = spec.get("max_excess", 0.0)
         absolute_gate = spec.get("absolute_gate", -float("inf"))
         rel_ok = engine <= ref + max_excess
-        abs_ok = engine <= absolute_gate
+        reference_requires_absolute_gate = ref <= absolute_gate
+        abs_ok = not reference_requires_absolute_gate or engine <= absolute_gate
         ok = rel_ok and abs_ok
         parts = []
         if not rel_ok:
             parts.append(f"relative: {engine} > {ref} + {max_excess} = {ref + max_excess} dB — FAIL")
         else:
             parts.append(f"relative: {engine} <= {ref + max_excess} dB — pass")
-        if not abs_ok:
+        if not reference_requires_absolute_gate:
+            parts.append(
+                f"absolute: reference {ref} > {absolute_gate} dB — not applicable"
+            )
+        elif not abs_ok:
             parts.append(f"absolute: {engine} > {absolute_gate} dB — FAIL")
         else:
             parts.append(f"absolute: {engine} <= {absolute_gate} dB — pass")

@@ -121,7 +121,7 @@ Bad (requires specific implementation):
 
 Good (specifies observable behavior):
 
-> Apply a second-order lowpass filter with the given cutoff and resonance. At canonical mode, the coefficients and response must match the values in `test-vectors/numeric/dsp-values.json`.
+> Apply a second-order lowpass filter with the given cutoff and resonance. At canonical mode, its coefficients must match [the numeric aid](../test-vectors/numeric/dsp-values.json) within the published transcendental tolerance.
 
 ---
 

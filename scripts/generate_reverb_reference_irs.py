@@ -138,6 +138,7 @@ class FDN:
     def __init__(self, tail_ms: int, soften_hz: float = 4000.0, sample_rate: int = 48000):
         self.sample_rate = sample_rate
         self.soften_hz = soften_hz
+        self.effective_soften_hz = min(soften_hz, min(20000.0, 0.49 * sample_rate))
         self.R = frame(float(tail_ms), self.sample_rate)  # conformance response length
         self.tail_ms = tail_ms
         self._build_diffusers()
@@ -282,7 +283,7 @@ class FDN:
             L[n] = coreL
             R_chan[n] = coreR
 
-        a = math.exp(-2.0 * math.pi * self.soften_hz / self.sample_rate)
+        a = math.exp(-2.0 * math.pi * self.effective_soften_hz / self.sample_rate)
         yL, yR = 0.0, 0.0
         for n in range(T):
             L[n] = a * yL + (1.0 - a) * L[n]
@@ -391,7 +392,7 @@ class FDN:
             L[n] = coreL
             R_chan[n] = coreR
 
-        a = math.exp(-2.0 * math.pi * self.soften_hz / self.sample_rate)
+        a = math.exp(-2.0 * math.pi * self.effective_soften_hz / self.sample_rate)
         yL, yR = 0.0, 0.0
         for n in range(T):
             L[n] = a * yL + (1.0 - a) * L[n]

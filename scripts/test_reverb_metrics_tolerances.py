@@ -85,9 +85,21 @@ def test_nonrelative_types():
     assert_fail("lr_correlation", 0.2, 0.5)
 
 
+def test_modal_floor_conditional_absolute_gate():
+    key = "modal_resonance_floor_db"
+    # A reference that meets the quality floor keeps both clauses mandatory.
+    assert_pass(key, -30.0, -32.0)
+    assert_fail(key, -29.9, -32.0)
+    # A same-configuration reference above the floor cannot fail against itself.
+    assert_pass(key, -19.8, -19.8)
+    assert_pass(key, -14.0, -19.8)
+    assert_fail(key, -13.7, -19.8)
+
+
 if __name__ == "__main__":
     test_echo_density_bounds()
     test_spectral_centroid_bounds()
     test_degenerate_cases()
     test_nonrelative_types()
+    test_modal_floor_conditional_absolute_gate()
     print("All tolerance boundary tests passed.")

@@ -189,11 +189,11 @@ The first term is part of the wet diffuser response, not an unprocessed dry bypa
 
 Apply the normative wet lowpass and terminal window after this core. During configuration preparation, run the normative impulse once, calculate `normalization_gain = 1 / sqrt(wet_energy)`, and cache that scalar by render profile, `tail_ms`, and `soften_hz`. Apply the cached scalar to rendered wet samples. During document rendering, use the document's actual `N` for the terminal window and output boundary. Do not generate an impulse response, measure energy, tune decay, or allocate delay lines in the audio callback.
 
-Measure the final softened, windowed response in every declared render profile. If its RT60 crossing is outside the permitted window, calibrate `p` during configuration preparation. Use 16 bisection steps over `[0.5, 6]` to target crossing frame `1 + floor(0.95 × R)`: lower `p` when the crossing is too early and raise `p` when it is too late. Cache the resulting exponent with the normalization gain. A crossing anywhere in the normative final-10% interval is sufficient; do not add calibration work to the render loop.
+Measure the final softened, windowed response for the active render profile during configuration preparation. If its RT60 crossing is outside the permitted window, calibrate `p`. Use 16 bisection steps over `[0.5, 6]` to target crossing frame `1 + floor(0.95 × R)`: lower `p` when the crossing is too early and raise `p` when it is too late. Cache the resulting exponent with the normalization gain. A crossing anywhere in the normative final-10% interval is sufficient; do not add calibration work to the render loop.
 
 ### Perceptual qualification
 
-The strict perceptual-equivalence tolerances in [Reverb](07-reverb.md) §Perceptual-equivalence metric algorithms provide the machine-checkable conformance bar against the published canonical reference IR render. Each of the seven metrics has a normatively pinned measurement algorithm, and the baseline values per canonical fixture are published in `manifest.json`. The engine's FDN output MUST pass those tolerances for every declared render profile.
+The strict perceptual-equivalence tolerances in [Reverb](07-reverb.md) §Perceptual-equivalence metric algorithms provide the machine-checkable conformance bar. Each of the seven metrics has a normatively pinned measurement algorithm, and the baseline values per canonical fixture are published in `manifest.json`. The engine's FDN output MUST pass those tolerances across the finite canonical, qualification, and additional-profile matrices in [Engine Build Guide](15-engine-build-guide.md) step 6.
 
 **Note.** Further listening review should confirm:
 

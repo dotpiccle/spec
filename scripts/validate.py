@@ -432,7 +432,7 @@ def numeric_aid_errors() -> list[str]:
         "curve_progress_at_half": {"linear": .5, "exponential_0_1_to_1": math.sqrt(.1), "easeIn": .25, "easeOut": .75, "easeInOut": .5},
         "zero_duration_transition_chain": {"declared_targets": [.1, .2, .3], "transition_frames": [0, 0], "first_emitted_target": .3},
         "oscillator_coefficients": {"sine_k1": 1.0, "square_k1": 4/math.pi, "square_k3": 4/(3*math.pi), "saw_k1": 2/math.pi, "saw_k2": -1/math.pi, "triangle_k1": 8/math.pi**2, "triangle_k3": -8/(9*math.pi**2)},
-        "balance": {"center_left": math.sqrt(.5), "center_right": math.sqrt(.5), "center_then_mono": 1.0},
+        "balance": {},
         "lowpass_1000_hz_48000_resonance_0": {},
         "render_frequency_max_hz": {str(rate): min(20000, .49*rate) for rate in (8000, 16000, 22050, 44100, 48000)},
         "absolute_boundary_frames_at_44100": {"frame_4_ms": 176, "frame_8_ms": 353, "span_4_to_8_ms": 177, "independently_rounded_4_ms": 176},
@@ -472,6 +472,14 @@ def numeric_aid_errors() -> list[str]:
     c, alpha = math.cos(omega), math.sin(omega)/(2*.707)
     a0 = 1 + alpha
     expected["lowpass_1000_hz_48000_resonance_0"] = {"b0": ((1-c)/2)/a0, "b1": (1-c)/a0, "b2": ((1-c)/2)/a0, "a1": (-2*c)/a0, "a2": (1-alpha)/a0}
+    center_x = 0.5
+    center_left = math.cos(center_x * math.pi / 2)
+    center_right = math.sin(center_x * math.pi / 2)
+    expected["balance"] = {
+        "center_left": center_left,
+        "center_right": center_right,
+        "center_then_mono": (center_left + center_right) / math.sqrt(2),
+    }
 
     failures: list[str] = []
     def compare(left: Any, right: Any, path: str) -> None:
@@ -485,12 +493,17 @@ def numeric_aid_errors() -> list[str]:
             if left != right:
                 failures.append(f"numeric aid {path}: values differ")
         elif isinstance(right, float) and isinstance(left, (int, float)):
-            # Float comparison uses isclose to accommodate last-bit differences in
-            # sin/cos-derived entries (lowpass coefficients). All other floats are
-            # deterministic (sqrt is correctly-rounded per IEEE-754; constants are exact)
-            # and pass isclose trivially. See docs/15-engine-build-guide.md step 3
-            # and docs/14-conformance.md §Role of repository fixtures.
-            if not math.isclose(float(left), right, rel_tol=1e-14, abs_tol=1e-15):
+            is_transcendental = path.startswith("$.balance.") or path.startswith(
+                "$.lowpass_1000_hz_48000_resonance_0."
+            )
+            if is_transcendental:
+                tolerance = 8 * sys.float_info.epsilon * max(1.0, abs(right))
+                if abs(float(left) - right) > tolerance:
+                    failures.append(
+                        f"numeric aid {path}: {left!r} differs from {right!r} "
+                        f"by more than {tolerance!r}"
+                    )
+            elif left != right:
                 failures.append(f"numeric aid {path}: {left!r} != {right!r}")
         elif left != right:
             failures.append(f"numeric aid {path}: {left!r} != {right!r}")
@@ -690,9 +703,21 @@ def reverb_qualification_matrix_errors() -> list[str]:
         tail_ms = entry["tail_ms"]
         soften_hz = entry["soften_hz"]
         sample_rate = entry["sample_rate"]
-        from generate_reverb_reference_irs import FDN
+        from generate_reverb_reference_irs import FDN, _config_seed, _random_orthogonal_matrix
         try:
             fdn = FDN(tail_ms, soften_hz, sample_rate)
+            expected_soften_hz = min(soften_hz, min(20000.0, 0.49 * sample_rate))
+            if fdn.effective_soften_hz != expected_soften_hz:
+                failures.append(
+                    f"qualification matrix ({tail_ms}, {soften_hz}, {sample_rate}): "
+                    f"effective soften_hz {fdn.effective_soften_hz} != {expected_soften_hz}"
+                )
+            expected_matrix = _random_orthogonal_matrix(8, _config_seed(tail_ms, soften_hz))
+            if fdn.feedback_matrix != expected_matrix:
+                failures.append(
+                    f"qualification matrix ({tail_ms}, {soften_hz}, {sample_rate}): "
+                    "feedback seed did not preserve declared soften_hz"
+                )
             L, R_chan = fdn.generate()
             T = len(L)
         except Exception as e:
@@ -717,9 +742,24 @@ def reverb_qualification_matrix_errors() -> list[str]:
         mrf = metrics.get("modal_resonance_floor_db")
         if mrf is not None and not math.isfinite(mrf):
             failures.append(f"qualification matrix ({tail_ms}, {soften_hz}, {sample_rate}): modal_resonance_floor_db not finite: {mrf}")
+        if mrf is not None:
+            modal_ok, modal_description = reverb_metrics.check_metric(
+                "modal_resonance_floor_db", mrf, mrf
+            )
+            if not modal_ok:
+                failures.append(
+                    f"qualification matrix ({tail_ms}, {soften_hz}, {sample_rate}): "
+                    f"reference fails its own modal predicate: {modal_description}"
+                )
     # Verify property_test section exists
     if "property_test" not in matrix:
         failures.append("qualification matrix: missing property_test section")
+    required_profile_rates = [8000, 16000, 22050, 24000, 32000, 44100, 48000, 96000, 192000]
+    if matrix.get("additional_profile_sample_rates") != required_profile_rates:
+        failures.append(
+            "qualification matrix: additional_profile_sample_rates must equal "
+            f"{required_profile_rates}"
+        )
     return failures
 
 

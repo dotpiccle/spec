@@ -1,6 +1,17 @@
 {
   "status": "non-normative",
   "description": "Finite mandatory qualification matrix for reverb conformance. Each entry is a (tail_ms, soften_hz, sample_rate) triple that an engine MUST verify against the normative FDN generator. Non-normative as format definition (derivable from the spec); normatively referenced by docs/15-engine-build-guide.md step 6.",
+  "additional_profile_sample_rates": [
+    8000,
+    16000,
+    22050,
+    24000,
+    32000,
+    44100,
+    48000,
+    96000,
+    192000
+  ],
   "property_test": {
     "recommendation": "SHOULD",
     "minimum_count": 100,

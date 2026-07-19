@@ -33,7 +33,9 @@ Use this checklist for `v1.0.0-rc.1` and repeat it before promoting v1 to stable
 - [ ] Qualify a browser engine integration using JavaScript, WebAssembly, or WebAudio.
 - [ ] Qualify a native mobile ARM engine integration.
 - [ ] Qualify a constrained no-FPU engine profile using binary32 or fixed-point DSP.
-- [ ] Exercise declared render rates of 8, 16, 22.05, 44.1, and 48 kHz.
+- [ ] Exercise every supported rate in the reverb qualification matrix's representative set: 8,
+      16, 22.05, 24, 32, 44.1, 48, 96, and 192 kHz. Engines with a smaller finite rate set test
+      every declared rate.
 - [ ] Exercise stereo hosts and mono hosts that downmix only after Piccle clipping.
 - [ ] Verify finite output, timing within one render-profile frame, seeded-noise determinism, resource rejection, frequency clamping, alias suppression, filter stability, and exact reverb termination in every applicable class.
 - [ ] Publish each engine profile's CPU, memory, voice, duration, and output-bandwidth limits without changing format validity.
@@ -46,7 +48,7 @@ Use this checklist for `v1.0.0-rc.1` and repeat it before promoting v1 to stable
 - [ ] Listen on full-range speakers and at least one small-device speaker.
 - [ ] Listen through the lowest-bandwidth supported output path.
 - [ ] Check recognizability, onset clicks, ending clicks, clipping, loudness consistency, oscillator aliasing, filter instability, and reverb cutoff.
-- [ ] Pass the reverb perceptual-equivalence tolerances in [Reverb](docs/07-reverb.md) at every declared render profile against the canonical reference IR in [test-vectors/numeric/reverb-reference-irs/](test-vectors/numeric/reverb-reference-irs/) for tails 1, 10, 20, 220, and 500 ms.
+- [ ] Pass the reverb perceptual-equivalence tolerances in [Reverb](docs/07-reverb.md) across the finite canonical, qualification, and additional-profile matrices in [Engine Build Guide](docs/15-engine-build-guide.md) step 6. Use the published canonical fixtures at 48 kHz and generate same-configuration references on demand elsewhere.
 - [ ] A/B confirm wet onset, echo density, early-to-late energy, stereo decorrelation, brightness, and decay without metallic ringing or discrete echoes; RT60 and tolerance agreement alone is insufficient without listening review.
 - [ ] Profile the examples and the engine's published maximum supported document on the lowest supported device; document render throughput, peak CPU, state memory, and simultaneous voices.
 - [ ] Confirm the production render path performs no JSON work, schema traversal, sorting, table construction, impulse measurement, or memory allocation.

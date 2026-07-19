@@ -54,7 +54,7 @@
   "balance": {
     "center_left": 0.7071067811865476,
     "center_right": 0.7071067811865475,
-    "center_then_mono": 1.0
+    "center_then_mono": 0.9999999999999999
   },
   "lowpass_1000_hz_48000_resonance_0": {
     "b0": 0.0039160766836994635,
