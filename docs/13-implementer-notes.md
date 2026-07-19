@@ -16,7 +16,7 @@ For a task-ordered implementation checklist, see [Engine Build Guide](15-engine-
 
 ## Reference reverb runtime
 
-The recommended default reverb runtime is the diffused eight-line feedback-delay network (FDN) below. It produces perceptually equivalent wet output at canonical mode across conforming engines and requires ~94 operations per output sample with ~13 KiB of state independent of `tail_ms` — the cheapest audibly-same path on memory- and CPU-constrained profiles. This recipe is non-normative: engines may replace it with another LTI realization (e.g. convolution against the canonical reference IR in [test-vectors/numeric/reverb-reference-irs/](../test-vectors/numeric/reverb-reference-irs/)) as long as the output meets the strict perceptual-equivalence tolerances in [Reverb](07-reverb.md).
+The recommended default reverb runtime is the diffused eight-line feedback-delay network (FDN) below. It produces perceptually equivalent wet output at canonical mode across conforming engines and requires ~194 operations per output sample with state proportional to `tail_ms` (~70 bytes per ms at 48 kHz binary64, ~34 KiB at 500 ms, ~576 bytes at 1 ms) — the cheapest audibly-same path on memory- and CPU-constrained profiles. This recipe is non-normative: engines may replace it with another LTI realization (e.g. convolution against the canonical reference IR in [test-vectors/numeric/reverb-reference-irs/](../test-vectors/numeric/reverb-reference-irs/)) as long as the output meets the strict perceptual-equivalence tolerances in [Reverb](07-reverb.md).
 
 For one `tail_ms` and sample-rate configuration, define the conformance-response length `R` exactly as the reverb harness does:
 
@@ -57,12 +57,17 @@ Here `frame` is the active render profile's boundary conversion. Process the fou
 
 ### Eight-line late network
 
-Create eight zero-filled circular delay lines. Use the same delay-length helper with:
+Create eight zero-filled circular delay lines. Derive the delay lengths using the ratios below (no caps — the delay lengths scale proportionally with `R`, bounded by `R`):
 
 ```text
-cap_ms = [1.49, 1.87, 2.29, 2.83, 3.49, 4.33, 5.39, 6.71]
-ratio  = [0.004, 0.006, 0.009, 0.013, 0.019, 0.027, 0.038, 0.053]
+ratio = [0.004, 0.006, 0.009, 0.013, 0.019, 0.027, 0.038, 0.053]
+
+raw[i] = max(1, floor(R × ratio[i] + 0.5))
+d[0] = raw[0]
+d[i] = min(R, max(raw[i], d[i-1] + 1))
 ```
+
+The FDN delay lengths are uncapped so the total delay `M = Σ d[i]` scales with `tail_ms`, meeting Schroeder's modal-density criterion `M ≥ 0.15 × T₆₀ × Fs` at ~113% of the minimum for all valid tails. The diffuser delay lengths remain capped (see §Input diffusion above) because early reflections (~1 ms) do not scale with tail length.
 
 Every render profile has at least eight frames in the shortest valid tail, so these eight lengths can remain positive and distinct. Start with decay exponent `p = 3` and set each line's feedback gain to:
 
@@ -81,22 +86,16 @@ side_sign = [ 1, -1,  1,  1, -1,  1, -1, -1] / sqrt(8)
 u[i] = mid_sign[i] × mid + side_sign[i] × side
 ```
 
-Apply an eight-point normalized fast Walsh-Hadamard transform to `q[i] = g[i] × z[i]`. One in-place transform is:
+Apply the **per-configuration random orthogonal feedback matrix** to `q[i] = g[i] × z[i]`. The matrix `Q` is an 8×8 orthogonal matrix (`Qᵀ Q = I`), generated once at configuration time via modified Gram-Schmidt orthonormalization of a matrix seeded by a deterministic hash of `(tail_ms, soften_hz)` using PCG32 (see [Noise and Determinism](09-noise-and-determinism.md)). The matrix is cached per reverb configuration and reused for every frame:
 
 ```text
-for width = 1, 2, 4:
-    for each adjacent block of 2 × width values:
-        for j = 0 .. width-1:
-            a = value[j]
-            b = value[j + width]
-            value[j] = a + b
-            value[j + width] = a - b
-
-v[i] = value[i] / sqrt(8)
+v = Q × q     (8×8 dense matrix-vector multiply: 64 mults + 56 adds)
 write[i] = u[i] + v[i]
 ```
 
-Write and advance all eight circular delay lines. The normalized transform is orthogonal and every `g[i]` is below `1`, so the late network is stable.
+The random orthogonal matrix has eigenvalues spread as `e^{±jθ}` around the unit circle, distributing mode energy more uniformly than the Walsh-Hadamard transform (whose eigenvalues are all `±1`, clustering modes at two frequencies). This reduces the modal crest factor and the modal resonance floor for all tail lengths, with the largest improvement at long tails. Reference: Dal Santo et al. 2024, *Efficient Optimization of Feedback Delay Networks for Smooth Reverberation* (arXiv:2402.11216); JOS *Physical Audio Signal Processing*, §Choice of Lossless Feedback Matrix.
+
+Write and advance all eight circular delay lines. The orthogonal matrix is lossless (`Qᵀ Q = I`) and every `g[i]` is below `1`, so the late network is stable.
 
 ### Wet output and decay preparation
 
@@ -141,7 +140,7 @@ Further listening review should confirm:
 
 Also inspect each metric from the [normative algorithm specification](07-reverb.md#perceptual-equivalence-metric-algorithms). No single metric substitutes for listening. A candidate that only matches RT60 is not an acceptable replacement for the baseline.
 
-At 48 kHz, the capped FDN and diffuser delays retain about 1,570 samples in total. The eight-line transform, eight feedback gains, eight all-pass stages, and stereo input/output matrices require constant work independent of `tail_ms`. A 500 ms generated 2-by-2 FIR would instead retain about 96,000 coefficients and direct convolution would perform work proportional to the tail length for every output frame.
+At 48 kHz, the FDN and diffuser delays total approximately `0.07 × tail_ms × sample_rate / 1000` samples (e.g., ~1,789 samples at 220 ms, ~4,261 samples at 500 ms), meeting Schroeder's modal-density criterion at ~113% of the minimum. The eight-line dense matrix multiply, eight feedback gains, eight all-pass stages, and stereo input/output matrices require ~194 operations per output sample, constant work independent of `tail_ms`. A 500 ms generated 2-by-2 FIR would instead retain about 96,000 coefficients and direct convolution would perform work proportional to the tail length for every output frame.
 
 ## Noise implementation
 

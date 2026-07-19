@@ -91,7 +91,7 @@ Platform sample-rate conversion, hardware channel routing, mono adaptation, and 
 
 ### 8. Reverb
 
-**Recommended path — diffused eight-line FDN runtime** (the algorithm in [Implementer Notes](13-implementer-notes.md) §Reference reverb runtime). At ~94 ops per output sample and ~13 KiB of state at 500 ms tail, this is the cheapest conformant path on memory- and CPU-constrained profiles. It is constant-work per frame independent of `tail_ms`. At canonical mode it produces perceptually equivalent wet output across conforming engines.
+**Recommended path — diffused eight-line FDN runtime** (the algorithm in [Implementer Notes](13-implementer-notes.md) §Reference reverb runtime). At ~194 ops per output sample and ~34 KiB of state at 500 ms tail (state proportional to `tail_ms`), this is the cheapest conformant path on memory- and CPU-constrained profiles. Per-frame work is constant independent of `tail_ms`. At canonical mode it produces perceptually equivalent wet output across conforming engines.
 
 **Permitted alternative — convolution against the reference IR.** Engines with offline render pipelines or existing FFT infrastructure may convolve the dry stereo mix against the canonical reference IR published in [test-vectors/numeric/reverb-reference-irs/](../test-vectors/numeric/reverb-reference-irs/). The convolution kernel is implementation-defined. Memory at 500 ms is ~2.6 MiB binary64 or ~1.4 MiB binary32 — confirm against the engine's published render limits.
 

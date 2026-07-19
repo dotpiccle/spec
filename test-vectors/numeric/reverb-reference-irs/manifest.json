@@ -10,7 +10,7 @@
       "soften_hz": 4000.0,
       "tail_ms": 1,
       "dtype": "binary64le",
-      "sha256": "9433ebbec369fdbf3c0ed1aa378e6f567d69d120b70f4eec7a88eb1e85f06441",
+      "sha256": "ea6ad43e7a15e9e887a9e82faa7b60997cd00083fcaab3f0e30c9b2ce4235c59",
       "generator": "docs/13-implementer-notes.md \u00a7Reference reverb runtime",
       "conformance_impulse": {
         "left": "sqrt(0.5)",
@@ -18,10 +18,10 @@
       },
       "metrics": {
         "rt60_crossing_frame": 48,
-        "total_wet_energy": 1.0000000000000007,
+        "total_wet_energy": 1.0,
         "echo_density": 1.0,
-        "lr_correlation": -0.026167740039161554,
-        "spectral_centroid_hz": 9215.66353601338,
+        "lr_correlation": -0.014733948433132105,
+        "spectral_centroid_hz": 9576.89591985295,
         "onset_frame": 0,
         "modal_resonance_floor_db": null
       }
@@ -34,7 +34,7 @@
       "soften_hz": 4000.0,
       "tail_ms": 10,
       "dtype": "binary64le",
-      "sha256": "2975be81a3c5773b0c46245059c592b935512faa3b8bd81237e261746c960d97",
+      "sha256": "041b3a67d9eaf9146313361234a1a548d127c38a0abb4c34ddc6abda34d54d41",
       "generator": "docs/13-implementer-notes.md \u00a7Reference reverb runtime",
       "conformance_impulse": {
         "left": "sqrt(0.5)",
@@ -42,12 +42,12 @@
       },
       "metrics": {
         "rt60_crossing_frame": 456,
-        "total_wet_energy": 0.9999999999999981,
+        "total_wet_energy": 1.0000000000000002,
         "echo_density": 1.0,
-        "lr_correlation": 0.17532459335514713,
-        "spectral_centroid_hz": 9077.544289334486,
+        "lr_correlation": 0.06797853267985386,
+        "spectral_centroid_hz": 9410.873618128546,
         "onset_frame": 0,
-        "modal_resonance_floor_db": -44.4
+        "modal_resonance_floor_db": -42.8
       }
     },
     {
@@ -58,7 +58,7 @@
       "soften_hz": 4000.0,
       "tail_ms": 20,
       "dtype": "binary64le",
-      "sha256": "17baaf5ce01667aa3386dbffc34a7161ea03ee53e781b1b9a87725270f5ceb50",
+      "sha256": "a1c8a74e3cfe9d8d71ee074903b7c584a127a5a21e8fe8383c195e6cb2339113",
       "generator": "docs/13-implementer-notes.md \u00a7Reference reverb runtime",
       "conformance_impulse": {
         "left": "sqrt(0.5)",
@@ -66,12 +66,12 @@
       },
       "metrics": {
         "rt60_crossing_frame": 912,
-        "total_wet_energy": 0.9999999999999994,
+        "total_wet_energy": 1.0000000000000004,
         "echo_density": 1.0,
-        "lr_correlation": 0.09081425191676847,
-        "spectral_centroid_hz": 9276.003816831777,
+        "lr_correlation": 0.049027420716043886,
+        "spectral_centroid_hz": 8691.780358535429,
         "onset_frame": 0,
-        "modal_resonance_floor_db": -27.9
+        "modal_resonance_floor_db": -27.7
       }
     },
     {
@@ -82,7 +82,7 @@
       "soften_hz": 4000.0,
       "tail_ms": 220,
       "dtype": "binary64le",
-      "sha256": "3cdbac03c61a00bf8ea06818fcb9b45355890424d6278f308bdef2562a887a6c",
+      "sha256": "3b617cd6e62c30dfb37d066043ab49697817379718d90b6ee062827a5cf5be59",
       "generator": "docs/13-implementer-notes.md \u00a7Reference reverb runtime",
       "conformance_impulse": {
         "left": "sqrt(0.5)",
@@ -90,12 +90,12 @@
       },
       "metrics": {
         "rt60_crossing_frame": 10033,
-        "total_wet_energy": 1.000000000000007,
+        "total_wet_energy": 0.9999999999999927,
         "echo_density": 1.0,
-        "lr_correlation": 0.025830305683127764,
-        "spectral_centroid_hz": 8888.370153578082,
+        "lr_correlation": 0.05194644705524387,
+        "spectral_centroid_hz": 8786.062841991989,
         "onset_frame": 0,
-        "modal_resonance_floor_db": -28.1
+        "modal_resonance_floor_db": -30.7
       }
     },
     {
@@ -106,7 +106,7 @@
       "soften_hz": 4000.0,
       "tail_ms": 500,
       "dtype": "binary64le",
-      "sha256": "b4d5f1b289c2372c39ab0dffe6c9cbaf66dbf0824efc951284b4e6e061eff797",
+      "sha256": "7bea88e41fdfb715f03946e0ee4b97fd332b704b5791e19fb171b79847b91974",
       "generator": "docs/13-implementer-notes.md \u00a7Reference reverb runtime",
       "conformance_impulse": {
         "left": "sqrt(0.5)",
@@ -114,12 +114,12 @@
       },
       "metrics": {
         "rt60_crossing_frame": 22801,
-        "total_wet_energy": 0.9999999999999895,
+        "total_wet_energy": 0.9999999999999872,
         "echo_density": 1.0,
-        "lr_correlation": -0.03890561027009783,
-        "spectral_centroid_hz": 8889.178647948049,
+        "lr_correlation": 0.002389094792278852,
+        "spectral_centroid_hz": 8973.224216328681,
         "onset_frame": 0,
-        "modal_resonance_floor_db": -34.8
+        "modal_resonance_floor_db": -35.9
       }
     }
   ]

@@ -174,10 +174,33 @@ def echo_density(L: list[float], R: list[float], N: int, rate: int = SAMPLE_RATE
     return float(len(qualifying)) / float(len(intervals)) if intervals else 0.0
 
 
+def _fdn_total_delay(tail_ms: int, rate: int = SAMPLE_RATE) -> int:
+    """Compute the FDN total delay M = Σ d[i] for the uncapped proportional formula.
+
+    Matches the generator's _build_late_network (cap_ms=None) and docs/13.
+    Used by the Schroeder-aware analysis window: W_m = max(Schroeder_min, M).
+    """
+    R = int(math.floor(tail_ms * rate / 1000 + 0.5))
+    ratios = [0.004, 0.006, 0.009, 0.013, 0.019, 0.027, 0.038, 0.053]
+    lengths: list[int] = []
+    for ratio in ratios:
+        raw = max(1, int(math.floor(R * ratio + 0.5)))
+        if lengths:
+            d = min(R, max(raw, lengths[-1] + 1))
+        else:
+            d = raw
+        lengths.append(d)
+    return sum(lengths)
+
+
 def modal_resonance_floor(
     L: list[float], R: list[float], T: int, tail_ms: int, rate: int = SAMPLE_RATE
 ) -> float | None:
-    """Strongest sustained sinusoidal mode in any 0.15 x tail_ms window.
+    """Strongest sustained sinusoidal mode in any Schroeder-aware window.
+
+    The window length is W_m = max(0.15 × tail_ms × Fs, M) where M is the FDN's
+    total delay. This ensures the window can resolve modes at the FDN's actual
+    modal density, not just the Schroeder minimum.
 
     Returns dB value, or None if no analysis window fits (degenerate: tail too short).
     See docs/07-reverb.md metric 4.
@@ -187,8 +210,10 @@ def modal_resonance_floor(
     if peak_wet == 0.0:
         return None
 
-    onset_skip = max(frame(5), frame(0.05 * tail_ms))
-    W_m = frame(0.15 * tail_ms)
+    onset_skip = max(frame(5, rate), frame(0.05 * tail_ms, rate))
+    schroeder_min = frame(0.15 * tail_ms, rate)
+    M = _fdn_total_delay(tail_ms, rate)
+    W_m = max(schroeder_min, M)
     if onset_skip + W_m > T or W_m < 2:
         return None
 
@@ -284,11 +309,15 @@ def onset_frame(L: list[float], R: list[float], T: int) -> int:
 
 
 # Tolerance comparisons matching docs/07-reverb.md exactly
+# Modal floor uses a HYBRID tolerance: engine ≤ ref + 6 (relative) AND
+# engine ≤ MODAL_FLOOR_ABSOLUTE_GATE (absolute quality floor). Both must pass.
+MODAL_FLOOR_ABSOLUTE_GATE = -25.0  # worst non-degenerate ref (-27.7) + 3 dB headroom
+
 TOLERANCE_SPEC: dict[str, dict] = {
     "rt60_crossing_frame": {"type": "exact"},
     "total_wet_energy": {"type": "db", "max_abs": 0.5},
     "echo_density": {"type": "relative", "factor": 1.1},
-    "modal_resonance_floor_db": {"type": "one_sided_db", "max_excess": 6.0},
+    "modal_resonance_floor_db": {"type": "hybrid_db", "max_excess": 6.0, "absolute_gate": MODAL_FLOOR_ABSOLUTE_GATE},
     "lr_correlation": {"type": "absolute", "max_abs": 0.15},
     "spectral_centroid_hz": {"type": "relative", "factor": 1.1},
     "onset_frame": {"type": "absolute", "max_abs": 1},
@@ -307,7 +336,7 @@ def check_metric(key: str, engine: float | None, ref: float | None) -> tuple[boo
     if ref is None:
         if engine is None:
             return True, f"{key}: both null (degenerate) — pass"
-        if tol_type == "one_sided_db":
+        if tol_type in ("one_sided_db", "hybrid_db"):
             return True, f"{key}: ref is null (degenerate), engine={engine} — pass (trivially)"
         return False, f"{key}: ref=null but engine={engine!r} — fail (engine should be null)"
 
@@ -338,6 +367,23 @@ def check_metric(key: str, engine: float | None, ref: float | None) -> tuple[boo
         if engine > ref + max_excess:
             return False, f"{key}: engine={engine} dB, ref={ref} dB, excess={engine - ref:.2f} dB > {max_excess} dB — FAIL"
         return True, f"{key}: engine={engine} dB, ref={ref} dB, excess={engine - ref:.2f} dB <= {max_excess} dB — pass"
+
+    if tol_type == "hybrid_db":
+        max_excess = spec.get("max_excess", 0.0)
+        absolute_gate = spec.get("absolute_gate", -float("inf"))
+        rel_ok = engine <= ref + max_excess
+        abs_ok = engine <= absolute_gate
+        ok = rel_ok and abs_ok
+        parts = []
+        if not rel_ok:
+            parts.append(f"relative: {engine} > {ref} + {max_excess} = {ref + max_excess} dB — FAIL")
+        else:
+            parts.append(f"relative: {engine} <= {ref + max_excess} dB — pass")
+        if not abs_ok:
+            parts.append(f"absolute: {engine} > {absolute_gate} dB — FAIL")
+        else:
+            parts.append(f"absolute: {engine} <= {absolute_gate} dB — pass")
+        return ok, f"{key}: engine={engine} dB, ref={ref} dB — {'pass' if ok else 'FAIL'} ({'; '.join(parts)})"
 
     if tol_type == "db":
         max_abs = spec.get("max_abs", 0.0)

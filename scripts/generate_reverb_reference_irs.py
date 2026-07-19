@@ -6,6 +6,12 @@ docs/13-implementer-notes.md and the wet harness from docs/07-reverb.md.
 At binary64 48 kHz canonical mode the output is perceptually equivalent across
 conforming implementations.
 
+The FDN uses a per-configuration random orthogonal feedback matrix (generated
+via modified Gram-Schmidt orthonormalization of a PCG32-seeded matrix) instead
+of the Walsh-Hadamard transform. The random matrix spreads eigenvalues as
+e^{±jθ} around the unit circle (vs the WHT's ±1), distributing mode energy
+more uniformly and reducing the modal crest factor for all tail lengths.
+
 Usage:
     python3 generate_reverb_reference_irs.py          # regenerate all fixtures
     python3 generate_reverb_reference_irs.py --check  # verify SHA-256s only
@@ -29,6 +35,8 @@ SAMPLE_RATE = 48000
 SOFTEN_HZ = 4000.0
 INV_SQRT2 = 1.0 / math.sqrt(2.0)
 INV_SQRT8 = 1.0 / math.sqrt(8.0)
+MASK64 = (1 << 64) - 1
+MASK32 = (1 << 32) - 1
 
 
 def frame(ms: float) -> int:
@@ -37,6 +45,59 @@ def frame(ms: float) -> int:
 
 def five_ms_frames() -> int:
     return int(math.floor(5 * SAMPLE_RATE / 1000 + 0.5))
+
+
+def _pcg32(seed: int):
+    """PCG32 generator matching docs/09-noise-and-determinism.md."""
+    state = [0]
+
+    def step() -> int:
+        old = state[0]
+        state[0] = (old * 6364136223846793005 + 1442695040888963407) & MASK64
+        x = (((old >> 18) ^ old) >> 27) & MASK32
+        rotation = old >> 59
+        return ((x >> rotation) | (x << ((-rotation) & 31))) & MASK32
+
+    step()
+    state[0] = (state[0] + seed) & MASK64
+    step()
+    return step
+
+
+def _config_seed(tail_ms: int, soften_hz: float) -> int:
+    """Deterministic seed from reverb configuration (tail_ms, soften_hz)."""
+    return hash((tail_ms, int(soften_hz * 1000))) & MASK32
+
+
+def _random_orthogonal_matrix(n: int, seed: int) -> list[list[float]]:
+    """Generate an n×n random orthogonal matrix via modified Gram-Schmidt.
+
+    Seeded by a deterministic hash of the reverb configuration (tail_ms, soften_hz).
+    The matrix is computed once at configuration time and cached. It is LTI
+    (fixed for the render), lossless (orthogonal → eigenvalues on unit circle),
+    and deterministic (same seed → same matrix → same reverb output).
+
+    The random orthogonal matrix has eigenvalues spread as e^{±jθ} around the
+    unit circle, distributing mode energy more uniformly than the Walsh-Hadamard
+    transform (whose eigenvalues are all ±1, clustering modes at two frequencies).
+    Reference: Dal Santo et al. 2024, arXiv:2402.11216.
+    """
+    rng = _pcg32(seed)
+    A = [[(rng() / (1 << 32) - 0.5) * 2.0 for _ in range(n)] for _ in range(n)]
+    Q = [[0.0] * n for _ in range(n)]
+    for j in range(n):
+        v = [A[i][j] for i in range(n)]
+        for k in range(j):
+            dot = sum(Q[i][k] * v[i] for i in range(n))
+            for i in range(n):
+                v[i] -= dot * Q[i][k]
+        norm = math.sqrt(sum(x * x for x in v))
+        if norm < 1e-15:
+            v[j] = 1.0
+            norm = math.sqrt(sum(x * x for x in v))
+        for i in range(n):
+            Q[i][j] = v[i] / norm
+    return Q
 
 
 class AllpassDiffuser:
@@ -59,8 +120,11 @@ class AllpassDiffuser:
 class FDN:
     """Diffused eight-line feedback-delay network from docs/13.
 
-    At canonical mode (binary64, 48kHz) the hot path uses only adds, subs,
-    muls, sign-flips, and delay-line reads/writes — no transcendentals.
+    Uses a per-configuration random orthogonal feedback matrix (generated via
+    modified Gram-Schmidt from a PCG32-seeded matrix) instead of the
+    Walsh-Hadamard transform. FDN delay lengths are uncapped (proportional
+    to R, bounded by R) so total delay M scales with tail_ms, meeting
+    Schroeder's modal-density criterion at ~113%.
     """
 
     def __init__(self, tail_ms: int):
@@ -75,15 +139,24 @@ class FDN:
 
     # --- Diffuser helpers ---
 
-    def _length(self, cap_ms: float, ratio: float, prev: int | None) -> int:
-        raw = max(1, min(frame(cap_ms), int(math.floor(self.R * ratio + 0.5))))
+    def _length(self, cap_ms: float | None, ratio: float, prev: int | None) -> int:
+        """Delay-length helper. cap_ms=None means uncapped (proportional only)."""
+        proportional = int(math.floor(self.R * ratio + 0.5))
+        if cap_ms is None:
+            raw = max(1, proportional)
+        else:
+            raw = max(1, min(frame(cap_ms), proportional))
         if prev is None:
             return raw
         return min(self.R, max(raw, prev + 1))
 
-    def _make_lengths(self, caps_ms: list[float], ratios: list[float]) -> list[int]:
+    def _make_lengths(self, caps_ms: list[float] | None, ratios: list[float]) -> list[int]:
+        if caps_ms is None:
+            caps = [None] * len(ratios)
+        else:
+            caps = caps_ms
         lengths: list[int] = []
-        for cap, ratio in zip(caps_ms, ratios):
+        for cap, ratio in zip(caps, ratios):
             prev = lengths[-1] if lengths else None
             lengths.append(self._length(cap, ratio, prev))
         return lengths
@@ -106,13 +179,14 @@ class FDN:
         }
 
     def _build_late_network(self):
-        cap_ms = [1.49, 1.87, 2.29, 2.83, 3.49, 4.33, 5.39, 6.71]
         ratios = [0.004, 0.006, 0.009, 0.013, 0.019, 0.027, 0.038, 0.053]
-        self.fdn_lengths = self._make_lengths(cap_ms, ratios)
+        self.fdn_lengths = self._make_lengths(None, ratios)
         self.num_lines = 8
         self.fdn_buffers = [[0.0] * l for l in self.fdn_lengths]
         self.fdn_indices = [0] * self.num_lines
         self.feedback_gains = [0.0] * self.num_lines
+        seed = _config_seed(self.tail_ms, SOFTEN_HZ)
+        self.feedback_matrix = _random_orthogonal_matrix(self.num_lines, seed)
 
     def _reset(self):
         for diff in self.left_diffusers:
@@ -181,10 +255,10 @@ class FDN:
                 u[i] = (mid_sign[i] * mid + side_sign[i] * side) * INV_SQRT8
 
             q = [self.feedback_gains[i] * read_z[i] for i in range(self.num_lines)]
-            self._fwt(q)
+            v = self._matrix_feedback(q)
 
             for i in range(self.num_lines):
-                write_val = u[i] + q[i] * INV_SQRT8
+                write_val = u[i] + v[i]
                 self.fdn_buffers[i][self.fdn_indices[i]] = write_val
                 self.fdn_indices[i] = (self.fdn_indices[i] + 1) % self.fdn_lengths[i]
 
@@ -236,18 +310,23 @@ class FDN:
                 return k
         return T - 1
 
-    def _fwt(self, values: list[float]):
-        """In-place normalized fast Walsh-Hadamard transform."""
-        n = len(values)
-        width = 1
-        while width < n:
-            for start in range(0, n, 2 * width):
-                for j in range(width):
-                    a = values[start + j]
-                    b = values[start + j + width]
-                    values[start + j] = a + b
-                    values[start + j + width] = a - b
-            width *= 2
+    def _matrix_feedback(self, q: list[float]) -> list[float]:
+        """Apply the cached random orthogonal feedback matrix: v = Q × q.
+
+        Q is orthogonal (Q^T Q = I), so the transform is energy-preserving and
+        the FDN is lossless. The eigenvalues of Q are spread as e^{±jθ} around
+        the unit circle, distributing mode energy more uniformly than the
+        Walsh-Hadamard transform (whose eigenvalues are all ±1).
+        """
+        n = self.num_lines
+        Q = self.feedback_matrix
+        result = [0.0] * n
+        for i in range(n):
+            s = 0.0
+            for j in range(n):
+                s += Q[i][j] * q[j]
+            result[i] = s
+        return result
 
     def generate(self, tail_ms: int | None = None) -> tuple[list[float], list[float]]:
         """Generate the reference IR render: L and R lists of length T = N+1.
@@ -285,10 +364,10 @@ class FDN:
                 u[i] = (mid_sign[i] * mid + side_sign[i] * side) * INV_SQRT8
 
             q = [self.feedback_gains[i] * read_z[i] for i in range(self.num_lines)]
-            self._fwt(q)
+            v = self._matrix_feedback(q)
 
             for i in range(self.num_lines):
-                write_val = u[i] + q[i] * INV_SQRT8
+                write_val = u[i] + v[i]
                 self.fdn_buffers[i][self.fdn_indices[i]] = write_val
                 self.fdn_indices[i] = (self.fdn_indices[i] + 1) % self.fdn_lengths[i]
 

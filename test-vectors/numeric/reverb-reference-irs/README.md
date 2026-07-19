@@ -29,7 +29,7 @@ Each `metrics` object contains the following keys:
 | `rt60_crossing_frame` | int | The first frame whose backward-integrated energy is ≤ −60 dB from the total |
 | `total_wet_energy` | float | `Σ(L² + R²)` after harness normalization (always `1.0` by construction) |
 | `echo_density` | float | Fraction of zero-crossing intervals below `sample_rate / 1000` in the first 50 ms of the tail |
-| `modal_resonance_floor_db` | float or `null` | Strongest sustained sinusoidal mode in any `0.15 × tail_ms` window, relative to the wet peak (dB). `null` when the tail is too short for analysis |
+| `modal_resonance_floor_db` | float or `null` | Strongest sustained sinusoidal mode in any Schroeder-aware `max(0.15 × tail_ms, M)` window (excluding onset), relative to the wet peak (dB). `null` when the tail is too short for analysis |
 | `lr_correlation` | float | Pearson correlation across the tail (excluding the impulse frame) |
 | `spectral_centroid_hz` | float | Magnitude-weighted spectral centroid (Hz) of the full wet response |
 | `onset_frame` | int | Index of first sample exceeding `0.1 × peak` across both channels |
