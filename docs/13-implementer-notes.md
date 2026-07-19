@@ -1,6 +1,6 @@
 # Implementer Notes
 
-This appendix is non-normative. It offers implementation guidance after an engine author has read the normative chapters.
+This appendix contains both normative and non-normative sections. The §Reference reverb runtime section is normative — a conforming engine MUST implement the reverb topology specified there. All other sections are implementation guidance.
 
 ## Recommended reading order
 
@@ -16,7 +16,7 @@ For a task-ordered implementation checklist, see [Engine Build Guide](15-engine-
 
 ## Reference reverb runtime
 
-The recommended default reverb runtime is the diffused eight-line feedback-delay network (FDN) below. It produces perceptually equivalent wet output at canonical mode across conforming engines and requires ~194 operations per output sample with state proportional to `tail_ms` for long tails (~65 bytes per ms at 48 kHz binary64 plus ~1.6 KiB constant diffuser state, ~34 KiB at 500 ms, ~16 KiB at 220 ms, ~448 bytes at 1 ms) — the cheapest audibly-same path on memory- and CPU-constrained profiles. This recipe is non-normative: engines may replace it with another LTI realization (e.g. convolution against the canonical reference IR in [test-vectors/numeric/reverb-reference-irs/](../test-vectors/numeric/reverb-reference-irs/)) as long as the output meets the strict perceptual-equivalence tolerances in [Reverb](07-reverb.md).
+The conforming reverb runtime is the diffused eight-line feedback-delay network (FDN) below. A conforming engine MUST implement this topology. It requires ~194 operations per output sample with state proportional to `tail_ms` for long tails (~65 bytes per ms at 48 kHz binary64 plus ~1.6 KiB constant diffuser state, ~34 KiB at 500 ms, ~16 KiB at 220 ms, ~448 bytes at 1 ms).
 
 For one `tail_ms` and sample-rate configuration, define the conformance-response length `R` exactly as the reverb harness does:
 
@@ -127,9 +127,9 @@ Measure the final softened, windowed response in every declared render profile. 
 
 ### Perceptual qualification
 
-The strict perceptual-equivalence tolerances in [Reverb](07-reverb.md) §Perceptual-equivalence metric algorithms provide the machine-checkable conformance bar against the published canonical reference IR render. Each of the seven metrics has a normatively pinned measurement algorithm, and the baseline values per canonical fixture are published in `manifest.json`. Before adopting this or another baseline, pass those tolerances for every declared render profile.
+The strict perceptual-equivalence tolerances in [Reverb](07-reverb.md) §Perceptual-equivalence metric algorithms provide the machine-checkable conformance bar against the published canonical reference IR render. Each of the seven metrics has a normatively pinned measurement algorithm, and the baseline values per canonical fixture are published in `manifest.json`. The engine's FDN output MUST pass those tolerances for every declared render profile.
 
-Further listening review should confirm:
+**Note.** Further listening review should confirm:
 
 - immediate wet onset rather than audible predelay;
 - dense, noise-like reflections without discrete echoes;
@@ -138,9 +138,9 @@ Further listening review should confirm:
 - low left/right correlation without unstable image movement; and
 - comparable brightness after the normative lowpass.
 
-Also inspect each metric from the [normative algorithm specification](07-reverb.md#perceptual-equivalence-metric-algorithms). No single metric substitutes for listening. A candidate that only matches RT60 is not an acceptable replacement for the baseline.
+Also inspect each metric from the [normative algorithm specification](07-reverb.md#perceptual-equivalence-metric-algorithms). No single metric substitutes for listening. An engine that only matches RT60 does not conform.
 
-At 48 kHz, the FDN's total delay `M = Σ d[i] ≈ 0.169 × tail_ms × sample_rate / 1000` samples (e.g., M ≈ 1,784 at 220 ms, M ≈ 4,056 at 500 ms), meeting Schroeder's modal-density criterion at ~113% of the minimum. The diffuser delays add approximately 205 samples of constant state, giving a total of ~1,989 samples at 220 ms and ~4,261 samples at 500 ms. The eight-line dense matrix multiply, eight feedback gains, eight all-pass stages, and stereo input/output matrices require ~194 operations per output sample, constant work independent of `tail_ms`. A 500 ms generated 2-by-2 FIR would instead retain about 96,000 coefficients and direct convolution would perform work proportional to the tail length for every output frame.
+At 48 kHz, the FDN's total delay `M = Σ d[i] ≈ 0.169 × tail_ms × sample_rate / 1000` samples (e.g., M ≈ 1,784 at 220 ms, M ≈ 4,056 at 500 ms), meeting Schroeder's modal-density criterion at ~113% of the minimum. The diffuser delays add approximately 205 samples of constant state, giving a total of ~1,989 samples at 220 ms and ~4,261 samples at 500 ms. The eight-line dense matrix multiply, eight feedback gains, eight all-pass stages, and stereo input/output matrices require ~194 operations per output sample, constant work independent of `tail_ms`.
 
 ## Noise implementation
 

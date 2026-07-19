@@ -28,7 +28,7 @@ Read the normative chapters in this order:
 8. [Reverb](07-reverb.md) and [Output](08-output.md)
 9. [Conformance](14-conformance.md)
 
-Then read [Implementer Notes](13-implementer-notes.md), including the lightweight baseline reverb recipe and render-loop guidance.
+Then read [Implementer Notes](13-implementer-notes.md), including the normative reverb runtime and render-loop guidance.
 
 ## Required engine subsystems
 
@@ -91,11 +91,7 @@ Platform sample-rate conversion, hardware channel routing, mono adaptation, and 
 
 ### 8. Reverb
 
-**Recommended path — diffused eight-line FDN runtime** (the algorithm in [Implementer Notes](13-implementer-notes.md) §Reference reverb runtime). At ~194 ops per output sample and ~34 KiB of state at 500 ms tail (state proportional to `tail_ms`), this is the cheapest conformant path on memory- and CPU-constrained profiles. Per-frame work is constant independent of `tail_ms`. At canonical mode it produces perceptually equivalent wet output across conforming engines.
-
-**Permitted alternative — convolution against the reference IR.** Engines with offline render pipelines or existing FFT infrastructure may convolve the dry stereo mix against the canonical reference IR published in [test-vectors/numeric/reverb-reference-irs/](../test-vectors/numeric/reverb-reference-irs/). The convolution kernel is implementation-defined. Memory at 500 ms is ~2.6 MiB binary64 or ~1.4 MiB binary32 — confirm against the engine's published render limits.
-
-Either path MUST pass the strict perceptual-equivalence tolerances defined in [Reverb](07-reverb.md) at every declared render profile. A metallic or ringing wet response will fail the echo-density and modal-resonance-floor tolerances regardless of topology.
+Implement the diffused eight-line FDN runtime specified in [Implementer Notes](13-implementer-notes.md) §Reference reverb runtime. At ~194 ops per output sample and ~34 KiB of state at 500 ms tail (state proportional to `tail_ms`), per-frame work is constant independent of `tail_ms`. The engine MUST pass the strict perceptual-equivalence tolerances defined in [Reverb](07-reverb.md) at every declared render profile. A metallic or ringing wet response will fail the echo-density and modal-resonance-floor tolerances.
 
 Test `amount` values `0`, partial wet, and `1`, plus `tail_ms` values `1`, `10`, `20`, `220`, and `500`. Verify the final emitted wet frame is exactly zero. For each canonical tail, render the conformance impulse and assert each tolerance against the published fixture. Matching RT60 alone is insufficient.
 
@@ -144,7 +140,7 @@ These steps verify the engine against this specification. Before calling the imp
 
 6. **Verify reverb cross-engine equivalence.** For each published canonical reference IR fixture in `test-vectors/numeric/reverb-reference-irs/manifest.json` (tails 1, 10, 20, 220, and 500 ms), feed the conformance impulse (one frame at `L=R=sqrt(0.5)` followed by zeroes) through your engine's reverb in canonical mode and:
 
-    - For every engine topology (FDN runtime, convolution against the IR, or another LTI realization), compute the seven perceptual-equivalence metrics from `docs/07-reverb.md` §Perceptual-equivalence metric algorithms on your wet output and assert each stays within its tolerance against the reference fixture. Each metric has a normatively pinned algorithm with precise formulas and degenerate-case handling; the published baseline values per canonical fixture are in `manifest.json` under the `metrics` key on each fixture entry. Bit-identical output to the fixture is not required: the reverb configuration constants depend on platform transcendentals, which Piccle does not require to be correctly-rounded across processors.
+    - Compute the seven perceptual-equivalence metrics from `docs/07-reverb.md` §Perceptual-equivalence metric algorithms on your FDN's wet output and assert each stays within its tolerance against the reference fixture. Each metric has a normatively pinned algorithm with precise formulas and degenerate-case handling; the published baseline values per canonical fixture are in `manifest.json` under the `metrics` key on each fixture entry. Bit-identical output to the fixture is not required: the reverb configuration constants depend on platform transcendentals, which Piccle does not require to be correctly-rounded across processors.
     - As a non-normative stronger check, engines whose platform `libm` matches the fixture's MAY also assert bit-identical output. This is a convenience test, not a conformance requirement.
 
     Then, for each additional declared render profile (other sample rates, binary32 production mode, etc.), render the same conformance impulse through your engine's reverb and assert the same seven perceptual-equivalence tolerances.

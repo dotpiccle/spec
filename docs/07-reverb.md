@@ -36,7 +36,7 @@ The dry branch ends at `D`. The wet branch emits exactly `N` tail frames after `
 
 ## Wet processor
 
-The reverb core MUST be causal, bounded-input bounded-output stable, deterministic, linear, time-invariant, stereo, and free of dry-path leakage. It MUST begin from zero state for each document. Its conformance impulse response MUST have finite, positive energy before normalization. The topology is implementation-defined.
+The reverb core MUST be causal, bounded-input bounded-output stable, deterministic, linear, time-invariant, stereo, and free of dry-path leakage. It MUST begin from zero state for each document. Its conformance impulse response MUST have finite, positive energy before normalization. The topology is the diffused eight-line FDN specified in [Implementer Notes](13-implementer-notes.md) §Reference reverb runtime. A conforming engine MUST implement this topology.
 
 After the reverb core, apply this first-order lowpass independently to the wet left and right channels:
 
@@ -197,7 +197,7 @@ Define the analysis window length as the Schroeder-aware Nyquist-resolution maxi
 
 ```text
 schroeder_min = floor(0.15 × tail_ms × sample_rate / 1000 + 0.5)
-M = Σ d[i]  (the FDN's total delay; see [Implementer Notes](13-implementer-notes.md) §Reference reverb runtime)
+M = Σ d[i]  (the conforming FDN's total delay, computed by the normative delay-length formula in [Implementer Notes](13-implementer-notes.md) §Reference reverb runtime)
 late_tail = T − onset_skip
 W_m = min(late_tail, max(schroeder_min, 2 × M))
 ```
@@ -314,8 +314,6 @@ The onset frame is the smallest `n ≥ 0` where `max(|L[n]|, |R[n]|) ≥ 0.1 × 
 
 The published baseline values for each canonical fixture are recorded in `test-vectors/numeric/reverb-reference-irs/manifest.json` under the `metrics` key on each fixture entry. The manifest is non-normative metadata; the algorithms in this section are the normative authority for metric computation.
 
-## Implementation freedom
+## Reverb topology
 
-Schroeder, feedback-delay-network, generated-convolution, and other linear time-invariant implementations are permitted when they meet the response, normalization, equivalence tolerances, and lifetime requirements above.
-
-The implementation in [Implementer Notes](13-implementer-notes.md) §Reference reverb runtime is the recommended default.
+The conforming reverb topology is the diffused eight-line FDN specified in [Implementer Notes](13-implementer-notes.md) §Reference reverb runtime. A conforming engine MUST implement this topology. The perceptual-equivalence tolerances in this chapter are measured against the canonical reference IR render, which is generated from this same FDN.
