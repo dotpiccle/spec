@@ -331,7 +331,7 @@ def onset_frame(L: list[float], R: list[float], T: int) -> int:
 # Tolerance comparisons matching docs/07-reverb.md exactly
 # Modal floor uses a HYBRID tolerance: engine ≤ ref + 6 (relative) AND
 # engine ≤ MODAL_FLOOR_ABSOLUTE_GATE (absolute quality floor). Both must pass.
-MODAL_FLOOR_ABSOLUTE_GATE = -30.0  # worst non-degenerate ref (-32.8) + 2.8 dB headroom, rounded to -30
+MODAL_FLOOR_ABSOLUTE_GATE = -30.0  # derived from worst non-degenerate ref modal floor + headroom; see docs/07-reverb.md and test-vectors/numeric/reverb-reference-irs/manifest.json
 
 TOLERANCE_SPEC: dict[str, dict] = {
     "rt60_crossing_frame": {"type": "exact"},
