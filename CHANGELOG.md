@@ -31,6 +31,8 @@ All notable changes to the Piccle specification are documented here. Piccle v1 h
 - Parser fixtures and stable errors for non-JSON numeric tokens and decimal values outside finite binary64 range.
 - Non-PCM document render cases for computed duration, hard truncation, simultaneous boundaries, fades, and non-additive reverb-tail frame counts.
 - Curved fade-in and fade-out. The `transition_curve` enum (`linear`, `exponential`, `easeIn`, `easeOut`, `easeInOut`) is now reusable on `fade_in.curve` and `fade_out.curve` in object-form layer volume.
+- Normative pseudocode for the random orthogonal feedback matrix construction in `docs/13-implementer-notes.md` §Random orthogonal feedback matrix construction. Pins the u32-to-binary64 conversion, row-major source fill, column-oriented modified Gram-Schmidt iteration order, and `1e-15` degeneracy fallback. Previously the prose said "modified Gram-Schmidt of a PCG32-seeded matrix" without specifying these details, requiring implementers to reverse-engineer the Python generator.
+- Language-neutral test vector for the random orthogonal feedback matrix at `test-vectors/numeric/reverb-matrix-vector.json` (configuration: `tail_ms=37`, `soften_hz=8000`). Includes the seed, first 8 PCG32 u32 outputs, full 8×8 source matrix, and full 8×8 feedback matrix Q. Validator gate in `scripts/validate.py::reverb_matrix_vector_errors()` detects drift between the test vector and generator.
 
 ### Removed
 

@@ -34,6 +34,7 @@ EXPECTATIONS_PATH = ROOT / "test-vectors" / "invalid-expectations.json"
 NUMERIC_PATH = ROOT / "test-vectors" / "numeric" / "dsp-values.json"
 BEHAVIOR_PATH = ROOT / "test-vectors" / "behavior" / "render-cases.json"
 REVERB_REF_IR_DIR = ROOT / "test-vectors" / "numeric" / "reverb-reference-irs"
+NUMERIC_DIR = ROOT / "test-vectors" / "numeric"
 CANONICAL_SCHEMA_URI = "https://spec.dotpiccle.com/schema/v1.json"
 MAX_SAFE_INTEGER = 9007199254740991
 
@@ -631,6 +632,43 @@ def reverb_reference_ir_metrics_errors() -> list[str]:
     return failures
 
 
+def reverb_matrix_vector_errors() -> list[str]:
+    """Verify the reverb matrix test vector matches the generator."""
+    failures: list[str] = []
+    vector_path = NUMERIC_DIR / "reverb-matrix-vector.json"
+    if not vector_path.exists():
+        failures.append(f"missing matrix test vector: {vector_path}")
+        return failures
+
+    vector = load_json(vector_path)
+    config = vector["configuration"]
+    tail_ms = config["tail_ms"]
+    soften_hz = config["soften_hz"]
+
+    from generate_reverb_reference_irs import _config_seed, _pcg32, _random_orthogonal_matrix
+
+    # Verify seed
+    expected_seed = _config_seed(tail_ms, soften_hz)
+    if vector["seed"] != expected_seed:
+        failures.append(f"matrix vector: seed mismatch, expected {expected_seed}, got {vector['seed']}")
+
+    # Verify first 8 PCG32 outputs
+    rng = _pcg32(expected_seed)
+    for i, expected_u in enumerate(vector["pcg32_first_8_u32"]):
+        actual_u = rng()
+        if actual_u != expected_u:
+            failures.append(f"matrix vector: pcg32 output {i} mismatch, expected {expected_u}, got {actual_u}")
+            break
+
+    # Verify feedback matrix Q
+    Q = _random_orthogonal_matrix(8, expected_seed)
+    for i in range(8):
+        for j in range(8):
+            if Q[i][j] != vector["feedback_matrix_q"][i][j]:
+                failures.append(f"matrix vector: Q[{i}][{j}] mismatch, expected {vector['feedback_matrix_q'][i][j]}, got {Q[i][j]}")
+    return failures
+
+
 def main() -> int:
     failures: list[str] = []
     schema = load_json(SCHEMA_PATH)
@@ -663,6 +701,7 @@ def main() -> int:
     failures.extend(numeric_aid_errors())
     failures.extend(reverb_reference_ir_errors())
     failures.extend(reverb_reference_ir_metrics_errors())
+    failures.extend(reverb_matrix_vector_errors())
     failures.extend(behavior_aid_errors())
     formatter = subprocess.run([sys.executable, str(ROOT / "scripts" / "format_json.py")], cwd=ROOT, text=True, capture_output=True)
     if formatter.returncode:

@@ -93,7 +93,66 @@ soften_mhz = floor(soften_hz × 1000 + 0.5)
 seed = (tail_ms × 2654435769 + soften_mhz) mod 2^32
 ```
 
-where `2654435769 = 0x9E3779B9` is the 32-bit golden ratio constant (2^32 / φ). The multiplication is unsigned 32-bit wrapping (`mod 2^32`). The seed initializes PCG32 (see [Noise and Determinism](09-noise-and-determinism.md)), which generates the random entries for the matrix before orthonormalization. The matrix is cached per reverb configuration and reused for every frame:
+where `2654435769 = 0x9E3779B9` is the 32-bit golden ratio constant (2^32 / φ). The multiplication is unsigned 32-bit wrapping (`mod 2^32`). The seed initializes PCG32 (see [Noise and Determinism](09-noise-and-determinism.md)), which generates the random entries for the matrix before orthonormalization. The matrix is cached per reverb configuration and reused for every frame.
+
+### Random orthogonal feedback matrix construction
+
+The construction is deterministic: the same `(tail_ms, soften_hz)` always produces the same `Q`.
+
+**Step 1 — Compute the configuration seed** (as above).
+
+**Step 2 — Initialize PCG32** per [Noise and Determinism](09-noise-and-determinism.md) with the configuration seed:
+
+```text
+state = 0
+pcg32_next()                    // discard
+state = state + seed
+pcg32_next()                    // discard
+```
+
+The first non-discarded `pcg32_next()` output is the first source entry.
+
+**Step 3 — Fill the 8×8 source matrix `A` in row-major order.** Each `u32` output `u` is converted to binary64 via the same formula as the noise source:
+
+```text
+x = 2 × (u / 4294967296) - 1
+```
+
+Generate 64 outputs and fill `A` row by row:
+
+```text
+for i = 0 to 7:
+    for j = 0 to 7:
+        A[i][j] = 2 × (pcg32_next() / 4294967296) - 1
+```
+
+**Step 4 — Column-oriented modified Gram-Schmidt orthonormalization.** The columns of `Q` are orthonormal (`Qᵀ Q = I`):
+
+```text
+for j = 0 to 7:
+    // Extract column j of A
+    v[i] = A[i][j]  for i = 0..7
+
+    // Subtract projections onto previously computed Q columns
+    for k = 0 to j-1:
+        dot = Σ(i=0..7) Q[i][k] × v[i]
+        for i = 0..7:
+            v[i] = v[i] - dot × Q[i][k]
+
+    // Normalize; handle degeneracy
+    norm = sqrt(Σ(i=0..7) v[i]²)
+    if norm < 1e-15:
+        v[j] = 1.0
+        norm = sqrt(Σ(i=0..7) v[i]²)
+    for i = 0..7:
+        Q[i][j] = v[i] / norm
+```
+
+The degeneracy fallback (`v[j] = 1.0`) replaces the near-zero residual with a standard basis vector, ensuring linear independence from previous columns. The matrix is cached per configuration and reused for every frame.
+
+A language-neutral test vector verifying this construction is published at [test-vectors/numeric/reverb-matrix-vector.json](../test-vectors/numeric/reverb-matrix-vector.json) for the configuration `tail_ms = 37`, `soften_hz = 8000`. It includes the seed, PCG32 outputs, source matrix `A`, and resulting matrix `Q`.
+
+The matrix is applied as:
 
 ```text
 v = Q × q     (8×8 dense matrix-vector multiply: 64 mults + 56 adds)
