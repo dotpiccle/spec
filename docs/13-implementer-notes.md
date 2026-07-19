@@ -16,7 +16,7 @@ For a task-ordered implementation checklist, see [Engine Build Guide](15-engine-
 
 ## Reference reverb runtime
 
-The recommended default reverb runtime is the diffused eight-line feedback-delay network (FDN) below. It produces perceptually equivalent wet output at canonical mode across conforming engines and requires ~194 operations per output sample with state proportional to `tail_ms` (~70 bytes per ms at 48 kHz binary64, ~34 KiB at 500 ms, ~576 bytes at 1 ms) — the cheapest audibly-same path on memory- and CPU-constrained profiles. This recipe is non-normative: engines may replace it with another LTI realization (e.g. convolution against the canonical reference IR in [test-vectors/numeric/reverb-reference-irs/](../test-vectors/numeric/reverb-reference-irs/)) as long as the output meets the strict perceptual-equivalence tolerances in [Reverb](07-reverb.md).
+The recommended default reverb runtime is the diffused eight-line feedback-delay network (FDN) below. It produces perceptually equivalent wet output at canonical mode across conforming engines and requires ~194 operations per output sample with state proportional to `tail_ms` for long tails (~65 bytes per ms at 48 kHz binary64 plus ~1.6 KiB constant diffuser state, ~34 KiB at 500 ms, ~16 KiB at 220 ms, ~448 bytes at 1 ms) — the cheapest audibly-same path on memory- and CPU-constrained profiles. This recipe is non-normative: engines may replace it with another LTI realization (e.g. convolution against the canonical reference IR in [test-vectors/numeric/reverb-reference-irs/](../test-vectors/numeric/reverb-reference-irs/)) as long as the output meets the strict perceptual-equivalence tolerances in [Reverb](07-reverb.md).
 
 For one `tail_ms` and sample-rate configuration, define the conformance-response length `R` exactly as the reverb harness does:
 
@@ -140,7 +140,7 @@ Further listening review should confirm:
 
 Also inspect each metric from the [normative algorithm specification](07-reverb.md#perceptual-equivalence-metric-algorithms). No single metric substitutes for listening. A candidate that only matches RT60 is not an acceptable replacement for the baseline.
 
-At 48 kHz, the FDN and diffuser delays total approximately `0.07 × tail_ms × sample_rate / 1000` samples (e.g., ~1,789 samples at 220 ms, ~4,261 samples at 500 ms), meeting Schroeder's modal-density criterion at ~113% of the minimum. The eight-line dense matrix multiply, eight feedback gains, eight all-pass stages, and stereo input/output matrices require ~194 operations per output sample, constant work independent of `tail_ms`. A 500 ms generated 2-by-2 FIR would instead retain about 96,000 coefficients and direct convolution would perform work proportional to the tail length for every output frame.
+At 48 kHz, the FDN's total delay `M = Σ d[i] ≈ 0.169 × tail_ms × sample_rate / 1000` samples (e.g., M ≈ 1,784 at 220 ms, M ≈ 4,056 at 500 ms), meeting Schroeder's modal-density criterion at ~113% of the minimum. The diffuser delays add approximately 205 samples of constant state, giving a total of ~1,989 samples at 220 ms and ~4,261 samples at 500 ms. The eight-line dense matrix multiply, eight feedback gains, eight all-pass stages, and stereo input/output matrices require ~194 operations per output sample, constant work independent of `tail_ms`. A 500 ms generated 2-by-2 FIR would instead retain about 96,000 coefficients and direct convolution would perform work proportional to the tail length for every output frame.
 
 ## Noise implementation
 
