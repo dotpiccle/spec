@@ -148,6 +148,11 @@ for j = 0 to 7:
         Q[i][j] = v[i] / norm
 ```
 
+Every `Σ(i=0..7)` above MUST be accumulated left-to-right in ascending `i` order, starting from
+binary64 positive zero and rounding to binary64 after each addition. Implementations MUST NOT use a
+compensated, pairwise, or runtime-version-dependent summation algorithm for these two reductions.
+This explicit order is part of the canonical matrix construction.
+
 The degeneracy fallback (`v[j] = 1.0`) replaces the near-zero residual with a standard basis vector, ensuring linear independence from previous columns. The matrix is cached per configuration and reused for every frame.
 
 A language-neutral test vector verifying this construction is published at [test-vectors/numeric/reverb-matrix-vector.json](../test-vectors/numeric/reverb-matrix-vector.json) for the configuration `tail_ms = 37`, `soften_hz = 8000`. It includes the seed, PCG32 outputs, source matrix `A`, and resulting matrix `Q`.

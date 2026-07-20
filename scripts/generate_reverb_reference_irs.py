@@ -25,6 +25,7 @@ import json
 import math
 import struct
 import sys
+from collections.abc import Iterable
 from pathlib import Path
 
 import reverb_metrics
@@ -77,6 +78,14 @@ def _config_seed(tail_ms: int, soften_hz: float) -> int:
     return (tail_ms * 2654435769 + soften_mhz) & 0xFFFFFFFF
 
 
+def _ordered_sum(values: Iterable[float]) -> float:
+    """Accumulate binary64 values left-to-right in normative iteration order."""
+    total = 0.0
+    for value in values:
+        total += value
+    return total
+
+
 def _random_orthogonal_matrix(n: int, seed: int) -> list[list[float]]:
     """Generate an n×n random orthogonal matrix via modified Gram-Schmidt.
 
@@ -96,13 +105,13 @@ def _random_orthogonal_matrix(n: int, seed: int) -> list[list[float]]:
     for j in range(n):
         v = [A[i][j] for i in range(n)]
         for k in range(j):
-            dot = sum(Q[i][k] * v[i] for i in range(n))
+            dot = _ordered_sum(Q[i][k] * v[i] for i in range(n))
             for i in range(n):
                 v[i] -= dot * Q[i][k]
-        norm = math.sqrt(sum(x * x for x in v))
+        norm = math.sqrt(_ordered_sum(x * x for x in v))
         if norm < 1e-15:
             v[j] = 1.0
-            norm = math.sqrt(sum(x * x for x in v))
+            norm = math.sqrt(_ordered_sum(x * x for x in v))
         for i in range(n):
             Q[i][j] = v[i] / norm
     return Q
@@ -301,7 +310,7 @@ class FDN:
                 L[n] *= gain
                 R_chan[n] *= gain
 
-        energy = sum(L[k] ** 2 + R_chan[k] ** 2 for k in range(T))
+        energy = _ordered_sum(L[k] ** 2 + R_chan[k] ** 2 for k in range(T))
         if energy > 0:
             norm = 1.0 / math.sqrt(energy)
             for k in range(T):
@@ -410,7 +419,7 @@ class FDN:
                 L[n] *= gain
                 R_chan[n] *= gain
 
-        energy = sum(L[k] ** 2 + R_chan[k] ** 2 for k in range(T))
+        energy = _ordered_sum(L[k] ** 2 + R_chan[k] ** 2 for k in range(T))
         if energy > 0:
             norm = 1.0 / math.sqrt(energy)
             for k in range(T):

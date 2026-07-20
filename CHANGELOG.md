@@ -78,6 +78,10 @@ All notable changes to the Piccle specification are documented here. Piccle v1 h
 
 ### Fixed
 
+- Made every normative reference-generator reduction use explicit left-to-right binary64
+  accumulation. Python 3.12 changed the algorithm used by built-in `sum()`, which caused 36
+  last-bit feedback-matrix mismatches across Python versions despite the specification's fixed
+  iteration order. Validation now runs on Python 3.9, 3.12, and 3.14 (issue #22).
 - Corrected the normative arbitrary-configuration reverb generator to clamp the wet lowpass corner
   by the active render profile while preserving matrix seeding from the declared `soften_hz`.
 - Made the `−30 dB` modal quality floor conditional on the same-configuration reference meeting
