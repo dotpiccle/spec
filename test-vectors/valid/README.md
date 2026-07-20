@@ -39,8 +39,8 @@ Each valid fixture tests acceptance, a default behavior, or a boundary condition
 | `seed-boundaries.json`          | Noise seed at unsigned 32-bit minimum and maximum.                        |
 | `short-default-fade.json`       | Default layer fade clamps for a layer shorter than 5 ms.                  |
 | `simultaneous-boundary.json`    | Half-open layer intervals meeting at one boundary.                        |
-| `spatial-effects-echo-then-reverb.json` | Stacked spatial effects: echo first, then reverb (serial order). |
+| `spatial-effects-echo-then-reverb.json` | Stacked spatial effects declared echo first, then reverb; effects run in parallel. |
 | `spatial-effects-empty-array.json` | Valid document with an empty `spatial_effects` array.                  |
-| `spatial-effects-reverb-then-echo.json` | Stacked spatial effects: reverb first, then echo (serial order). |
+| `spatial-effects-reverb-then-echo.json` | Stacked spatial effects declared reverb first, then echo; effects run in parallel. |
 | `volume-last-entry-hold.json`   | Last-entry timing fields are ignored by semantic validation.              |
 | `volume-level-curve.json`       | Volume contour with two levels and exponential decay.                     |

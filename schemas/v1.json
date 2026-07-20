@@ -361,7 +361,7 @@
           "type": "number",
           "minimum": 0,
           "exclusiveMaximum": 1,
-          "description": "How much of each echo is fed back into the delay line. 0 = a single echo (one repeat); approaching 1 = many repeats, very long tail. Must be strictly less than 1 for stability. The echo tail length is derived from delay_ms and feedback via tail_ms_effective = delay_ms × (1 + ceil(log(0.001)/log(feedback))); high feedback combined with long delay_ms produces very long output. Authors are responsible for choosing values appropriate to their use case."
+          "description": "How much of each echo is fed back into the delay line. 0 = a single echo (one repeat); approaching 1 = many repeats, very long tail. Must be strictly less than 1 for stability. The echo tail length (`tail_ms_effective`) is derived from delay_ms and feedback by the bounded iterative binary64 procedure in docs/07-spatial-effects.md; if the 2^20 iteration cap is reached, the document is semantically invalid with semantic.echo_tail_unbounded. Authors are responsible for choosing values appropriate to their use case."
         },
         "wet_gain": {
           "type": "number",

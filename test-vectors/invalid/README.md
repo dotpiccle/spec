@@ -45,6 +45,7 @@ Each invalid fixture fails for exactly one primary reason, matching the rule lis
 | `spatial-echo-delay-zero.json`             | Spatial: echo `delay_ms` must be at least 1.      |
 | `spatial-echo-feedback-at-or-above-1.json` | Spatial: echo `feedback` must be below 1.         |
 | `spatial-echo-missing-field.json`          | Spatial: echo effect requires all echo fields.    |
+| `spatial-echo-tail-unbounded.json`         | Semantic: echo repeat count exceeds the bounded iterative cap. |
 | `spatial-echo-wet-gain-out-of-range.json`  | Spatial: echo `wet_gain` must be 0–1.             |
 | `spatial-effects-unknown-type.json`        | Spatial: `type` must be a valid effect type.      |
 | `spatial-reverb-amount-out-of-range.json`  | Spatial: reverb `amount` must be 0–1.             |

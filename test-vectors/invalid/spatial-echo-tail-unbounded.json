@@ -1,0 +1,29 @@
+{
+  "piccle": "1.0",
+  "spatial_effects": [
+    {
+      "type": "echo",
+      "delay_ms": 1,
+      "feedback": 0.9999999999999999,
+      "wet_gain": 0.3,
+      "damp_hz": 4000
+    }
+  ],
+  "layers": [
+    {
+      "id": "tone",
+      "duration_ms": 1,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [
+            {
+              "hz": 440
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

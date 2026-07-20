@@ -444,14 +444,17 @@ else:
     N = 1                                # echo 1 (amplitude feedback⁰ = 1, always audible)
     amp = feedback                        # amplitude of echo 2
     iterations = 0
+    unbounded = false
     while amp >= 0.001:
         amp = amp × feedback              # binary64, round-to-nearest-even
         N = N + 1
         iterations = iterations + 1
         if iterations >= 1048576:         # 2^20 iteration cap
-            N_total = undefined           # document is semantically invalid
+            unbounded = true              # document is semantically invalid
             break
-    if N_total is defined:
+    if unbounded:
+        N_total = undefined
+    else:
         N_total = N + 1                   # include the first below-threshold echo
 ```
 

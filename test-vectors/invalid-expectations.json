@@ -309,6 +309,11 @@
     "code": "semantic.output_end_out_of_range",
     "path": "$.spatial_effects[0].feedback"
   },
+  "spatial-echo-tail-unbounded.json": {
+    "stage": "semantic",
+    "code": "semantic.echo_tail_unbounded",
+    "path": "$.spatial_effects[0].feedback"
+  },
   "spatial-multi-effect-output-end-out-of-range.json": {
     "stage": "semantic",
     "code": "semantic.output_end_out_of_range",
