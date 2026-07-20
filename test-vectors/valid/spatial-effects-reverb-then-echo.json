@@ -2,7 +2,7 @@
   "$schema": "https://spec.dotpiccle.com/schema/v1.json",
   "piccle": "1.0",
   "name": "Reverb then echo",
-  "description": "Stacked spatial effects: reverb first, then echo. Proves serial application in array order.",
+  "description": "Parallel spatial effects listed as reverb then echo. Paired with the reversed-order fixture to prove array-order independence.",
   "spatial_effects": [
     {
       "type": "reverb",

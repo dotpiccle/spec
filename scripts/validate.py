@@ -490,7 +490,7 @@ def numeric_aid_errors() -> list[str]:
         "dft_sine_reference": {"real": 0.0, "imaginary": -1.0, "amplitude": 1.0, "phase_from_sine": 0.0},
         "reverb_terminal_window_frames_at_48000": {f"tail_{tail}_ms": max(2, min(240, math.ceil((48*tail)/10))) for tail in (1, 10, 20, 500)},
         "reverb_tail_1_ms_terminal_gains": {"window_start_frame_in_tail": 43, "gains": [1.0, .75, .5, .25, 0.0]},
-        "reverb_absolute_tail_frames_at_44100": {"document_duration_ms": 4, "tail_ms": 4, "dry_end_frame": 176, "output_end_frame": 353, "tail_frames": 177},
+        "reverb_absolute_tail_frames_at_44100": {"document_duration_ms": 4, "tail_ms": 4, "dry_end_frame": 176, "output_end_frame": 352, "tail_frames": 176},
     }
 
     def baseline_lengths(tail_ms: int, caps_ms: list[float] | None, ratios: list[float]) -> list[int]:
