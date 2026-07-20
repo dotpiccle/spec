@@ -46,7 +46,7 @@
       "items": {
         "$ref": "#/$defs/spatial_effect"
       },
-      "description": "Optional whole-document. Effects are applied serially in array order, all starting at the document origin. An empty array is valid and equivalent to omitting the field — no spatial effects are applied."
+      "description": "Optional whole-document spatial effects applied after the dry mix. Each entry is a reverb or echo. All effects run in parallel — each receives the same dry mix and adds its wet contribution. An empty array is valid and equivalent to omitting the field — no spatial effects are applied."
     },
     "layers": {
       "type": "array",
@@ -273,7 +273,7 @@
       "additionalProperties": false
     },
     "spatial_effect": {
-      "description": "A spatial effect applied to the whole document. Each entry has a type discriminator and type-specific fields. Effects are applied serially in array order. Property validation (including additionalProperties: false) is delegated to the type-specific branches spatial_reverb and spatial_echo; the router itself only enforces object-ness and the type enum.",
+      "description": "A spatial effect applied to the whole document. Each entry has a type discriminator and type-specific fields. All effects run in parallel. Property validation (including additionalProperties: false) is delegated to the type-specific branches spatial_reverb and spatial_echo; the router itself only enforces object-ness and the type enum.",
       "type": "object",
       "properties": {
         "type": {
@@ -319,7 +319,7 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "Dry/wet crossfade. 0 = fully dry, 1 = fully wet (dry removed)."
+          "description": "Additive wet gain. 0 = no reverb contribution, 1 = reverb at full level. Dry is always present from the parallel spatial-effects stage."
         },
         "tail_ms": {
           "type": "integer",

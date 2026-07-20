@@ -6,25 +6,27 @@ Spatial effects are optional whole-document effects applied after the dry stereo
 
 `spatial_effects` is an array of spatial effect objects at the document root. Each entry has a `type` discriminator (`"reverb"` or `"echo"`) and type-specific fields. An empty array or omitted field means no spatial processing — the dry mix passes through unchanged.
 
-Effects are applied serially: the first entry processes the summed stereo layer mix; the second entry processes the first entry's output; and so on. All spatial effects start at the document origin (time 0) — every effect receives the input timeline starting from frame 0.
-
-### Stage boundaries
-
-Let `D` be the explicit or computed document duration. Define the stage boundaries in frames:
+Effects are applied in **parallel**: every effect receives the same dry stereo layer mix as its input, starting at the document origin (frame 0). All effects run simultaneously — no effect waits for or chains from another. The final output is the dry mix plus the sum of each effect's wet contribution:
 
 ```text
-E₀ = frame(D)
-E₁ = E₀ + tail_frames_1
-E₂ = E₁ + tail_frames_2
-...
-Eₙ = Eₙ₋₁ + tail_framesₙ
+output[n] = dry[n] + Σ_i (contribution_i[n])
 ```
 
-where `n` is the number of spatial effects and `tail_frames_i` is the effective tail length of effect `i` in frames, computed per-effect from its own parameters (see each effect's Timeline subsection). The total output timeline is `[0, Eₙ)`. When `spatial_effects` is absent or empty, `Eₙ = E₀ = frame(D)` and the output timeline is `[0, frame(D))`.
+where `contribution_i[n]` is the wet signal from effect `i`, scaled by that effect's wet-gain field (`amount` for reverb, `wet_gain` for echo). Both are additive wet gains — the dry signal is always present at full level. There is no dry/wet crossfade in either effect.
 
-Each effect `i` (1-indexed) processes its stage input on `[0, E_{i-1})` and receives zero input on `[E_{i-1}, E_i)`. Its terminal window applies to `[E_{i-1}, E_i)` — its own tail region only. The accumulated frame boundaries ensure that serial output length and per-stage tail boundaries are deterministic and consistent with the runtime's frame-level operation. Engines MUST NOT round the millisecond sum independently; they MUST accumulate per-stage frame counts.
+### Output length
 
-The total `E₀ + Σ_i tail_frames_i` MUST be ≤ `9007199254740991`. A document that exceeds this bound is semantically invalid.
+Let `D` be the explicit or computed document duration. Each effect `i` extends the output by its own effective tail length `tail_frames_i` (computed in frames from the effect's own parameters — see each effect's Timeline subsection). The total output length is determined by the **longest** tail:
+
+```text
+output_end_frame = frame(D) + max_i(tail_frames_i)
+```
+
+When `spatial_effects` is absent or empty, `output_end_frame = frame(D)` and the output timeline is `[0, frame(D))`.
+
+Each effect `i` processes its stage input on `[0, frame(D))` and receives zero input on `[frame(D), frame(D) + tail_frames_i)`. Its terminal window applies to `[frame(D), frame(D) + tail_frames_i)` — its own tail region only. Effects with shorter tails produce zero output after their tail ends; the output continues until the longest tail terminates.
+
+The total `frame(D) + max_i(tail_frames_i)` MUST be ≤ `9007199254740991`. A document that exceeds this bound is semantically invalid.
 
 See [Document Structure](01-document-structure.md) for the top-level field definition and [Output](08-output.md) for the signal-flow position.
 
@@ -39,7 +41,7 @@ When a reverb entry is present, all fields are required.
 | Field       | Type    | Range         | Meaning                                       |
 | ----------- | ------- | ------------- | --------------------------------------------- |
 | `type`      | string  | `"reverb"`    | Discriminator identifying this as a reverb effect. |
-| `amount`    | number  | `0`–`1`       | Linear dry/wet crossfade.                     |
+| `amount`    | number  | `0`–`1`       | Additive wet gain. `0` = no reverb, `1` = reverb at full level. Dry is always present. |
 | `tail_ms`   | integer | `1` or more   | RT60 target and emitted wet-tail duration.    |
 | `soften_hz` | number  | `200`–`12000` | Wet-path first-order lowpass corner in Hertz. |
 
@@ -54,23 +56,23 @@ When a reverb entry is present, all fields are required.
 
 ### Timeline
 
-When a reverb entry is effect `i` in the `spatial_effects` array, its stage input end is `E_{i-1}` (the previous stage's output end; `E₀ = frame(D)` when it is the first or only effect). Its tail length in frames is:
+The reverb processes the dry mix on `[0, frame(D))` and receives zero input afterward. Its tail length in frames is:
 
 ```text
 tail_frames = frame(tail_ms)
 ```
 
-Its output end is `E_i = E_{i-1} + tail_frames`. Define:
+Define:
 
 ```text
-input_end_frame = E_{i-1}
-output_end_frame = E_i
+input_end_frame = frame(D)
+output_end_frame = input_end_frame + tail_frames
 N = output_end_frame - input_end_frame
 ```
 
-The reverb consumes its stage input before `input_end_frame` and zero input afterward. Engines MUST derive `N` by subtracting these absolute boundaries; they MUST NOT round `tail_ms` independently.
+The reverb consumes its input before `input_end_frame` and zero input afterward. Engines MUST derive `N` by subtracting these absolute boundaries; they MUST NOT round `tail_ms` independently.
 
-The dry branch ends at `input_end_frame`. The wet branch emits exactly `N` tail frames after `input_end_frame`, including its automatic terminal window, and is zero outside the output timeline. All reverb core and lowpass state starts at zero and is discarded after the final output frame.
+The wet branch emits exactly `N` tail frames after `input_end_frame`, including its automatic terminal window, and is zero outside the output timeline. All reverb core and lowpass state starts at zero and is discarded after the final output frame.
 
 ### Wet processor
 
@@ -143,15 +145,15 @@ c <= N
 
 The final emitted wet frame `N` is exactly zero because of the terminal window. Compute the threshold comparison from the linear energy ratio; do not take `log10(0)` on the final frame.
 
-### Dry/wet crossfade
+### Wet contribution
 
-After the reverb core, wet lowpass, terminal window, and normalization, apply:
+After the reverb core, wet lowpass, terminal window, and normalization, the reverb's wet contribution is:
 
 ```text
-output = (1 - amount) × dry + amount × wet
+contribution = amount × wet
 ```
 
-`amount: 0` is fully dry and `amount: 1` is fully wet. Reverb presence still defines the complete output timeline even when the amount is zero.
+This is an additive wet gain — the dry signal is always present at full level from the parallel spatial-effects stage. `amount: 0` produces no reverb contribution; `amount: 1` adds the full wet signal on top of the dry. This is the same mixing model as echo's `wet_gain`.
 
 ### Reference IR and cross-engine equivalence
 
@@ -427,7 +429,7 @@ All fields are required.
 
 ### Timeline
 
-When an echo entry is effect `i` in the `spatial_effects` array, its stage input end is `E_{i-1}` (the previous stage's output end; `E₀ = frame(D)` when it is the first or only effect). Its tail length in frames is:
+The echo processes the dry mix on `[0, frame(D))` and receives zero input afterward. Its tail length in frames is:
 
 ```text
 tail_frames = N_total × delay_length
@@ -449,19 +451,19 @@ else:
 
 This iterative procedure uses only IEEE-754 correctly-rounded binary64 multiplication — no `log` or `ceil` — so it is deterministic across libm implementations. It matches the arithmetic the DSP feedback loop itself performs.
 
-Its output end is `E_i = E_{i-1} + tail_frames`. Define:
+Define:
 
 ```text
-input_end_frame = E_{i-1}
-output_end_frame = E_i
+input_end_frame = frame(D)
+output_end_frame = input_end_frame + tail_frames
 N_echo = output_end_frame - input_end_frame
 ```
 
-The echo processes its stage input on `[0, input_end_frame)` and receives zero input on `[input_end_frame, output_end_frame)`.
+The echo processes its input on `[0, input_end_frame)` and receives zero input on `[input_end_frame, output_end_frame)`.
 
 ### Automatic terminal window
 
-The echo wet tail terminates smoothly. The terminal window is applied to the wet signal `d_lp_c[n]` for frames `n ∈ [input_end_frame, output_end_frame)` — the stage's own tail region only. Frames before `input_end_frame` pass through unwindowed. When `N_echo < W` (the tail is shorter than the minimum window), the window is clamped to `W = max(2, N_echo)` to avoid the active region extending into the stage input region.
+The echo wet tail terminates smoothly. The terminal window is applied to the wet signal `d_lp_c[n]` for frames `n ∈ [input_end_frame, output_end_frame)` — the tail region only. Frames before `input_end_frame` pass through unwindowed. When `N_echo < W` (the tail is shorter than the minimum window), the window is clamped to `W = max(2, N_echo)` to avoid the active region extending into the input region.
 
 ```text
 T = output_end_frame
@@ -482,10 +484,10 @@ None. The echo wet path is not normalized. The feedback gain, `wet_gain`, and da
 The echo uses additive mixing:
 
 ```text
-y[n] = stage_input[n] + wet_gain × w[n]
+contribution[n] = wet_gain × w[n]
 ```
 
-The dry signal passes through at full level regardless of `wet_gain`. The echo wet signal adds on top. This is different from reverb's dry/wet crossfade — reverb removes dry signal at `amount: 1`, while echo always preserves the full dry signal.
+The echo's wet contribution is added to the dry mix (and any other spatial effects' contributions) by the parallel spatial-effects stage. The dry signal is always present at full level regardless of `wet_gain`. This is the same additive mixing model as reverb's `amount`.
 
 ### Conformance bar
 

@@ -132,9 +132,10 @@ def semantic_issues(document: dict[str, Any]) -> list[Issue]:
         "duration_ms",
         max(layer.get("start_ms", 0) + layer["duration_ms"] for layer in layers),
     )
-    # Check all spatial effects' tails cumulatively against the safe-integer bound
+    # Check all spatial effects' tails against the safe-integer bound (parallel: max tail wins)
     if "spatial_effects" in document:
-        total_tail_ms = 0
+        max_tail_ms = 0
+        max_path = None
         for i, effect in enumerate(document["spatial_effects"]):
             eff_type = effect.get("type")
             if eff_type == "reverb":
@@ -155,13 +156,14 @@ def semantic_issues(document: dict[str, Any]) -> list[Issue]:
                 path = f"$.spatial_effects[{i}].feedback"
             else:
                 continue
-            if document_duration + total_tail_ms + tail_ms > MAX_SAFE_INTEGER:
-                issues.append(Issue(
-                    "semantic", "semantic.output_end_out_of_range", path,
-                    f"document duration + cumulative tail exceeds {MAX_SAFE_INTEGER}",
-                ))
-                break
-            total_tail_ms += tail_ms
+            if tail_ms > max_tail_ms:
+                max_tail_ms = tail_ms
+                max_path = path
+        if max_path and document_duration + max_tail_ms > MAX_SAFE_INTEGER:
+            issues.append(Issue(
+                "semantic", "semantic.output_end_out_of_range", max_path,
+                f"document duration + max tail exceeds {MAX_SAFE_INTEGER}",
+            ))
     return issues
 
 
@@ -375,8 +377,8 @@ def documentation_parity_errors() -> list[str]:
         "docs/11-engine-safety.md": ["at least 8000 Hz", "min(20000, 0.49 × sample_rate)", "48000 Hz", "frame(S + b) - frame(S + a)"],
         "docs/04-pitch.md": ["Evaluate the `frequencies` contour", "Apply the cents offset", "Clamp `offset_hz`"],
         "docs/07-spatial-effects.md": ["five_ms_frames", "DSP conformance harness", "1 + floor(0.9 × N)", "Perceptual-equivalence metric algorithms", "next_power_of_two", "hop = max(1, floor(W_m / 4))", "is excluded", "magnitude weighting"],
-        "docs/08-output.md": ["Visit active layers in document array order", "[0, Eₙ)"],
-        "docs/14-conformance.md": ["start_ms + duration_ms", "document duration plus the sum of each spatial effect's effective tail length", "echo"],
+        "docs/08-output.md": ["Visit active layers in document array order", "max_i(tail_frames_i)"],
+        "docs/14-conformance.md": ["start_ms + duration_ms", "document duration plus the longest spatial effect's effective tail length", "echo"],
         "docs/15-engine-build-guide.md": ["schemas/v1.json", "test-vectors/invalid-expectations.json", "test-vectors/numeric/dsp-values.json", "test-vectors/behavior/render-cases.json", "Definition of done"],
     }
     for relative, tokens in exact_tokens.items():
@@ -567,8 +569,8 @@ def behavior_aid_errors() -> list[str]:
             max(layer.get("start_ms", 0) + layer["duration_ms"] for layer in document["layers"]),
         )
         dry_end = frame(duration)
-        # Compute cumulative tail frames across all spatial effects
-        output_end = dry_end
+        # Compute max tail frames across all spatial effects (parallel: longest tail wins)
+        max_tail_frames = 0
         if "spatial_effects" in document:
             for effect in document["spatial_effects"]:
                 eff_type = effect.get("type")
@@ -589,7 +591,8 @@ def behavior_aid_errors() -> list[str]:
                     tail_frames_eff = n_total * delay_length
                 else:
                     continue
-                output_end += tail_frames_eff
+                max_tail_frames = max(max_tail_frames, tail_frames_eff)
+        output_end = dry_end + max_tail_frames
         tail_frames = output_end - dry_end
         terminal_frames = (
             max(2, min(frame(5), math.ceil(tail_frames / 10))) if tail_frames > 0 else 0

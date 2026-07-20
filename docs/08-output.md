@@ -12,7 +12,7 @@ tone/noise source
   → layer volume envelope and fades
   → equal-power balance (mono to stereo)
   → sum all active layers into the dry mix
-  → spatial effects processing, when present (see [Spatial Effects](07-spatial-effects.md))
+  → parallel spatial effects, when present (each effect receives the dry mix; contributions are summed; see [Spatial Effects](07-spatial-effects.md))
   → root master_volume_level
   → safety hard clipper
   → canonical stereo output
@@ -45,7 +45,7 @@ Additional engine render profiles MAY use an equivalent parallel or vectorized r
 
 ## Document and output timelines
 
-Let `D` be the explicit root `duration_ms`, or the latest declared layer end when it is omitted. Let `F(m) = frame(m)` from [Engine Safety](11-engine-safety.md). Without spatial effects, output frames are `[0, F(D))`. With spatial effects, output frames are `[0, Eₙ)` where `Eₙ` is the accumulated per-stage frame boundary defined in [Spatial Effects](07-spatial-effects.md) §Stage boundaries. Engines MUST accumulate per-stage frame counts; they MUST NOT round the millisecond sum independently.
+Let `D` be the explicit root `duration_ms`, or the latest declared layer end when it is omitted. Let `F(m) = frame(m)` from [Engine Safety](11-engine-safety.md). Without spatial effects, output frames are `[0, F(D))`. With spatial effects, output frames are `[0, F(D) + max_i(tail_frames_i))` where `tail_frames_i` is each effect's effective tail length in frames, computed from its own parameters; see [Spatial Effects](07-spatial-effects.md) §Output length.
 
 For a layer starting at `S` and ending at `E = S + layer.duration_ms`, its untruncated global-frame interval is `[F(S), F(E))`. An explicit `duration_ms` changes the active interval to `[F(S), min(F(E), F(D)))`; the interval is empty when its end is not greater than its start. Truncation does not move or create a layer fade. A non-zero sample may therefore be followed by zero at the boundary. Authors who need a smooth explicit cutoff must align each affected layer's declared duration and fade with `D`.
 

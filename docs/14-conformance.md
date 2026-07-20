@@ -14,7 +14,7 @@ A Piccle processor evaluates input in this order:
    - pitch and filter contour schedules do not exceed their declared layer duration;
    - object-form layer-volume schedules, including fades, do not exceed their declared layer duration;
    - every `start_ms + duration_ms` layer end remains within the safe-integer bound; and
-   - the document duration plus the sum of each spatial effect's effective tail length remains within the safe-integer bound.
+   - the document duration plus the longest spatial effect's effective tail length remains within the safe-integer bound.
 5. **Engine support check** — compare the valid document with the engine's published resource and output-bandwidth limits.
 
 Failure at stage 1 is a resource-rejected input whose format validity was not established. Failure at stages 2 through 4 produces an invalid document. Failure only at stage 5 produces an unsupported document.
