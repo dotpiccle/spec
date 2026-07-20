@@ -28,7 +28,7 @@ A Piccle asset should be:
 | Volume contour     | A shorthand number (constant level) or an N-level object with fade-in, fade-out, and per-segment timing.                     |
 | Filter chain       | Lowpass, highpass, or bandpass filters in series, each with its own frequency contour and resonance.                         |
 | Balance            | Stereo position from -1 (left) to 1 (right).                                                                                 |
-| Spatial effects | Optional whole-document spatial effects: reverb (amount, tail_ms, soften_hz) and echo (delay_ms, feedback, wet_gain, damp_hz). Applied serially in array order. |
+| Spatial effects | Optional whole-document spatial effects: reverb (amount, tail_ms, soften_hz) and echo (delay_ms, feedback, wet_gain, damp_hz). All effects run in parallel — each receives the same dry mix and adds its wet contribution. |
 | Output shaping     | Final master `master_volume_level` and mandatory safety clipping.                                                            |
 | Safety             | Built-in hard clipping, Nyquist-aware frequency handling, validation before allocation, and engine-declared resource limits. |
 

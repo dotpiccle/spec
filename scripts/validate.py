@@ -149,9 +149,22 @@ def semantic_issues(document: dict[str, Any]) -> list[Issue]:
                 else:
                     n = 1
                     amp = feedback
+                    iterations = 0
+                    tail_unbounded = False
                     while amp >= 0.001:
                         amp *= feedback
                         n += 1
+                        iterations += 1
+                        if iterations >= 1048576:
+                            tail_unbounded = True
+                            break
+                    if tail_unbounded:
+                        issues.append(Issue(
+                            "semantic", "semantic.echo_tail_unbounded",
+                            f"$.spatial_effects[{i}].feedback",
+                            f"echo iterative procedure exceeded 2^20 iteration cap",
+                        ))
+                        continue
                     tail_ms = delay_ms * (n + 1)
                 path = f"$.spatial_effects[{i}].feedback"
             else:
@@ -584,9 +597,13 @@ def behavior_aid_errors() -> list[str]:
                     else:
                         n_total = 1
                         amp = fb
+                        iterations = 0
                         while amp >= 0.001:
                             amp *= fb
                             n_total += 1
+                            iterations += 1
+                            if iterations >= 1048576:
+                                break
                         n_total += 1
                     tail_frames_eff = n_total * delay_length
                 else:

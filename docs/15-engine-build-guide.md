@@ -43,7 +43,7 @@ Implement these boundaries separately so each can be tested before complete audi
 - Run semantic validation for layer IDs, contour budgets, and derived-time bounds.
 - Report malformed, schema-invalid, semantically invalid, unsupported, and internal failures as distinct outcomes.
 
-Use the file `test-vectors/invalid-expectations.json` (in the repository root) as the expected validation stage, stable code, and JSON path contract. This file maps each fixture in `test-vectors/invalid/` (54 JSON documents that must fail validation) to its expected outcome: the validation stage that must reject it (malformed, schema-invalid, or semantic), the stable error code, and the JSON path where the error is reported. Your engine's validator must produce the same stage, code, and path for every invalid fixture.
+Use the file `test-vectors/invalid-expectations.json` (in the repository root) as the expected validation stage, stable code, and JSON path contract. This file maps each fixture in `test-vectors/invalid/` (63 JSON documents that must fail validation) to its expected outcome: the validation stage that must reject it (malformed, schema-invalid, or semantic), the stable error code, and the JSON path where the error is reported. Your engine's validator must produce the same stage, code, and path for every invalid fixture.
 
 ### 2. Resolved document model
 
@@ -130,7 +130,7 @@ These steps verify the engine against this specification. Before calling the imp
 
 1. **Accept all valid fixtures.** Load every `.json` file in `test-vectors/valid/` (38 documents covering defaults, boundaries, reverb tails, noise determinism, filter sweeps, spatial effects, etc.) and verify your engine classifies each as valid — before applying any engine-specific support limits. The valid fixture inventory is documented at `test-vectors/valid/README.md`.
 
-2. **Reject all invalid fixtures.** Load every `.json` file in `test-vectors/invalid/` (61 documents, each designed to fail for exactly one reason) and verify your engine rejects each at the precise stage (malformed, schema-invalid, or semantic), error code, and JSON path declared in `test-vectors/invalid-expectations.json`. The invalid fixture inventory is documented at `test-vectors/invalid/README.md`.
+2. **Reject all invalid fixtures.** Load every `.json` file in `test-vectors/invalid/` (63 documents, each designed to fail for exactly one reason) and verify your engine rejects each at the precise stage (malformed, schema-invalid, or semantic), error code, and JSON path declared in `test-vectors/invalid-expectations.json`. The invalid fixture inventory is documented at `test-vectors/invalid/README.md`.
 
 3. **Match the DSP reference values.** Recompute every entry in [the numeric DSP aid](../test-vectors/numeric/dsp-values.json) using the engine's own canonical-mode primitives (binary64, 48 kHz). Integer and deterministic arithmetic entries MUST match exactly. The `balance` and `lowpass_1000_hz_48000_resonance_0` fields use `sin`/`cos`, which IEEE-754 does not require to be correctly rounded; compare each of those fields with `abs(engine − reference) ≤ 8 × ε × max(1, abs(reference))`, where binary64 machine epsilon `ε = 2⁻⁵²`. This bound covers documented cross-libm last-bit variance without weakening the observable DSP contract. The aid is non-normative as format definition but normatively referenced by this gate; see [Conformance](14-conformance.md) §Role of repository fixtures. Apply exact equality to every schedule in [the behavior aid](../test-vectors/behavior/render-cases.json).
 

@@ -63,7 +63,7 @@ Here is a minimal document showing the required fields:
 - If `duration_ms` is present and longer than all layers, the remaining time is silence.
 - Every layer has its own required `duration_ms` (1 or more) which is independent of the document duration.
 - When spatial effects are present, the output length is `frame(D) + max_i(tail_frames_i)` where each effect's tail length is computed in frames from its own parameters; see [Spatial Effects](07-spatial-effects.md) §Output length.
-- Every derived layer end (`start_ms + duration_ms`) and the total output end (`frame(D) + max_i(tail_frames_i)`) MUST be no greater than `9007199254740991`. A document that exceeds either bound is semantically invalid.
+- Every derived layer end (`start_ms + duration_ms`) and the total output end (`D + max_i(tail_ms_effective_i)`) MUST be no greater than `9007199254740991`. A document that exceeds either bound is semantically invalid.
 
 ## Layer timing
 

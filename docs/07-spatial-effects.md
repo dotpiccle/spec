@@ -26,7 +26,7 @@ When `spatial_effects` is absent or empty, `output_end_frame = frame(D)` and the
 
 Each effect `i` processes its stage input on `[0, frame(D))` and receives zero input on `[frame(D), frame(D) + tail_frames_i)`. Its terminal window applies to `[frame(D), frame(D) + tail_frames_i)` — its own tail region only. Effects with shorter tails produce zero output after their tail ends; the output continues until the longest tail terminates.
 
-The total `frame(D) + max_i(tail_frames_i)` MUST be ≤ `9007199254740991`. A document that exceeds this bound is semantically invalid.
+The total `D + max_i(tail_ms_effective_i)` MUST be ≤ `9007199254740991`. A document that exceeds this bound is semantically invalid.
 
 See [Document Structure](01-document-structure.md) for the top-level field definition and [Output](08-output.md) for the signal-flow position.
 
@@ -443,13 +443,21 @@ if feedback == 0:
 else:
     N = 1                                # echo 1 (amplitude feedback⁰ = 1, always audible)
     amp = feedback                        # amplitude of echo 2
+    iterations = 0
     while amp >= 0.001:
         amp = amp × feedback              # binary64, round-to-nearest-even
         N = N + 1
-    N_total = N + 1                       # include the first below-threshold echo
+        iterations = iterations + 1
+        if iterations >= 1048576:         # 2^20 iteration cap
+            N_total = undefined           # document is semantically invalid
+            break
+    if N_total is defined:
+        N_total = N + 1                   # include the first below-threshold echo
 ```
 
 This iterative procedure uses only IEEE-754 correctly-rounded binary64 multiplication — no `log` or `ceil` — so it is deterministic across libm implementations. It matches the arithmetic the DSP feedback loop itself performs.
+
+The procedure is bounded at `2^20 = 1_048_576` iterations. If the cap is reached (`amp` has not fallen below `0.001` after `2^20` multiplications), `N_total` is undefined and the document is semantically invalid with error code `semantic.echo_tail_unbounded`. This guarantees tractable computation for any conforming implementation. Conforming engines MAY pre-screen using a closed-form formula (`ceil(log(0.001)/log(feedback)) + 1`) to short-circuit such documents in constant time; the closed form is non-normative for determinism, the iterative procedure remains the source of truth for `N_total`.
 
 Define:
 
@@ -505,7 +513,7 @@ For each checkpoint frame `n` in the echo impulse-response test vector, the rend
 |y_engine[n] − y_ref[n]| ≤ 1e-10 × max(1, |y_ref[n]|)
 ```
 
-This bound is specific to the published test vector configuration (`delay_ms=200, feedback=0.6, wet_gain=0.3, damp_hz=4000, 48 kHz, 144,048 output frames`). Future echo test vectors with longer tails MUST publish their own bound, scaled to the accumulated ULP drift over the response length. The `1e-10` bound is much larger than realistic ULP accumulation (~`1e-9` over 144K frames for this configuration) and much smaller than a perceptible difference (~`1e-3`) or an implementation bug (~`1e-2`).
+This bound is specific to the published test vector configuration (`delay_ms=200, feedback=0.6, wet_gain=0.3, damp_hz=4000, 48 kHz, 144,048 output frames`). Future echo test vectors with longer tails MUST publish their own bound, scaled to the accumulated ULP drift over the response length. For this configuration, the worst-case accumulated ULP drift over 144K frames is approximately `1.6e-11` (each frame accumulates at most one lowpass-coefficient ULP ~`1.1e-16`, compounded by the geometric feedback series `Σ feedback^k ≈ 1/(1-0.6) = 2.5`), so `1e-10` is approximately 6× the estimated drift — large enough to cover cross-libm coefficient variance, small enough to catch implementation bugs (~`1e-2`) and perceptible differences (~`1e-3`).
 
 ### Authoring guidance
 

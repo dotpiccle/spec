@@ -10,7 +10,7 @@ All notable changes to the Piccle specification are documented here. Piccle v1 h
 
 ### Added
 
-- **`spatial_effects` top-level array** — optional whole-document spatial effects applied after the dry layer mix. Each entry is a `reverb` or `echo` effect. Effects are applied serially in array order, all starting at the document origin. An empty array is valid and equivalent to omitting the field. Extends the output timeline by the sum of each effect's effective tail length.
+- **`spatial_effects` top-level array** — optional whole-document spatial effects applied after the dry layer mix. Each entry is a `reverb` or `echo` effect. All effects run in parallel — each receives the same dry mix and adds its wet contribution. An empty array is valid and equivalent to omitting the field. Extends the output timeline by the longest effect's effective tail length.
 
 - **`echo` spatial effect type** — a lowpass-feedback comb filter (LBCF) producing discrete repeats with progressive darkening. Additive wet (dry always at unity). Fields: `delay_ms` (integer, ≥1, time between successive echoes), `feedback` (number, 0 to <1, how much of each echo is fed back), `wet_gain` (number, 0–1, additive wet gain), `damp_hz` (number, 200–12000, feedback-path lowpass corner). Deterministic algorithm spec; canonical-mode bit-equivalence required with transcendental tolerance for the lowpass coefficient. General-purpose personalizable echo primitive — cuelume's `shimmer` is one achievable preset.
 
@@ -20,8 +20,8 @@ All notable changes to the Piccle specification are documented here. Piccle v1 h
 
 ### Changed
 
-- **Signal-flow stage** "reverb dry/wet crossfade, when present" renamed to "spatial effects processing, when present (see docs/07-spatial-effects.md)". Output-end formula generalized from `D + reverb.tail_ms` to `D + Σ_i tail_ms_effective_i` across all spatial effects.
-- `docs/07-reverb.md` renamed to `docs/07-spatial-effects.md` — now the canonical home for both the reverb and echo normative specifications. The reverb section preserves all existing semantics (FDN topology, 7 perceptual-equivalence metrics, canonical IR fixtures, terminal window, normalization, RT60, dry/wet crossfade).
+- **Signal-flow stage** "reverb dry/wet crossfade, when present" renamed to "parallel spatial effects, when present". Output-end formula generalized from `D + reverb.tail_ms` to `D + max_i(tail_ms_effective_i)` (longest tail, not sum — effects run in parallel).
+- `docs/07-reverb.md` renamed to `docs/07-spatial-effects.md` — now the canonical home for both the reverb and echo normative specifications. The reverb section preserves all existing semantics (FDN topology, 7 perceptual-equivalence metrics, canonical IR fixtures, terminal window, normalization, RT60). Reverb's `amount` changed from dry/wet crossfade to additive wet gain (dry always present from the parallel stage).
 - `docs/11-engine-safety.md` — added `echo.damp_hz` to render-profile frequency clamping; updated determinism classes table with echo effect row.
 - `docs/13-implementer-notes.md` — added normative §Reference echo runtime subsection.
 - `docs/14-conformance.md` — updated safe-integer bound and numeric aids references.
@@ -33,7 +33,7 @@ All notable changes to the Piccle specification are documented here. Piccle v1 h
 
 ### Note
 
-Reverb's internal semantics (FDN topology, 7 perceptual-equivalence metrics, canonical IR fixtures, terminal window, normalization, RT60, dry/wet crossfade) are unchanged. Only the host field changed from `reverb` object to `spatial_effects` array entry with `type: "reverb"`.
+Reverb's internal DSP (FDN topology, 7 perceptual-equivalence metrics, canonical IR fixtures, terminal window, normalization, RT60) is unchanged. The host field changed from `reverb` object to `spatial_effects` array entry, and `amount` changed from dry/wet crossfade to additive wet gain (consistent with echo's `wet_gain`).
 
 - Canonical reference IR render fixtures for the reverb perceptual-equivalence gate (five binary64 stereo PCM files at 48 kHz with 4 kHz soften, 1, 10, 20, 220, and 500 ms tails, SHA-256 manifest) at `test-vectors/numeric/reverb-reference-irs/`.
 - Strict normative perceptual-equivalence tolerances for reverb across non-canonical render profiles: RT60 crossing window, total wet energy ±0.5 dB, echo density ±10% of reference, reference-qualified modal resonance floor, L/R correlation ±0.15, spectral centroid ±10%, onset within ±1 sample.
