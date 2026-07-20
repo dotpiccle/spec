@@ -758,8 +758,13 @@ def reverb_matrix_vector_errors() -> list[str]:
     Q = _random_orthogonal_matrix(8, expected_seed)
     for i in range(8):
         for j in range(8):
-            if Q[i][j] != vector["feedback_matrix_q"][i][j]:
-                failures.append(f"matrix vector: Q[{i}][{j}] mismatch, expected {vector['feedback_matrix_q'][i][j]}, got {Q[i][j]}")
+            expected_q = vector["feedback_matrix_q"][i][j]
+            tolerance = 8 * sys.float_info.epsilon * max(1.0, abs(expected_q))
+            if abs(Q[i][j] - expected_q) > tolerance:
+                failures.append(
+                    f"matrix vector: Q[{i}][{j}] mismatch, expected {expected_q}, "
+                    f"got {Q[i][j]}, tolerance {tolerance}"
+                )
     return failures
 
 
