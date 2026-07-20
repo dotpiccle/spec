@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Reference implementation of the seven perceptual-equivalence metrics
-defined in docs/07-reverb.md §Perceptual-equivalence metric algorithms.
+defined in docs/07-spatial-effects.md §Perceptual-equivalence metric algorithms.
 
 Usage:
     python3 scripts/reverb_metrics.py            # compute and print; exit 0 if match manifest
@@ -124,7 +124,7 @@ def magnitude_spectrum(signal: list[float], fft_length: int | None = None) -> li
 def rt60_crossing(L: list[float], R: list[float], N: int, T: int) -> int:
     """The first frame whose backward-integrated energy <= 1e-6 * total energy.
 
-    Implements docs/07-reverb.md ## Wet-path normalization and RT60 lines 92-106.
+    Implements docs/07-spatial-effects.md ## Wet-path normalization and RT60 lines 92-106.
     """
     # The harness uses T = N + 1 where N = floor(tail_ms * rate / 1000 + 0.5)
     E = [L[k] ** 2 + R[k] ** 2 for k in range(T)]
@@ -148,7 +148,7 @@ def total_energy(L: list[float], R: list[float], T: int) -> float:
 def echo_density(L: list[float], R: list[float], N: int, rate: int = SAMPLE_RATE) -> float:
     """Fraction of zero-crossing intervals below rate/1000 in the tail.
 
-    Excludes frame 0 (the impulse). See docs/07-reverb.md metric 3.
+    Excludes frame 0 (the impulse). See docs/07-spatial-effects.md metric 3.
     """
     M = min(N, int(0.05 * rate))
     if M <= 1:
@@ -220,7 +220,7 @@ def modal_resonance_floor(
     in the available late tail.
 
     Returns dB value, or None if no analysis window fits (degenerate: tail too short).
-    See docs/07-reverb.md metric 4.
+    See docs/07-spatial-effects.md metric 4.
     """
     m = [(L[k] + R[k]) / 2.0 for k in range(T)]
     peak_wet = max(abs(v) for v in m) if m else 0.0
@@ -275,7 +275,7 @@ def lr_correlation(L: list[float], R: list[float], T: int) -> float:
     """Pearson correlation across the tail (excluding frame 0).
 
     Returns value in [-1, 1], or 0.0 for degenerate cases.
-    See docs/07-reverb.md metric 5.
+    See docs/07-spatial-effects.md metric 5.
     """
     if T <= 2:
         return 0.0
@@ -295,7 +295,7 @@ def lr_correlation(L: list[float], R: list[float], T: int) -> float:
 def spectral_centroid(L: list[float], R: list[float], T: int, rate: int = SAMPLE_RATE) -> float:
     """Magnitude-weighted spectral centroid of the full wet response.
 
-    Returns Hz. See docs/07-reverb.md metric 6.
+    Returns Hz. See docs/07-spatial-effects.md metric 6.
     """
     m = [(L[k] + R[k]) / 2.0 for k in range(T)]
     mag = magnitude_spectrum(m)
@@ -312,7 +312,7 @@ def spectral_centroid(L: list[float], R: list[float], T: int, rate: int = SAMPLE
 def onset_frame(L: list[float], R: list[float], T: int) -> int:
     """Index of first sample exceeding 0.1 * peak across both channels.
 
-    See docs/07-reverb.md metric 7.
+    See docs/07-spatial-effects.md metric 7.
     """
     peak = 0.0
     for k in range(T):
@@ -328,11 +328,11 @@ def onset_frame(L: list[float], R: list[float], T: int) -> int:
     return T - 1
 
 
-# Tolerance comparisons matching docs/07-reverb.md exactly
+# Tolerance comparisons matching docs/07-spatial-effects.md exactly
 # Modal floor always uses the one-sided engine ≤ ref + 6 bound. The
 # absolute quality floor additionally applies when the same-configuration
 # reference itself satisfies it.
-MODAL_FLOOR_ABSOLUTE_GATE = -30.0  # derived from worst non-degenerate ref modal floor + headroom; see docs/07-reverb.md and test-vectors/numeric/reverb-reference-irs/manifest.json
+MODAL_FLOOR_ABSOLUTE_GATE = -30.0  # derived from worst non-degenerate ref modal floor + headroom; see docs/07-spatial-effects.md and test-vectors/numeric/reverb-reference-irs/manifest.json
 
 TOLERANCE_SPEC: dict[str, dict] = {
     "rt60_crossing_frame": {"type": "exact"},

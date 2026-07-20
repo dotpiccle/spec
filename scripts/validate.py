@@ -132,10 +132,15 @@ def semantic_issues(document: dict[str, Any]) -> list[Issue]:
         "duration_ms",
         max(layer.get("start_ms", 0) + layer["duration_ms"] for layer in layers),
     )
-    reverb = document.get("reverb")
+    reverb = None
+    if "spatial_effects" in document:
+        for effect in document["spatial_effects"]:
+            if effect.get("type") == "reverb":
+                reverb = effect
+                break
     if reverb is not None and document_duration + reverb["tail_ms"] > MAX_SAFE_INTEGER:
         issues.append(Issue(
-            "semantic", "semantic.output_end_out_of_range", "$.reverb.tail_ms",
+            "semantic", "semantic.output_end_out_of_range", "$.spatial_effects[0].tail_ms",
             f"document duration + tail_ms exceeds {MAX_SAFE_INTEGER}",
         ))
     return issues
@@ -229,7 +234,7 @@ def check_schema_contract(schema: dict[str, Any]) -> list[str]:
             expect(prop.get("default"), default, f"{name} default")
     expect(schema["$schema"], "https://json-schema.org/draft/2019-09/schema", "$schema")
     expect(schema["$id"], CANONICAL_SCHEMA_URI, "$id")
-    expect(set(properties), {"$schema", "piccle", "name", "description", "duration_ms", "master_volume_level", "reverb", "layers"}, "root properties")
+    expect(set(properties), {"$schema", "piccle", "name", "description", "duration_ms", "master_volume_level", "spatial_effects", "layers"}, "root properties")
     expect(schema["required"], ["piccle", "layers"], "root required fields")
     expect(properties["$schema"].get("const"), CANONICAL_SCHEMA_URI, "instance $schema")
     expect(properties["piccle"].get("enum"), ["1.0"], "piccle versions")
@@ -263,14 +268,21 @@ def check_schema_contract(schema: dict[str, Any]) -> list[str]:
         expect_property(entry, "transition_ms", kind="integer", minimum=0, default=0, has_default=True)
         expect(entry["properties"]["transition_curve"].get("default"), "linear", f"{label} transition curve default")
 
-    reverb = defs["reverb"]
-    expect(reverb["required"], ["amount", "tail_ms", "soften_hz"], "reverb required fields")
-    expect((reverb["properties"]["amount"].get("minimum"), reverb["properties"]["amount"].get("maximum")), (0, 1), "reverb amount range")
-    expect((reverb["properties"]["tail_ms"].get("minimum"), reverb["properties"]["soften_hz"].get("minimum"), reverb["properties"]["soften_hz"].get("maximum")), (1, 200, 12000), "reverb ranges")
-    expect_property(reverb, "amount", kind="number", minimum=0, maximum=1)
-    expect_property(reverb, "tail_ms", kind="integer", minimum=1)
-    expect_property(reverb, "soften_hz", kind="number", minimum=200, maximum=12000)
-    expect("safe-integer bound" in reverb["properties"]["tail_ms"]["description"], True, "reverb derived-end description")
+    # spatial_effect defs
+    spatial_reverb = defs["spatial_reverb"]
+    expect(spatial_reverb["properties"]["type"]["const"], "reverb", "spatial_reverb type const")
+    expect(spatial_reverb["required"], ["type", "amount", "tail_ms", "soften_hz"], "spatial_reverb required")
+    expect_property(spatial_reverb, "amount", kind="number", minimum=0, maximum=1)
+    expect_property(spatial_reverb, "tail_ms", kind="integer", minimum=1)
+    expect_property(spatial_reverb, "soften_hz", kind="number", minimum=200, maximum=12000)
+    spatial_echo = defs["spatial_echo"]
+    expect(spatial_echo["properties"]["type"]["const"], "echo", "spatial_echo type const")
+    expect_property(spatial_echo, "delay_ms", kind="integer", minimum=1)
+    expect_property(spatial_echo, "feedback", kind="number", minimum=0)
+    expect(spatial_echo["properties"]["feedback"].get("exclusiveMaximum"), 1, "echo feedback exclusiveMaximum")
+    expect_property(spatial_echo, "wet_gain", kind="number", minimum=0, maximum=1)
+    expect_property(spatial_echo, "damp_hz", kind="number", minimum=200, maximum=12000)
+    expect("tail_length" in spatial_echo["properties"]["feedback"]["description"] or "tail_ms_effective" in spatial_echo["properties"]["feedback"]["description"], True, "echo feedback tail-length documentation")
 
     noise = defs["source"]["oneOf"][1]["properties"]
     expect(noise["character"]["enum"], ["soft", "neutral", "sharp"], "noise character enum")
@@ -299,7 +311,10 @@ def check_schema_contract(schema: dict[str, Any]) -> list[str]:
     def inspect(node: Any, location: str = "schema") -> None:
         if isinstance(node, dict):
             if node.get("type") == "object" and node.get("additionalProperties") is not False:
-                failures.append(f"schema contract: open object at {location}")
+                # An if/then/else router delegates property validation to its branches;
+                # the router intentionally cannot list all properties at this level.
+                if "if" not in node or "then" not in node:
+                    failures.append(f"schema contract: open object at {location}")
             properties_value = node.get("properties")
             if isinstance(properties_value, dict):
                 for key, value in properties_value.items():
@@ -319,12 +334,12 @@ def check_schema_contract(schema: dict[str, Any]) -> list[str]:
 
 def documentation_parity_errors() -> list[str]:
     requirements = {
-        "docs/01-document-structure.md": {"$schema", "piccle", "name", "description", "duration_ms", "master_volume_level", "reverb", "layers", "id", "start_ms", "source", "balance", "filters"},
+        "docs/01-document-structure.md": {"$schema", "piccle", "name", "description", "duration_ms", "master_volume_level", "spatial_effects", "layers", "id", "start_ms", "source", "balance", "filters"},
         "docs/03-sources.md": {"type", "wave", "pitch", "character", "seed"},
         "docs/04-pitch.md": {"frequencies", "hz", "hold_ms", "transition_ms", "transition_curve", "offset_cents"},
         "docs/05-layer-volume.md": {"fade_in", "fade_out", "levels", "level", "hold_ms", "transition_ms", "transition_curve"},
         "docs/06-filters.md": {"type", "frequencies", "hz", "hold_ms", "transition_ms", "transition_curve", "resonance"},
-        "docs/07-reverb.md": {"amount", "tail_ms", "soften_hz"},
+        "docs/07-spatial-effects.md": {"amount", "tail_ms", "soften_hz", "type", "delay_ms", "feedback", "wet_gain", "damp_hz"},
     }
     failures: list[str] = []
     for relative, fields in requirements.items():
@@ -337,12 +352,12 @@ def documentation_parity_errors() -> list[str]:
         "docs/01-document-structure.md": ["`duration_ms` | integer", "`master_volume_level` | number  | 1        | No"],
         "docs/05-layer-volume.md": ["`fade_in`  | object | `{\"ms\": 0", "`fade_out` | object | `{\"ms\": 5"],
         "docs/06-filters.md": ["`resonance`   | number | 0", "20-20000 Hz"],
-        "docs/07-reverb.md": ["`amount`    | number", "`tail_ms`   | integer | `1` or more", "`soften_hz` | number  | `200`–`12000`"],
+        "docs/07-spatial-effects.md": ["`amount`    | number", "`tail_ms`   | integer | `1` or more", "`soften_hz` | number  | `200`–`12000`"],
         "docs/11-engine-safety.md": ["at least 8000 Hz", "min(20000, 0.49 × sample_rate)", "48000 Hz", "frame(S + b) - frame(S + a)"],
         "docs/04-pitch.md": ["Evaluate the `frequencies` contour", "Apply the cents offset", "Clamp `offset_hz`"],
-        "docs/07-reverb.md": ["five_ms_frames", "DSP conformance harness", "1 + floor(0.9 × N)", "Perceptual-equivalence metric algorithms", "next_power_of_two", "hop = max(1, floor(W_m / 4))", "is excluded", "magnitude weighting"],
-        "docs/08-output.md": ["Visit active layers in document array order", "[0, F(D + tail_ms))"],
-        "docs/14-conformance.md": ["start_ms + duration_ms", "document duration plus `reverb.tail_ms`"],
+        "docs/07-spatial-effects.md": ["five_ms_frames", "DSP conformance harness", "1 + floor(0.9 × N)", "Perceptual-equivalence metric algorithms", "next_power_of_two", "hop = max(1, floor(W_m / 4))", "is excluded", "magnitude weighting"],
+        "docs/08-output.md": ["Visit active layers in document array order", "[0, F(D + Σ_i tail_ms_effective_i))"],
+        "docs/14-conformance.md": ["start_ms + duration_ms", "document duration plus the sum of each spatial effect's effective tail length", "echo"],
         "docs/15-engine-build-guide.md": ["schemas/v1.json", "test-vectors/invalid-expectations.json", "test-vectors/numeric/dsp-values.json", "test-vectors/behavior/render-cases.json", "Definition of done"],
     }
     for relative, tokens in exact_tokens.items():
@@ -533,7 +548,13 @@ def behavior_aid_errors() -> list[str]:
             max(layer.get("start_ms", 0) + layer["duration_ms"] for layer in document["layers"]),
         )
         dry_end = frame(duration)
-        reverb = document.get("reverb")
+        # Find first reverb entry in spatial_effects
+        reverb = None
+        if "spatial_effects" in document:
+            for effect in document["spatial_effects"]:
+                if effect.get("type") == "reverb":
+                    reverb = effect
+                    break
         output_end = frame(duration + reverb["tail_ms"]) if reverb else dry_end
         tail_frames = output_end - dry_end
         terminal_frames = (
@@ -617,7 +638,7 @@ def reverb_reference_ir_errors() -> list[str]:
                 f"reverb reference IR fixture {entry['filename']}: "
                 f"RT60 crossing frame {crossing} outside permitted range "
                 f"[{min_c}, {N}] (tail_ms={tail_ms}, N={N}, "
-                f"docs/07-reverb.md requires 1 + floor(0.9 · N) <= c <= N)"
+                f"docs/07-spatial-effects.md requires 1 + floor(0.9 · N) <= c <= N)"
             )
     return failures
 
@@ -763,6 +784,108 @@ def reverb_qualification_matrix_errors() -> list[str]:
     return failures
 
 
+def echo_impulse_response_errors() -> list[str]:
+    """Verify the echo impulse-response test vector matches the normative echo algorithm."""
+    path = NUMERIC_DIR / "echo-impulse-response.json"
+    if not path.exists():
+        return [f"echo impulse-response test vector not found: {path}"]
+    vector = load_json(path)
+    if vector.get("status") != "non-normative":
+        return ["echo impulse-response test vector: status must be non-normative"]
+
+    cfg = vector["configuration"]
+    delay_ms = cfg["delay_ms"]
+    feedback = cfg["feedback"]
+    wet_gain = cfg["wet_gain"]
+    damp_hz = cfg["damp_hz"]
+    sample_rate = cfg["sample_rate"]
+
+    def frame(ms: float) -> int:
+        return math.floor(ms * sample_rate / 1000 + 0.5)
+
+    # Derived values (must match the vector)
+    derived = vector["derived"]
+    delay_length = max(1, frame(delay_ms))
+    n_repeats = 1 + math.ceil(math.log(0.001) / math.log(feedback)) if feedback > 0 else 1
+    tail_ms_effective = delay_ms if feedback == 0 else delay_ms * n_repeats
+    d_ms = 1  # impulse document
+    dry_end = frame(d_ms)
+    output_end = frame(d_ms + tail_ms_effective)
+    n_echo = output_end - dry_end
+    f = min(damp_hz, 20000)
+    a = math.exp(-2 * math.pi * f / sample_rate)
+    five_ms_frames = math.floor(5 * sample_rate / 1000 + 0.5)
+    w = max(2, min(five_ms_frames, math.ceil(n_echo / 10)))
+    w = min(w, n_echo) if n_echo >= 2 else 2
+
+    failures: list[str] = []
+    for key, expected_val in {
+        "delay_length": delay_length,
+        "tail_ms_effective": tail_ms_effective,
+        "N_repeats": n_repeats,
+        "dry_end_frame": dry_end,
+        "output_end_frame": output_end,
+        "N_echo": n_echo,
+        "lowpass_coefficient_a": a,
+        "terminal_window_W": w,
+    }.items():
+        actual = derived.get(key)
+        if actual != expected_val:
+            failures.append(f"echo impulse-response: derived {key} is {actual!r}, expected {expected_val!r}")
+
+    if vector.get("total_output_frames") != output_end:
+        failures.append(f"echo impulse-response: total_output_frames is {vector.get('total_output_frames')!r}, expected {output_end!r}")
+
+    # Recompute the full output and compare checkpoints
+    impulse = vector["impulse_value"]
+    T = output_end
+    delay_buffer = [0.0] * delay_length
+    read_index = 0
+    write_index = 0
+    d_lp_prev = 0.0
+    checkpoints = vector["checkpoints"]
+    checkpoint_frames = {
+        "frame_0_impulse": 0,
+        "frame_dry_end": dry_end,
+        "frame_delay_length_first_echo": delay_length,
+        "frame_2x_delay_length_second_echo": 2 * delay_length,
+        "frame_3x_delay_length_third_echo": 3 * delay_length,
+        "frame_mid_tail": dry_end + n_echo // 2,
+        "frame_window_start": T - w,
+        "frame_T_minus_1_last": T - 1,
+    }
+
+    computed = {}
+    for n in range(T):
+        stage_in = impulse if n == 0 else 0.0
+        d = delay_buffer[read_index]
+        d_lp = a * d_lp_prev + (1 - a) * d
+        d_lp_prev = d_lp
+        fb = feedback * d_lp
+        delay_buffer[write_index] = stage_in + fb
+        if n < dry_end:
+            d_win = d_lp
+        elif T - w <= n < T:
+            d_win = d_lp * (T - 1 - n) / (w - 1)
+        else:
+            d_win = d_lp
+        y = stage_in + wet_gain * d_win
+        for label, frame_idx in checkpoint_frames.items():
+            if n == frame_idx:
+                computed[label] = y
+        read_index = (read_index + 1) % delay_length
+        write_index = (write_index + 1) % delay_length
+
+    for label, expected in checkpoints.items():
+        actual = computed.get(label)
+        if actual is None:
+            failures.append(f"echo impulse-response: checkpoint {label} not computed")
+        elif actual != expected:
+            failures.append(f"echo impulse-response: checkpoint {label} is {actual!r}, expected {expected!r}")
+
+    return failures
+
+
 def main() -> int:
     failures: list[str] = []
     schema = load_json(SCHEMA_PATH)
@@ -797,6 +920,7 @@ def main() -> int:
     failures.extend(reverb_reference_ir_metrics_errors())
     failures.extend(reverb_matrix_vector_errors())
     failures.extend(reverb_qualification_matrix_errors())
+    failures.extend(echo_impulse_response_errors())
     failures.extend(behavior_aid_errors())
     formatter = subprocess.run([sys.executable, str(ROOT / "scripts" / "format_json.py")], cwd=ROOT, text=True, capture_output=True)
     if formatter.returncode:

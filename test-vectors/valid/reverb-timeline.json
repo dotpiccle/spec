@@ -2,11 +2,14 @@
   "piccle": "1.0",
   "description": "A 100 ms document with a 200 ms RT60 has a 300 ms output timeline.",
   "duration_ms": 100,
-  "reverb": {
-    "amount": 0.25,
-    "tail_ms": 200,
-    "soften_hz": 4000
-  },
+  "spatial_effects": [
+    {
+      "type": "reverb",
+      "amount": 0.25,
+      "tail_ms": 200,
+      "soften_hz": 4000
+    }
+  ],
   "layers": [
     {
       "id": "impulse-like",

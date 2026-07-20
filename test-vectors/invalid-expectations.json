@@ -147,7 +147,7 @@
   "output-end-out-of-range.json": {
     "stage": "semantic",
     "code": "semantic.output_end_out_of_range",
-    "path": "$.reverb.tail_ms"
+    "path": "$.spatial_effects[0].tail_ms"
   },
   "pitch-frequencies-entry-missing-hz.json": {
     "stage": "schema",
@@ -164,25 +164,30 @@
     "code": "schema.maximum",
     "path": "$.layers[0].filters[0].resonance"
   },
-  "reverb-amount-out-of-range.json": {
+  "root-reverb-removed.json": {
+    "stage": "schema",
+    "code": "schema.additionalProperties",
+    "path": "$.reverb"
+  },
+  "spatial-reverb-amount-out-of-range.json": {
     "stage": "schema",
     "code": "schema.maximum",
-    "path": "$.reverb.amount"
+    "path": "$.spatial_effects[0].amount"
   },
-  "reverb-missing-field.json": {
+  "spatial-reverb-missing-field.json": {
     "stage": "schema",
     "code": "schema.required",
-    "path": "$.reverb.amount"
+    "path": "$.spatial_effects[0].amount"
   },
-  "reverb-soften-out-of-range.json": {
+  "spatial-reverb-soften-out-of-range.json": {
     "stage": "schema",
     "code": "schema.minimum",
-    "path": "$.reverb.soften_hz"
+    "path": "$.spatial_effects[0].soften_hz"
   },
-  "reverb-tail-zero.json": {
+  "spatial-reverb-tail-zero.json": {
     "stage": "schema",
     "code": "schema.minimum",
-    "path": "$.reverb.tail_ms"
+    "path": "$.spatial_effects[0].tail_ms"
   },
   "root-duration-zero.json": {
     "stage": "schema",
@@ -263,6 +268,36 @@
     "stage": "schema",
     "code": "schema.const",
     "path": "$.$schema"
+  },
+  "spatial-echo-delay-zero.json": {
+    "stage": "schema",
+    "code": "schema.minimum",
+    "path": "$.spatial_effects[0].delay_ms"
+  },
+  "spatial-echo-damp-out-of-range.json": {
+    "stage": "schema",
+    "code": "schema.minimum",
+    "path": "$.spatial_effects[0].damp_hz"
+  },
+  "spatial-echo-feedback-at-or-above-1.json": {
+    "stage": "schema",
+    "code": "schema.exclusiveMaximum",
+    "path": "$.spatial_effects[0].feedback"
+  },
+  "spatial-echo-missing-field.json": {
+    "stage": "schema",
+    "code": "schema.required",
+    "path": "$.spatial_effects[0].damp_hz"
+  },
+  "spatial-echo-wet-gain-out-of-range.json": {
+    "stage": "schema",
+    "code": "schema.maximum",
+    "path": "$.spatial_effects[0].wet_gain"
+  },
+  "spatial-effects-unknown-type.json": {
+    "stage": "schema",
+    "code": "schema.enum",
+    "path": "$.spatial_effects[0].type"
   },
   "zero-layers.json": {
     "stage": "schema",

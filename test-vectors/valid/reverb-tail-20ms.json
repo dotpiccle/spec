@@ -1,10 +1,13 @@
 {
   "piccle": "1.0",
-  "reverb": {
-    "amount": 1,
-    "tail_ms": 20,
-    "soften_hz": 8000
-  },
+  "spatial_effects": [
+    {
+      "type": "reverb",
+      "amount": 1,
+      "tail_ms": 20,
+      "soften_hz": 8000
+    }
+  ],
   "layers": [
     {
       "id": "tone",

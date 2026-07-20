@@ -3,11 +3,6 @@
   "piccle": "1.0",
   "name": "Bloom",
   "description": "Two almost-identical tones a few cents apart — a warm, slow swell.",
-  "reverb": {
-    "amount": 0.3,
-    "tail_ms": 400,
-    "soften_hz": 4000
-  },
   "layers": [
     {
       "id": "tone-a",
@@ -80,6 +75,14 @@
           }
         ]
       }
+    }
+  ],
+  "spatial_effects": [
+    {
+      "type": "reverb",
+      "amount": 0.3,
+      "tail_ms": 400,
+      "soften_hz": 4000
     }
   ]
 }

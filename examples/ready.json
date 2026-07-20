@@ -3,11 +3,6 @@
   "piccle": "1.0",
   "name": "Ready",
   "description": "A crisp tick opening into two soft harmonic tones — content is ready.",
-  "reverb": {
-    "amount": 0.2,
-    "tail_ms": 300,
-    "soften_hz": 4500
-  },
   "layers": [
     {
       "id": "tick",
@@ -99,6 +94,14 @@
           }
         ]
       }
+    }
+  ],
+  "spatial_effects": [
+    {
+      "type": "reverb",
+      "amount": 0.2,
+      "tail_ms": 300,
+      "soften_hz": 4500
     }
   ]
 }

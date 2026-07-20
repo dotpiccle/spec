@@ -2,7 +2,7 @@
 """Generate and verify the canonical reverb reference IR fixtures.
 
 Implements the deterministic diffused eight-line FDN from
-docs/13-implementer-notes.md and the wet harness from docs/07-reverb.md.
+docs/13-implementer-notes.md and the wet harness from docs/07-spatial-effects.md.
 At binary64 48 kHz canonical mode the output is perceptually equivalent across
 conforming implementations.
 

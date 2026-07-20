@@ -3,11 +3,6 @@
   "piccle": "1.0",
   "name": "Notification",
   "description": "A single soft bell, warmed with a slight pitch offset and gentle reverb.",
-  "reverb": {
-    "amount": 0.25,
-    "tail_ms": 300,
-    "soften_hz": 6000
-  },
   "layers": [
     {
       "id": "bell-1",
@@ -80,6 +75,14 @@
           }
         ]
       }
+    }
+  ],
+  "spatial_effects": [
+    {
+      "type": "reverb",
+      "amount": 0.25,
+      "tail_ms": 300,
+      "soften_hz": 6000
     }
   ]
 }

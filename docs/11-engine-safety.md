@@ -62,7 +62,7 @@ Canonical mode therefore uses `20000` Hz. The engine clamps instantaneous pitch 
 [20, render_frequency_max]
 ```
 
-It also clamps the fixed `soft` and `sharp` noise-character corners and `reverb.soften_hz` to `render_frequency_max` before calculating their coefficients. Declared document values remain unchanged and valid; the clamp adapts rendering to the profile's available bandwidth.
+It also clamps the fixed `soft` and `sharp` noise-character corners, `reverb.soften_hz`, and `echo.damp_hz` to `render_frequency_max` before calculating their coefficients. Declared document values remain unchanged and valid; the clamp adapts rendering to the profile's available bandwidth.
 
 An engine MAY instead report a valid document as unsupported when an output-bandwidth policy cannot represent the document adequately. Output-bandwidth limits affect support, never format validity.
 
@@ -80,7 +80,8 @@ Conformance does not prescribe whether rendering happens during playback, before
 | Seeded PCG32 raw noise                                                         | Exact unsigned sequence and source values                                          |
 | Tone oscillators                                                               | Exact phase semantics and the harmonic tolerances in [Sources](03-sources.md)      |
 | Filters                                                                        | Published coefficients, zero state, and per-frame updates                          |
-| Reverb                                                                         | Perceptually equivalent wet response at canonical and additional render profiles, measured against the canonical reference IR fixtures using the tolerances in [Reverb](07-reverb.md); published reference IR generator, lowpass, terminal window, measured response, normalization, and lifetime |
+| Reverb effect                                                                  | Perceptually equivalent wet response at canonical and additional render profiles, measured against the canonical reference IR fixtures using the tolerances in [Spatial Effects](07-spatial-effects.md); published reference IR generator, lowpass, terminal window, measured response, normalization, and lifetime |
+| Echo effect                                                                    | Canonical-mode bit-equivalence with transcendental tolerance for the lowpass coefficient; deterministic output-length formula |
 
 “Exact semantics” does not require bit-identical transcendentals across processors. Canonical implementations MUST use binary64 calculations.
 

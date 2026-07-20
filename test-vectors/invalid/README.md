@@ -26,6 +26,7 @@ Each invalid fixture fails for exactly one primary reason, matching the rule lis
 | `negative-fade.json`                       | Layer volume: fade time cannot be negative.       |
 | `root-fade-in-removed.json`                | Root: `fade_in_ms` is not a Piccle v1 field.       |
 | `root-fade-out-removed.json`               | Root: `fade_out_ms` is not a Piccle v1 field.      |
+| `root-reverb-removed.json`                 | Root: `reverb` is not a Piccle v1 field.           |
 | `negative-hold.json`                       | Contour: `hold_ms` cannot be negative.            |
 | `negative-transition.json`                 | Contour: `transition_ms` cannot be negative.      |
 | `offset-cents-out-of-range.json`           | Pitch: `offset_cents` must be −1200–1200.         |
@@ -38,10 +39,16 @@ Each invalid fixture fails for exactly one primary reason, matching the rule lis
 | `unknown-enum.json`                        | Various: enum value not in allowed set.           |
 | `missing-wave.json`                        | Source: tone variant requires `wave`.             |
 | `missing-character.json`                   | Source: noise variant requires `character`.       |
-| `reverb-missing-field.json`                | Reverb: all three fields required when present.   |
-| `reverb-amount-out-of-range.json`          | Reverb: `amount` must be 0–1.                     |
-| `reverb-soften-out-of-range.json`          | Reverb: `soften_hz` must be 200–12000.            |
-| `reverb-tail-zero.json`                    | Reverb: `tail_ms` must be at least 1.             |
+| `spatial-echo-damp-out-of-range.json`      | Spatial: `damp_hz` must be 200–12000.             |
+| `spatial-echo-delay-zero.json`             | Spatial: echo `delay_ms` must be at least 1.      |
+| `spatial-echo-feedback-at-or-above-1.json` | Spatial: echo `feedback` must be below 1.         |
+| `spatial-echo-missing-field.json`          | Spatial: echo effect requires all echo fields.    |
+| `spatial-echo-wet-gain-out-of-range.json`  | Spatial: echo `wet_gain` must be 0–1.             |
+| `spatial-effects-unknown-type.json`        | Spatial: `type` must be a valid effect type.      |
+| `spatial-reverb-amount-out-of-range.json`  | Spatial: reverb `amount` must be 0–1.             |
+| `spatial-reverb-missing-field.json`        | Spatial: reverb effect requires all reverb fields.|
+| `spatial-reverb-soften-out-of-range.json`  | Spatial: reverb `soften_hz` must be 200–12000.    |
+| `spatial-reverb-tail-zero.json`            | Spatial: reverb `tail_ms` must be at least 1.     |
 | `resonance-out-of-range.json`              | Filter: `resonance` must be 0–1.                  |
 | `root-duration-zero.json`                  | Root: `duration_ms` must be at least 1.           |
 | `filter-missing-frequencies.json`          | Filter: `frequencies` array required.             |

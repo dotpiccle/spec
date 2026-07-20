@@ -4,7 +4,36 @@ All notable changes to the Piccle specification are documented here. Piccle v1 h
 
 ## Unreleased — targeting v1.0.0-rc.1
 
+### Breaking
+
+- **Removed top-level `reverb` field.** Replaced with `spatial_effects` array — reverb becomes one entry with `type: "reverb"` inside the array. Migration: wrap `"reverb": { ... }` as `"spatial_effects": [ { "type": "reverb", ... } ]`. This is a breaking change; v1.0 is unreleased so the schema URI remains mutable.
+
 ### Added
+
+- **`spatial_effects` top-level array** — optional whole-document spatial effects applied after the dry layer mix. Each entry is a `reverb` or `echo` effect. Effects are applied serially in array order, all starting at the document origin. An empty array is valid and equivalent to omitting the field. Extends the output timeline by the sum of each effect's effective tail length.
+
+- **`echo` spatial effect type** — a lowpass-feedback comb filter (LBCF) producing discrete repeats with progressive darkening. Additive wet (dry always at unity). Fields: `delay_ms` (integer, ≥1, time between successive echoes), `feedback` (number, 0 to <1, how much of each echo is fed back), `wet_gain` (number, 0–1, additive wet gain), `damp_hz` (number, 200–12000, feedback-path lowpass corner). Deterministic algorithm spec; canonical-mode bit-equivalence required with transcendental tolerance for the lowpass coefficient. General-purpose personalizable echo primitive — cuelume's `shimmer` is one achievable preset.
+
+- **Echo normative test vector** at `test-vectors/numeric/echo-impulse-response.json` for canonical-mode canonical echo impulse response verification.
+
+- New valid and invalid test vectors covering spatial_effects array, echo field ranges, and unknown spatial effect types.
+
+### Changed
+
+- **Signal-flow stage** "reverb dry/wet crossfade, when present" renamed to "spatial effects processing, when present (see docs/07-spatial-effects.md)". Output-end formula generalized from `D + reverb.tail_ms` to `D + Σ_i tail_ms_effective_i` across all spatial effects.
+- `docs/07-reverb.md` renamed to `docs/07-spatial-effects.md` — now the canonical home for both the reverb and echo normative specifications. The reverb section preserves all existing semantics (FDN topology, 7 perceptual-equivalence metrics, canonical IR fixtures, terminal window, normalization, RT60, dry/wet crossfade).
+- `docs/11-engine-safety.md` — added `echo.damp_hz` to render-profile frequency clamping; updated determinism classes table with echo effect row.
+- `docs/13-implementer-notes.md` — added normative §Reference echo runtime subsection.
+- `docs/14-conformance.md` — updated safe-integer bound and numeric aids references.
+- `docs/15-engine-build-guide.md` — updated output-end formula and added echo verification step.
+- `docs/12-cookbook.md` — updated existing reverb recipes to use `spatial_effects` array form; added 3 new echo recipes (cuelume-style shimmer, slap-back echo, error stinger with progressive darkening, stacked reverb + echo).
+- All 5 reverb examples (`bloom`, `loading`, `notification`, `ready`, `success`) updated to wrap reverb in `spatial_effects`. New `echo` example added.
+- `schemas/v1.json` — removed top-level `reverb` property; added `spatial_effects` array property with `$defs/spatial_effect`, `$defs/spatial_reverb`, `$defs/spatial_echo`.
+- `scripts/validate.py` — updated root-properties allowlist, schema-structure assertions, docs-cited-fields assertions, render-case computation, and safe-integer check to use `spatial_effects` path.
+
+### Note
+
+Reverb's internal semantics (FDN topology, 7 perceptual-equivalence metrics, canonical IR fixtures, terminal window, normalization, RT60, dry/wet crossfade) are unchanged. Only the host field changed from `reverb` object to `spatial_effects` array entry with `type: "reverb"`.
 
 - Canonical reference IR render fixtures for the reverb perceptual-equivalence gate (five binary64 stereo PCM files at 48 kHz with 4 kHz soften, 1, 10, 20, 220, and 500 ms tails, SHA-256 manifest) at `test-vectors/numeric/reverb-reference-irs/`.
 - Strict normative perceptual-equivalence tolerances for reverb across non-canonical render profiles: RT60 crossing window, total wet energy ±0.5 dB, echo density ±10% of reference, reference-qualified modal resonance floor, L/R correlation ±0.15, spectral centroid ±10%, onset within ±1 sample.

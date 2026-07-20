@@ -1,0 +1,34 @@
+{
+  "status": "non-normative",
+  "description": "Canonical echo impulse response checkpoints for the echo bit-equivalence conformance gate. Configuration: delay_ms=200, feedback=0.6, wet_gain=0.3, damp_hz=4000, sample_rate=48000, binary64. Input: one frame at L=R=sqrt(0.5), then zeroes. The validator recomputes the full output from the normative algorithm and compares these checkpoint frames.",
+  "configuration": {
+    "delay_ms": 200,
+    "feedback": 0.6,
+    "wet_gain": 0.3,
+    "damp_hz": 4000,
+    "sample_rate": 48000,
+    "numeric_mode": "binary64"
+  },
+  "derived": {
+    "delay_length": 9600,
+    "tail_ms_effective": 3000,
+    "N_repeats": 15,
+    "dry_end_frame": 48,
+    "output_end_frame": 144048,
+    "N_echo": 144000,
+    "lowpass_coefficient_a": 0.592384847188389,
+    "terminal_window_W": 240
+  },
+  "impulse_value": 0.7071067811865476,
+  "total_output_frames": 144048,
+  "checkpoints": {
+    "frame_0_impulse": 0.7071067811865476,
+    "frame_dry_end": 0.0,
+    "frame_delay_length_first_echo": 0.08646823160024429,
+    "frame_2x_delay_length_second_echo": 0.02114745686225001,
+    "frame_3x_delay_length_third_echo": 0.005172014316289794,
+    "frame_mid_tail": 0.0,
+    "frame_window_start": 0.0,
+    "frame_T_minus_1_last": 0.0
+  }
+}

@@ -39,9 +39,9 @@ Each normative rule, formula, constraint, or field definition MUST live in exact
 
 | Scenario                                          | Action                                                         | Example                                                                                         |
 | ------------------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------- | ------------------------------------------------------------- |
-| You need the full rule                            | Reference: `docs/07-reverb.md` defines the tail-length formula | _"The emitted tail length N is given by the formula in docs/07-reverb.md."_                     |
+| You need the full rule                            | Reference: `docs/07-spatial-effects.md` defines the tail-length formula | _"The emitted tail length N is given by the formula in docs/07-spatial-effects.md."_                     |
 | Your reader needs context to follow a description | Restate briefly with a link                                    | _"The safety clipper runs after the root master gain (see docs/08-output.md for signal flow)."_ |
-| You're writing a field table                      | Include a one-line description and link                        | \*"`tail_ms`                                                                                    | integer | Reverb decay time in milliseconds (see docs/07-reverb.md)."\* |
+| You're writing a field table                      | Include a one-line description and link                        | \*"`tail_ms`                                                                                    | integer | Reverb decay time in milliseconds (see docs/07-spatial-effects.md)."\* |
 
 ---
 

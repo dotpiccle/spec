@@ -12,7 +12,7 @@ A Piccle document is a single JSON object with the fields below.
 | `description`         | string  | --       | No       | Non-empty human-readable description of what this sound is for.                                                                                                                         |
 | `duration_ms`         | integer | computed | No       | Total document duration in milliseconds. 1 or more. If absent, duration is computed from the latest-ending layer. A shorter duration trims layers; a longer duration pads with silence. |
 | `master_volume_level` | number  | 1        | No       | Final master gain. 0 = silent, 1 = full. A single number; unlike layer `volume`, this field does not accept a contour object. Independent of per-layer volume.                          |
-| `reverb`              | object  | --       | No       | Optional whole-document reverb applied after layers are mixed.                                                                                                                          |
+| `spatial_effects`      | array   | --       | No       | Optional whole-document spatial effects applied after the dry mix. Each entry is a `reverb` or `echo`. All effects start at the document origin and are applied serially in array order. An empty array is valid and equivalent to omitting the field. |
 | `layers`              | array   | --       | **Yes**  | One or more layers that make up this sound.                                                                                                                                             |
 
 ## Layer fields
@@ -62,8 +62,8 @@ Here is a minimal document showing the required fields:
 - If `duration_ms` is present and shorter than a layer, that layer is hard-truncated. Truncation does not move or create a layer fade and may therefore click.
 - If `duration_ms` is present and longer than all layers, the remaining time is silence.
 - Every layer has its own required `duration_ms` (1 or more) which is independent of the document duration.
-- When reverb is present, the output length is the document duration plus `reverb.tail_ms`; see [Reverb](07-reverb.md).
-- Every derived layer end (`start_ms + duration_ms`) and output end (`document duration + reverb.tail_ms`) MUST be no greater than `9007199254740991`. A document that exceeds either bound is semantically invalid.
+- When spatial effects are present, the output length is the document duration plus the sum of each effect's effective tail length; see [Spatial Effects](07-spatial-effects.md).
+- Every derived layer end (`start_ms + duration_ms`) and output end (`document duration + Σ tail_ms_effective`) MUST be no greater than `9007199254740991`. A document that exceeds either bound is semantically invalid.
 
 ## Layer timing
 
@@ -81,7 +81,7 @@ Every layer `id` MUST be unique within the document. Two layers MUST NOT share t
 
 ## Unknown properties
 
-Every root, layer, source, pitch, volume, filter, frequency-entry, level-entry, and reverb object is closed. A document containing an unknown property is invalid. Future fields require a future schema version.
+Every root, layer, source, pitch, volume, filter, frequency-entry, level-entry, and spatial-effect object is closed. A document containing an unknown property is invalid. Future fields require a future schema version.
 
 ## Required vs optional visual key
 

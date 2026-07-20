@@ -1,11 +1,14 @@
 {
   "piccle": "1.0",
   "master_volume_level": 1,
-  "reverb": {
-    "amount": 1,
-    "tail_ms": 1,
-    "soften_hz": 12000
-  },
+  "spatial_effects": [
+    {
+      "type": "reverb",
+      "amount": 1,
+      "tail_ms": 1,
+      "soften_hz": 12000
+    }
+  ],
   "layers": [
     {
       "id": "maximums",
