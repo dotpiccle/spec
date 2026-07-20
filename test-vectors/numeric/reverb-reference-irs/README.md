@@ -1,8 +1,8 @@
 # Reverb reference IR fixtures
 
-These files are non-normative numeric aids. They contain canonical reference IR renders for the reverb perceptual-equivalence gate defined in `docs/07-reverb.md` §Reference IR and cross-engine equivalence.
+These files are non-normative numeric aids. They contain canonical reference IR renders for the reverb perceptual-equivalence gate defined in `docs/07-spatial-effects.md` §Reference IR and cross-engine equivalence.
 
-Each fixture is raw little-endian binary64 IEEE-754 interleaved stereo PCM, generated from the deterministic FDN algorithm in `docs/13-implementer-notes.md` §Reference reverb runtime at canonical mode (binary64, 48 kHz). The generator runs the conformance harness from `docs/07-reverb.md` — one impulse frame at `L=R=sqrt(0.5)`, then zeroes — and records the full wet pipeline (FDN core, wet lowpass, automatic terminal window, and normalization).
+Each fixture is raw little-endian binary64 IEEE-754 interleaved stereo PCM, generated from the deterministic FDN algorithm in `docs/13-implementer-notes.md` §Reference reverb runtime at canonical mode (binary64, 48 kHz). The generator runs the conformance harness from `docs/07-spatial-effects.md` — one impulse frame at `L=R=sqrt(0.5)`, then zeroes — and records the full wet pipeline (FDN core, wet lowpass, automatic terminal window, and normalization).
 
 ## Schema
 
@@ -20,7 +20,7 @@ Each fixture is raw little-endian binary64 IEEE-754 interleaved stereo PCM, gene
 | `sha256`              | string | SHA-256 hex digest of the raw `.bin` file                                                           |
 | `generator`           | string | Pointer to the normative algorithm document                                                         |
 | `conformance_impulse` | object | The input impulse used (one frame: `{"left": "sqrt(0.5)", "right": "sqrt(0.5)"}`)                   |
-| `metrics`             | object | Published baseline values for the seven perceptual-equivalence metrics (see `docs/07-reverb.md` §Perceptual-equivalence metric algorithms) |
+| `metrics`             | object | Published baseline values for the seven perceptual-equivalence metrics (see `docs/07-spatial-effects.md` §Perceptual-equivalence metric algorithms) |
 
 Each `metrics` object contains the following keys:
 
@@ -34,7 +34,7 @@ Each `metrics` object contains the following keys:
 | `spectral_centroid_hz` | float | Magnitude-weighted spectral centroid (Hz) of the full wet response |
 | `onset_frame` | int | Index of first sample exceeding `0.1 × peak` across both channels |
 
-The measurement algorithms are normative and defined in `docs/07-reverb.md`. The published values are reference baselines for engine conformance comparison; the manifest itself is non-normative metadata.
+The measurement algorithms are normative and defined in `docs/07-spatial-effects.md`. The published values are reference baselines for engine conformance comparison; the manifest itself is non-normative metadata.
 
 ## Usage
 

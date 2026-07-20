@@ -3,11 +3,6 @@
   "piccle": "1.0",
   "name": "Success",
   "description": "Three rising sine tones with a short reverb — the classic 'done!' confirmation.",
-  "reverb": {
-    "amount": 0.2,
-    "tail_ms": 250,
-    "soften_hz": 5000
-  },
   "layers": [
     {
       "id": "note1",
@@ -113,6 +108,14 @@
           }
         ]
       }
+    }
+  ],
+  "spatial_effects": [
+    {
+      "type": "reverb",
+      "amount": 0.2,
+      "tail_ms": 250,
+      "soften_hz": 5000
     }
   ]
 }

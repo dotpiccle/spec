@@ -40,7 +40,7 @@ Avoid using "should" casually in normative sections. Use ordinary alternatives s
 
 ### Time: milliseconds (`*_ms`)
 
-All document time values are integer milliseconds no greater than `9007199254740991` (`2^53-1`) and use an `_ms` suffix. Durations and reverb tails are at least `1`; offsets, fades, holds, and transitions are at least `0`.
+All document time values are integer milliseconds no greater than `9007199254740991` (`2^53-1`) and use an `_ms` suffix. Durations, reverb tails and echo delays are at least `1`; offsets, fades, holds, and transitions are at least `0`.
 
 - `duration_ms` — total sound or layer length.
 - `fade_in.ms` — layer fade-in duration.
@@ -49,6 +49,7 @@ All document time values are integer milliseconds no greater than `9007199254740
 - `hold_ms` — hold time at a contour value.
 - `transition_ms` — time to move to the next contour value.
 - `tail_ms` — reverb RT60 and emitted-tail duration.
+- `delay_ms` — echo time between successive echoes.
 
 The exact conversion of document and layer boundaries to sample frames is defined in [Engine Safety and Render Profiles](11-engine-safety.md).
 
@@ -57,6 +58,7 @@ The exact conversion of document and layer boundaries to sample frames is define
 Frequency values use Hertz. A field name uses `_hz`, except for `frequencies[].hz`, where the array supplies the context.
 
 - `soften_hz` — reverb wet-path lowpass frequency.
+- `damp_hz` — echo feedback-path lowpass frequency.
 - `frequencies[].hz` — pitch or filter frequency.
 
 ### Pitch offset: cents

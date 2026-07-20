@@ -1,0 +1,45 @@
+{
+  "$schema": "https://spec.dotpiccle.com/schema/v1.json",
+  "piccle": "1.0",
+  "name": "Echo",
+  "description": "A soft repeating echo on a simple tone — a general-purpose echo primitive preset.",
+  "spatial_effects": [
+    {
+      "type": "echo",
+      "delay_ms": 90,
+      "feedback": 0.2,
+      "wet_gain": 0.15,
+      "damp_hz": 3000
+    }
+  ],
+  "layers": [
+    {
+      "id": "tone",
+      "duration_ms": 60,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [
+            {
+              "hz": 880
+            }
+          ]
+        }
+      },
+      "volume": {
+        "fade_in": {
+          "ms": 2
+        },
+        "fade_out": {
+          "ms": 30
+        },
+        "levels": [
+          {
+            "level": 0.5
+          }
+        ]
+      }
+    }
+  ]
+}

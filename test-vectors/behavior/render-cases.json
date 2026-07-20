@@ -82,8 +82,8 @@
       "expected": {
         "document_duration_ms": 4,
         "dry_end_frame": 176,
-        "output_end_frame": 353,
-        "tail_frames": 177,
+        "output_end_frame": 352,
+        "tail_frames": 176,
         "terminal_window_frames": 18,
         "layers": [
           {
@@ -93,6 +93,50 @@
             "active_end_frame": 176,
             "fade_start_frame": 0,
             "fade_frames": 176
+          }
+        ]
+      }
+    },
+    {
+      "id": "stacked-reverb-then-echo",
+      "document": "../valid/spatial-effects-reverb-then-echo.json",
+      "sample_rate": 48000,
+      "expected": {
+        "document_duration_ms": 100,
+        "dry_end_frame": 4800,
+        "output_end_frame": 31680,
+        "tail_frames": 26880,
+        "terminal_window_frames": 240,
+        "layers": [
+          {
+            "id": "tone",
+            "declared_start_frame": 0,
+            "declared_end_frame": 4800,
+            "active_end_frame": 4800,
+            "fade_start_frame": 3840,
+            "fade_frames": 960
+          }
+        ]
+      }
+    },
+    {
+      "id": "stacked-echo-then-reverb",
+      "document": "../valid/spatial-effects-echo-then-reverb.json",
+      "sample_rate": 48000,
+      "expected": {
+        "document_duration_ms": 100,
+        "dry_end_frame": 4800,
+        "output_end_frame": 31680,
+        "tail_frames": 26880,
+        "terminal_window_frames": 240,
+        "layers": [
+          {
+            "id": "tone",
+            "declared_start_frame": 0,
+            "declared_end_frame": 4800,
+            "active_end_frame": 4800,
+            "fade_start_frame": 3840,
+            "fade_frames": 960
           }
         ]
       }

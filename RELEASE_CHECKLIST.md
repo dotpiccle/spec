@@ -48,7 +48,7 @@ Use this checklist for `v1.0.0-rc.1` and repeat it before promoting v1 to stable
 - [ ] Listen on full-range speakers and at least one small-device speaker.
 - [ ] Listen through the lowest-bandwidth supported output path.
 - [ ] Check recognizability, onset clicks, ending clicks, clipping, loudness consistency, oscillator aliasing, filter instability, and reverb cutoff.
-- [ ] Pass the reverb perceptual-equivalence tolerances in [Reverb](docs/07-reverb.md) across the finite canonical, qualification, and additional-profile matrices in [Engine Build Guide](docs/15-engine-build-guide.md) step 6. Use the published canonical fixtures at 48 kHz and generate same-configuration references on demand elsewhere.
+- [ ] Pass the reverb perceptual-equivalence tolerances in [Reverb](docs/07-spatial-effects.md) across the finite canonical, qualification, and additional-profile matrices in [Engine Build Guide](docs/15-engine-build-guide.md) step 6. Use the published canonical fixtures at 48 kHz and generate same-configuration references on demand elsewhere.
 - [ ] A/B confirm wet onset, echo density, early-to-late energy, stereo decorrelation, brightness, and decay without metallic ringing or discrete echoes; RT60 and tolerance agreement alone is insufficient without listening review.
 - [ ] Profile the examples and the engine's published maximum supported document on the lowest supported device; document render throughput, peak CPU, state memory, and simultaneous voices.
 - [ ] Confirm the production render path performs no JSON work, schema traversal, sorting, table construction, impulse measurement, or memory allocation.

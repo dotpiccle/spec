@@ -1,18 +1,14 @@
 {
   "piccle": "1.0",
-  "duration_ms": 9007199254740991,
-  "spatial_effects": [
-    {
-      "type": "reverb",
-      "amount": 0.2,
-      "tail_ms": 1,
-      "soften_hz": 4000
-    }
-  ],
+  "reverb": {
+    "amount": 0.5,
+    "tail_ms": 200,
+    "soften_hz": 4000
+  },
   "layers": [
     {
       "id": "tone",
-      "duration_ms": 1,
+      "duration_ms": 20,
       "source": {
         "type": "tone",
         "wave": "sine",

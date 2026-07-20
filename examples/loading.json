@@ -3,11 +3,6 @@
   "piccle": "1.0",
   "name": "Loading",
   "description": "A brief rising shimmer that doesn't quite resolve — work has started.",
-  "reverb": {
-    "amount": 0.35,
-    "tail_ms": 350,
-    "soften_hz": 5000
-  },
   "layers": [
     {
       "id": "shimmer",
@@ -94,6 +89,14 @@
           }
         ]
       }
+    }
+  ],
+  "spatial_effects": [
+    {
+      "type": "reverb",
+      "amount": 0.35,
+      "tail_ms": 350,
+      "soften_hz": 5000
     }
   ]
 }

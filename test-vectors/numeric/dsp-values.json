@@ -115,8 +115,8 @@
     "document_duration_ms": 4,
     "tail_ms": 4,
     "dry_end_frame": 176,
-    "output_end_frame": 353,
-    "tail_frames": 177
+    "output_end_frame": 352,
+    "tail_frames": 176
   },
   "reverb_baseline_at_48000": {
     "tail_1_ms": {

@@ -28,7 +28,7 @@ A Piccle asset should be:
 | Volume contour     | A shorthand number (constant level) or an N-level object with fade-in, fade-out, and per-segment timing.                     |
 | Filter chain       | Lowpass, highpass, or bandpass filters in series, each with its own frequency contour and resonance.                         |
 | Balance            | Stereo position from -1 (left) to 1 (right).                                                                                 |
-| Reverb             | Optional whole-sound reverb with amount, tail length, and wet-path softening frequency.                                      |
+| Spatial effects | Optional whole-document spatial effects: reverb (amount, tail_ms, soften_hz) and echo (delay_ms, feedback, wet_gain, damp_hz). All effects run in parallel — each receives the same dry mix and adds its wet contribution. |
 | Output shaping     | Final master `master_volume_level` and mandatory safety clipping.                                                            |
 | Safety             | Built-in hard clipping, Nyquist-aware frequency handling, validation before allocation, and engine-declared resource limits. |
 
@@ -48,7 +48,7 @@ A Piccle sound is a short list of **layers** -- like one instrument per layer in
 
 3. **Optional filters** -- to soften it (keep the lows) or brighten it (keep the highs).
 
-The engine mixes all layers together, optionally adds a little **reverb** for a sense of space, and plays the result. That is the whole format.
+The engine mixes all layers together, optionally applies **spatial effects** (reverb for a sense of space, echo for discrete repeats), and plays the result. That is the whole format.
 
 ## Glossary
 
@@ -67,6 +67,7 @@ The engine mixes all layers together, optionally adds a little **reverb** for a 
 | Filter           | A processor that removes or boosts certain frequencies. Lowpass keeps lows, highpass keeps highs, bandpass keeps a focused range.              |
 | Resonance        | How much a filter rings at its target frequency, like a struck bell.                                                                           |
 | Reverb           | A sense of space around the sound, like playing in a small room.                                                                               |
+| Echo             | A spatial effect that adds one or more discrete repeats of the dry signal, each progressively darker. Fields: delay_ms, feedback, wet_gain, damp_hz.                                                      |
 | Transition curve | The interpolation shape between contour targets: linear, exponential, easeIn, easeOut, or easeInOut.                                           |
 | Offset cents     | A tiny pitch shift measured in cents (100 cents = 1 semitone). Two tones at slightly different cents create a warm chorus effect.              |
 | Boundary click   | A brief, harsh click caused by an abrupt non-zero start or stop. Piccle's default fade-out reduces ending clicks; authors control onset shape. |

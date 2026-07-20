@@ -198,7 +198,7 @@ Measure the final softened, windowed response for the active render profile duri
 
 ### Perceptual qualification
 
-The strict perceptual-equivalence tolerances in [Reverb](07-reverb.md) §Perceptual-equivalence metric algorithms provide the machine-checkable conformance bar. Each of the seven metrics has a normatively pinned measurement algorithm, and the baseline values per canonical fixture are published in `manifest.json`. The engine's FDN output MUST pass those tolerances across the finite canonical, qualification, and additional-profile matrices in [Engine Build Guide](15-engine-build-guide.md) step 6.
+The strict perceptual-equivalence tolerances in [Spatial Effects](07-spatial-effects.md) §Perceptual-equivalence metric algorithms provide the machine-checkable conformance bar. Each of the seven metrics has a normatively pinned measurement algorithm, and the baseline values per canonical fixture are published in `manifest.json`. The engine's FDN output MUST pass those tolerances across the finite canonical, qualification, and additional-profile matrices in [Engine Build Guide](15-engine-build-guide.md) step 6.
 
 **Note.** Further listening review should confirm:
 
@@ -209,9 +209,47 @@ The strict perceptual-equivalence tolerances in [Reverb](07-reverb.md) §Percept
 - low left/right correlation without unstable image movement; and
 - comparable brightness after the normative lowpass.
 
-Also inspect each metric from the [normative algorithm specification](07-reverb.md#perceptual-equivalence-metric-algorithms). No single metric substitutes for listening. An engine that only matches RT60 does not conform.
+Also inspect each metric from the [normative algorithm specification](07-spatial-effects.md#perceptual-equivalence-metric-algorithms). No single metric substitutes for listening. An engine that only matches RT60 does not conform.
 
 At 48 kHz, the FDN's total delay `M = Σ d[i] ≈ 0.169 × tail_ms × sample_rate / 1000` samples (e.g., M ≈ 1,784 at 220 ms, M ≈ 4,056 at 500 ms), meeting Schroeder's modal-density criterion at ~113% of the minimum. The diffuser delays add approximately 205 samples of constant state, giving a total of ~1,989 samples at 220 ms and ~4,261 samples at 500 ms. The eight-line dense matrix multiply, eight feedback gains, eight all-pass stages, and stereo input/output matrices require ~194 operations per output sample, constant work independent of `tail_ms`.
+
+## Reference echo runtime
+
+The conforming echo runtime is the two per-channel delay lines (one per L/R channel) with feedback-path lowpass (lossy-bilinear comb filter) below. A conforming engine MUST implement this topology.
+
+The echo uses two per-channel delay lines (one per L/R channel) with independent lowpass state, mirroring the reverb's per-channel wet lowpass. The delay length `delay_length = max(1, frame(delay_ms))` is the same for both channels; only the lowpass state and delay buffer contents differ. This preserves the author's `balance` placement — a panned dry sound produces a panned echo in the same position.
+
+The echo topology is purely deterministic in canonical mode; the only transcendental is the lowpass coefficient `a = exp(-2π × f / sample_rate)`, which benefits from the same platform tolerance as the reverb wet-lowpass coefficient.
+
+### Topology
+
+For each frame `n` in `[0, output_end_frame)`, for each channel `c` in `{L, R}`:
+
+1. `d_c[n] = delay_buffer_c[read_index_c]` (zero-filled buffer; zero until first write)
+2. `d_lp_c[n] = a × d_lp_c[n-1] + (1-a) × d_c[n]` (first-order one-pole IIR lowpass at `damp_hz`, per-channel state)
+3. `fb_c[n] = feedback × d_lp_c[n]`
+4. Write `delay_buffer_c[write_index_c] = stage_input_c[n] + fb_c[n]`
+5. Apply the terminal window (see [Spatial Effects](07-spatial-effects.md) §Echo effect) to `d_lp_c[n]` → `d_win_c[n]`
+6. `w_c[n] = d_win_c[n]`
+7. `y_c[n] = stage_input_c[n] + wet_gain × w_c[n]`
+8. Advance `read_index_c` and `write_index_c` (mod `delay_length`)
+
+Where:
+
+```text
+delay_length = max(1, frame(delay_ms))
+a = exp(-2π × min(damp_hz, render_frequency_max) / sample_rate)
+```
+
+The echo requires two delay lines of `delay_length` frames each (one per L/R channel), one state variable per channel for the IIR lowpass, and constant work per frame. State is proportional to `delay_ms` (~75 KiB per 100 ms at 48 kHz binary64 for both channels; scales linearly with `delay_ms`).
+
+### Denormal handling
+
+Apply the same denormal-protection strategy as the reverb feedback paths (see §Denormal handling). Apply the strategy consistently to filters, reverb feedback paths, and echo feedback paths.
+
+### Terminal window
+
+The echo wet tail MUST terminate smoothly using the automatic terminal window defined in [Spatial Effects](07-spatial-effects.md) §Echo effect.
 
 ## Noise implementation
 
@@ -231,7 +269,7 @@ The normative coefficient equations and zero initial state are in [Filters](06-f
 
 ## Denormal handling
 
-On x86, Flush-to-Zero and Denormals-Are-Zero flags are usually the cheapest protection. On other platforms, explicitly clear sufficiently small state values. Apply the strategy consistently to filters and reverb feedback paths.
+On x86, Flush-to-Zero and Denormals-Are-Zero flags are usually the cheapest protection. On other platforms, explicitly clear sufficiently small state values. Apply the strategy consistently to filters, reverb feedback paths, and echo feedback paths.
 
 ## Voice allocation
 

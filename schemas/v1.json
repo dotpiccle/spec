@@ -31,18 +31,22 @@
       "type": "integer",
       "minimum": 1,
       "maximum": 9007199254740991,
-      "description": "Total document duration in milliseconds. Optional — if absent, computed from the latest-ending layer. Shorter trims layers; longer pads with silence. With reverb, duration_ms plus tail_ms must remain within the safe-integer bound."
+      "description": "Total document duration in milliseconds. Optional — if absent, computed from the latest-ending layer. Shorter trims layers; longer pads with silence. With spatial effects, duration_ms plus each effect's tail extension must remain within the safe-integer bound."
     },
     "master_volume_level": {
       "type": "number",
       "minimum": 0,
       "maximum": 1,
       "default": 1,
-      "description": "Final master gain applied to the dry/wet result before clipping. 0 = silent, 1 = unity gain. A single number, unlike layer `volume` which accepts a contour object. Independent of per-layer volume."
+      "description": "Final master gain applied to the spatial-effects result before clipping. 0 = silent, 1 = unity gain. A single number, unlike layer `volume` which accepts a contour object. Independent of per-layer volume."
     },
-    "reverb": {
-      "$ref": "#/$defs/reverb",
-      "description": "Optional whole-document reverb applied after layers are mixed. The wet response is softened, normalized, and automatically windowed to zero at the tail boundary."
+    "spatial_effects": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "$ref": "#/$defs/spatial_effect"
+      },
+      "description": "Optional whole-document spatial effects applied after the dry mix. Each entry is a reverb or echo. All effects run in parallel — each receives the same dry mix and adds its wet contribution. An empty array is valid and equivalent to omitting the field — no spatial effects are applied."
     },
     "layers": {
       "type": "array",
@@ -268,33 +272,116 @@
       ],
       "additionalProperties": false
     },
-    "reverb": {
-      "description": "Optional whole-document reverb that adds a brief sense of space. All three fields are required. The wet response softens high frequencies according to soften_hz, decays to silence within tail_ms, and is automatically normalized.",
+    "spatial_effect": {
+      "description": "A spatial effect applied to the whole document. Each entry has a type discriminator and type-specific fields. All effects run in parallel. Property validation (including additionalProperties: false) is delegated to the type-specific branches spatial_reverb and spatial_echo; the router itself only enforces object-ness and the type enum.",
       "type": "object",
       "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "reverb",
+            "echo"
+          ],
+          "description": "The spatial effect type. reverb for a diffuse room tail, echo for discrete repeats."
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "if": {
+        "properties": {
+          "type": {
+            "const": "reverb",
+            "description": "Selects the reverb effect type."
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "$ref": "#/$defs/spatial_reverb"
+      },
+      "else": {
+        "$ref": "#/$defs/spatial_echo"
+      }
+    },
+    "spatial_reverb": {
+      "description": "A reverb effect — gives a one-shot sound a short sense of space. All three reverb fields are required.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "reverb",
+          "description": "Discriminator identifying this entry as a reverb effect."
+        },
         "amount": {
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "How much reverb is heard. 0 = dry (no reverb), 1 = fully wet."
+          "description": "Additive wet gain. 0 = no reverb contribution, 1 = reverb at full level. Dry is always present from the parallel spatial-effects stage."
         },
         "tail_ms": {
           "type": "integer",
           "minimum": 1,
           "maximum": 9007199254740991,
-          "description": "Reverb RT60 target and emitted wet-tail duration, in milliseconds. The wet response is automatically windowed to exact zero at its final frame. Document duration plus tail_ms must remain within the safe-integer bound."
+          "description": "Reverb RT60 target and emitted wet-tail duration, in milliseconds."
         },
         "soften_hz": {
           "type": "number",
           "minimum": 200,
           "maximum": 12000,
-          "description": "Corner frequency of the normative first-order wet-path lowpass, in Hz. Engines clamp it to the active render profile's available bandwidth."
+          "description": "Corner frequency of the normative first-order wet-path lowpass, in Hz."
         }
       },
       "required": [
+        "type",
         "amount",
         "tail_ms",
         "soften_hz"
+      ],
+      "additionalProperties": false
+    },
+    "spatial_echo": {
+      "description": "An echo effect — adds one or more discrete repeats of the dry signal. Use delay_ms to control spacing, feedback to control Repeat count, wet_gain for how loud the echoes are, and damp_hz to progressively darken each repeat. All four fields are required. For simple understandable audio terms: delay_ms = how long between echoes, feedback = how much comes back, wet_gain = how much echo you hear, damp_hz = how muffled each repeat gets.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "echo",
+          "description": "Discriminator identifying this entry as an echo effect."
+        },
+        "delay_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991,
+          "description": "Time between successive echoes in milliseconds, and the time to the first echo. 1 or more."
+        },
+        "feedback": {
+          "type": "number",
+          "minimum": 0,
+          "exclusiveMaximum": 1,
+          "description": "How much of each echo is fed back into the delay line. 0 = a single echo (one repeat); approaching 1 = many repeats, very long tail. Must be strictly less than 1 for stability. The echo tail length (`tail_ms_effective`) is derived from delay_ms and feedback by the bounded iterative binary64 procedure in docs/07-spatial-effects.md; if the 2^20 iteration cap is reached, the document is semantically invalid with semantic.echo_tail_unbounded. Authors are responsible for choosing values appropriate to their use case."
+        },
+        "wet_gain": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "How much of the echo is heard. 0 = no echo (dry only); 1 = echo at full level added on top of the dry signal. Additive — the dry is always present at full level regardless of this value."
+        },
+        "damp_hz": {
+          "type": "number",
+          "minimum": 200,
+          "maximum": 12000,
+          "description": "Corner frequency of the first-order lowpass in the feedback path, in Hz. Higher = brighter repeats (less damping); lower = darker, more muffled repeats (stronger damping). 200–12000 Hz range."
+        }
+      },
+      "required": [
+        "type",
+        "delay_ms",
+        "feedback",
+        "wet_gain",
+        "damp_hz"
       ],
       "additionalProperties": false
     },

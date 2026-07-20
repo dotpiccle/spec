@@ -1,12 +1,12 @@
 {
   "piccle": "1.0",
-  "duration_ms": 9007199254740991,
   "spatial_effects": [
     {
-      "type": "reverb",
-      "amount": 0.2,
-      "tail_ms": 1,
-      "soften_hz": 4000
+      "type": "echo",
+      "delay_ms": 1,
+      "feedback": 0.9999999999999999,
+      "wet_gain": 0.3,
+      "damp_hz": 4000
     }
   ],
   "layers": [
