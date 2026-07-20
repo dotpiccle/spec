@@ -236,7 +236,7 @@ delay_length = max(1, frame(delay_ms))
 a = exp(-2π × min(damp_hz, render_frequency_max) / sample_rate)
 ```
 
-The echo requires two delay lines of `delay_length` frames each (one per L/R channel), one state variable per channel for the IIR lowpass, and constant work per frame. State is proportional to `delay_ms` (~0.26 KiB per 100 ms at 48 kHz binary64 for both channels).
+The echo requires two delay lines of `delay_length` frames each (one per L/R channel), one state variable per channel for the IIR lowpass, and constant work per frame. State is proportional to `delay_ms` (~75 KiB per 100 ms at 48 kHz binary64 for both channels; scales linearly with `delay_ms`).
 
 ### Denormal handling
 

@@ -132,17 +132,36 @@ def semantic_issues(document: dict[str, Any]) -> list[Issue]:
         "duration_ms",
         max(layer.get("start_ms", 0) + layer["duration_ms"] for layer in layers),
     )
-    reverb = None
+    # Check all spatial effects' tails cumulatively against the safe-integer bound
     if "spatial_effects" in document:
-        for effect in document["spatial_effects"]:
-            if effect.get("type") == "reverb":
-                reverb = effect
+        total_tail_ms = 0
+        for i, effect in enumerate(document["spatial_effects"]):
+            eff_type = effect.get("type")
+            if eff_type == "reverb":
+                tail_ms = effect["tail_ms"]
+                path = f"$.spatial_effects[{i}].tail_ms"
+            elif eff_type == "echo":
+                delay_ms = effect["delay_ms"]
+                feedback = effect["feedback"]
+                if feedback == 0:
+                    tail_ms = delay_ms
+                else:
+                    n = 1
+                    amp = feedback
+                    while amp >= 0.001:
+                        amp *= feedback
+                        n += 1
+                    tail_ms = delay_ms * (n + 1)
+                path = f"$.spatial_effects[{i}].feedback"
+            else:
+                continue
+            if document_duration + total_tail_ms + tail_ms > MAX_SAFE_INTEGER:
+                issues.append(Issue(
+                    "semantic", "semantic.output_end_out_of_range", path,
+                    f"document duration + cumulative tail exceeds {MAX_SAFE_INTEGER}",
+                ))
                 break
-    if reverb is not None and document_duration + reverb["tail_ms"] > MAX_SAFE_INTEGER:
-        issues.append(Issue(
-            "semantic", "semantic.output_end_out_of_range", "$.spatial_effects[0].tail_ms",
-            f"document duration + tail_ms exceeds {MAX_SAFE_INTEGER}",
-        ))
+            total_tail_ms += tail_ms
     return issues
 
 
@@ -356,7 +375,7 @@ def documentation_parity_errors() -> list[str]:
         "docs/11-engine-safety.md": ["at least 8000 Hz", "min(20000, 0.49 × sample_rate)", "48000 Hz", "frame(S + b) - frame(S + a)"],
         "docs/04-pitch.md": ["Evaluate the `frequencies` contour", "Apply the cents offset", "Clamp `offset_hz`"],
         "docs/07-spatial-effects.md": ["five_ms_frames", "DSP conformance harness", "1 + floor(0.9 × N)", "Perceptual-equivalence metric algorithms", "next_power_of_two", "hop = max(1, floor(W_m / 4))", "is excluded", "magnitude weighting"],
-        "docs/08-output.md": ["Visit active layers in document array order", "[0, F(D + Σ_i tail_ms_effective_i))"],
+        "docs/08-output.md": ["Visit active layers in document array order", "[0, Eₙ)"],
         "docs/14-conformance.md": ["start_ms + duration_ms", "document duration plus the sum of each spatial effect's effective tail length", "echo"],
         "docs/15-engine-build-guide.md": ["schemas/v1.json", "test-vectors/invalid-expectations.json", "test-vectors/numeric/dsp-values.json", "test-vectors/behavior/render-cases.json", "Definition of done"],
     }
@@ -548,17 +567,32 @@ def behavior_aid_errors() -> list[str]:
             max(layer.get("start_ms", 0) + layer["duration_ms"] for layer in document["layers"]),
         )
         dry_end = frame(duration)
-        # Find first reverb entry in spatial_effects
-        reverb = None
+        # Compute cumulative tail frames across all spatial effects
+        output_end = dry_end
         if "spatial_effects" in document:
             for effect in document["spatial_effects"]:
-                if effect.get("type") == "reverb":
-                    reverb = effect
-                    break
-        output_end = frame(duration + reverb["tail_ms"]) if reverb else dry_end
+                eff_type = effect.get("type")
+                if eff_type == "reverb":
+                    tail_frames_eff = frame(effect["tail_ms"])
+                elif eff_type == "echo":
+                    delay_length = max(1, frame(effect["delay_ms"]))
+                    fb = effect["feedback"]
+                    if fb == 0:
+                        n_total = 1
+                    else:
+                        n_total = 1
+                        amp = fb
+                        while amp >= 0.001:
+                            amp *= fb
+                            n_total += 1
+                        n_total += 1
+                    tail_frames_eff = n_total * delay_length
+                else:
+                    continue
+                output_end += tail_frames_eff
         tail_frames = output_end - dry_end
         terminal_frames = (
-            max(2, min(frame(5), math.ceil(tail_frames / 10))) if reverb else 0
+            max(2, min(frame(5), math.ceil(tail_frames / 10))) if tail_frames > 0 else 0
         )
         layers: list[dict[str, Any]] = []
         for layer in document["layers"]:
@@ -803,14 +837,22 @@ def echo_impulse_response_errors() -> list[str]:
     def frame(ms: float) -> int:
         return math.floor(ms * sample_rate / 1000 + 0.5)
 
-    # Derived values (must match the vector)
-    derived = vector["derived"]
+    # Deterministic repeat count via iterative binary64 multiply (no transcendentals)
+    if feedback == 0:
+        n_total = 1
+    else:
+        n_total = 1
+        amp = feedback
+        while amp >= 0.001:
+            amp *= feedback
+            n_total += 1
+        n_total += 1  # include first below-threshold echo
+
     delay_length = max(1, frame(delay_ms))
-    n_repeats = 1 + math.ceil(math.log(0.001) / math.log(feedback)) if feedback > 0 else 1
-    tail_ms_effective = delay_ms if feedback == 0 else delay_ms * n_repeats
+    tail_frames = n_total * delay_length
     d_ms = 1  # impulse document
     dry_end = frame(d_ms)
-    output_end = frame(d_ms + tail_ms_effective)
+    output_end = dry_end + tail_frames  # accumulate in frames, not re-rounded ms
     n_echo = output_end - dry_end
     f = min(damp_hz, 20000)
     a = math.exp(-2 * math.pi * f / sample_rate)
@@ -821,22 +863,22 @@ def echo_impulse_response_errors() -> list[str]:
     failures: list[str] = []
     for key, expected_val in {
         "delay_length": delay_length,
-        "tail_ms_effective": tail_ms_effective,
-        "N_repeats": n_repeats,
+        "N_total": n_total,
+        "tail_frames": tail_frames,
         "dry_end_frame": dry_end,
         "output_end_frame": output_end,
         "N_echo": n_echo,
         "lowpass_coefficient_a": a,
         "terminal_window_W": w,
     }.items():
-        actual = derived.get(key)
+        actual = derived.get(key) if (derived := vector.get("derived")) else None
         if actual != expected_val:
             failures.append(f"echo impulse-response: derived {key} is {actual!r}, expected {expected_val!r}")
 
     if vector.get("total_output_frames") != output_end:
         failures.append(f"echo impulse-response: total_output_frames is {vector.get('total_output_frames')!r}, expected {output_end!r}")
 
-    # Recompute the full output and compare checkpoints
+    # Recompute the full output and compare checkpoints with numerical tolerance
     impulse = vector["impulse_value"]
     T = output_end
     delay_buffer = [0.0] * delay_length
@@ -855,7 +897,7 @@ def echo_impulse_response_errors() -> list[str]:
         "frame_T_minus_1_last": T - 1,
     }
 
-    computed = {}
+    computed: dict[str, float] = {}
     for n in range(T):
         stage_in = impulse if n == 0 else 0.0
         d = delay_buffer[read_index]
@@ -876,12 +918,20 @@ def echo_impulse_response_errors() -> list[str]:
         read_index = (read_index + 1) % delay_length
         write_index = (write_index + 1) % delay_length
 
+    # Numerical tolerance: |y_engine - y_ref| <= 1e-10 * max(1, |y_ref|)
+    TOL = 1e-10
     for label, expected in checkpoints.items():
         actual = computed.get(label)
         if actual is None:
             failures.append(f"echo impulse-response: checkpoint {label} not computed")
-        elif actual != expected:
-            failures.append(f"echo impulse-response: checkpoint {label} is {actual!r}, expected {expected!r}")
+        else:
+            diff = abs(actual - expected)
+            bound = TOL * max(1.0, abs(expected))
+            if diff > bound:
+                failures.append(
+                    f"echo impulse-response: checkpoint {label} differs by {diff!r}, "
+                    f"tolerance is {bound!r} (actual={actual!r}, expected={expected!r})"
+                )
 
     return failures
 

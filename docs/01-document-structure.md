@@ -62,8 +62,8 @@ Here is a minimal document showing the required fields:
 - If `duration_ms` is present and shorter than a layer, that layer is hard-truncated. Truncation does not move or create a layer fade and may therefore click.
 - If `duration_ms` is present and longer than all layers, the remaining time is silence.
 - Every layer has its own required `duration_ms` (1 or more) which is independent of the document duration.
-- When spatial effects are present, the output length is the document duration plus the sum of each effect's effective tail length; see [Spatial Effects](07-spatial-effects.md).
-- Every derived layer end (`start_ms + duration_ms`) and output end (`document duration + Σ tail_ms_effective`) MUST be no greater than `9007199254740991`. A document that exceeds either bound is semantically invalid.
+- When spatial effects are present, the output length is the accumulated per-stage frame boundary `Eₙ` defined in [Spatial Effects](07-spatial-effects.md) §Stage boundaries. Each effect's tail length is computed in frames from its own parameters; stage boundaries are accumulated in frames, not re-rounded from a millisecond sum.
+- Every derived layer end (`start_ms + duration_ms`) and the total accumulated output end (`E₀ + Σ_i tail_frames_i`) MUST be no greater than `9007199254740991`. A document that exceeds either bound is semantically invalid.
 
 ## Layer timing
 

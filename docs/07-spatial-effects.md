@@ -8,13 +8,23 @@ Spatial effects are optional whole-document effects applied after the dry stereo
 
 Effects are applied serially: the first entry processes the summed stereo layer mix; the second entry processes the first entry's output; and so on. All spatial effects start at the document origin (time 0) — every effect receives the input timeline starting from frame 0.
 
-The output timeline extends beyond the document duration to accommodate spatial-effect tails:
+### Stage boundaries
+
+Let `D` be the explicit or computed document duration. Define the stage boundaries in frames:
 
 ```text
-output_end_frame = frame(D + Σ_i tail_ms_effective_i)
+E₀ = frame(D)
+E₁ = E₀ + tail_frames_1
+E₂ = E₁ + tail_frames_2
+...
+Eₙ = Eₙ₋₁ + tail_framesₙ
 ```
 
-where `tail_ms_effective_i` is the effective tail length of the i-th spatial effect. When `spatial_effects` is absent or empty, `output_end_frame = frame(D)`.
+where `n` is the number of spatial effects and `tail_frames_i` is the effective tail length of effect `i` in frames, computed per-effect from its own parameters (see each effect's Timeline subsection). The total output timeline is `[0, Eₙ)`. When `spatial_effects` is absent or empty, `Eₙ = E₀ = frame(D)` and the output timeline is `[0, frame(D))`.
+
+Each effect `i` (1-indexed) processes its stage input on `[0, E_{i-1})` and receives zero input on `[E_{i-1}, E_i)`. Its terminal window applies to `[E_{i-1}, E_i)` — its own tail region only. The accumulated frame boundaries ensure that serial output length and per-stage tail boundaries are deterministic and consistent with the runtime's frame-level operation. Engines MUST NOT round the millisecond sum independently; they MUST accumulate per-stage frame counts.
+
+The total `E₀ + Σ_i tail_frames_i` MUST be ≤ `9007199254740991`. A document that exceeds this bound is semantically invalid.
 
 See [Document Structure](01-document-structure.md) for the top-level field definition and [Output](08-output.md) for the signal-flow position.
 
@@ -44,17 +54,23 @@ When a reverb entry is present, all fields are required.
 
 ### Timeline
 
-Let `D` be the explicit or computed document duration. Define:
+When a reverb entry is effect `i` in the `spatial_effects` array, its stage input end is `E_{i-1}` (the previous stage's output end; `E₀ = frame(D)` when it is the first or only effect). Its tail length in frames is:
 
 ```text
-dry_end_frame = frame(D)
-output_end_frame = frame(D + tail_ms)
-N = output_end_frame - dry_end_frame
+tail_frames = frame(tail_ms)
 ```
 
-When a reverb entry is present, the output timeline is `[0, output_end_frame)`. The reverb consumes the dry mix before `dry_end_frame` and zero input afterward. Engines MUST derive `N` by subtracting these absolute boundaries; they MUST NOT round `tail_ms` independently.
+Its output end is `E_i = E_{i-1} + tail_frames`. Define:
 
-The dry branch ends at `D`. The wet branch emits exactly `N` tail frames after `D`, including its automatic terminal window, and is zero outside the output timeline. All reverb core and lowpass state starts at zero and is discarded after the final output frame.
+```text
+input_end_frame = E_{i-1}
+output_end_frame = E_i
+N = output_end_frame - input_end_frame
+```
+
+The reverb consumes its stage input before `input_end_frame` and zero input afterward. Engines MUST derive `N` by subtracting these absolute boundaries; they MUST NOT round `tail_ms` independently.
+
+The dry branch ends at `input_end_frame`. The wet branch emits exactly `N` tail frames after `input_end_frame`, including its automatic terminal window, and is zero outside the output timeline. All reverb core and lowpass state starts at zero and is discarded after the final output frame.
 
 ### Wet processor
 
@@ -411,33 +427,45 @@ All fields are required.
 
 ### Timeline
 
-Let `D` be the explicit or computed document duration. Define the effective echo tail length:
+When an echo entry is effect `i` in the `spatial_effects` array, its stage input end is `E_{i-1}` (the previous stage's output end; `E₀ = frame(D)` when it is the first or only effect). Its tail length in frames is:
 
 ```text
-tail_ms_effective = delay_ms                                       when feedback == 0
-                    delay_ms × (1 + ceil(log(0.001) / log(feedback)))   when 0 < feedback < 1
+tail_frames = N_total × delay_length
 ```
 
-The `+1` in the formula is not an off-by-one. The first delayed copy (at frame `delay_length`) has amplitude `feedback⁰ = 1`. The feedback gain is applied *after* the delay read and only reaches the output on the next round trip. Echo `k` at frame `k × delay_length` has amplitude `feedback^(k-1)`. Solving `feedback^(k-1) = 0.001` gives `k = 1 + log(0.001)/log(feedback)`, and the timeline must include echo `ceil(k)`, giving `delay_ms × (1 + ceil(log(0.001)/log(feedback)))`.
-
-The output end across all spatial effects:
+where `delay_length = max(1, frame(delay_ms))` and `N_total` is the deterministic repeat count, computed by an iterative binary64 procedure that uses no transcendentals:
 
 ```text
-output_end_frame = frame(D + Σ_i tail_ms_effective_i)
+if feedback == 0:
+    N_total = 1
+else:
+    N = 1                                # echo 1 (amplitude feedback⁰ = 1, always audible)
+    amp = feedback                        # amplitude of echo 2
+    while amp >= 0.001:
+        amp = amp × feedback              # binary64, round-to-nearest-even
+        N = N + 1
+    N_total = N + 1                       # include the first below-threshold echo
 ```
 
-where `i` iterates over all spatial effects. Each effect's `tail_ms_effective` is:
-- Reverb: `tail_ms_effective = tail_ms`
-- Echo: `tail_ms_effective` as defined above.
+This iterative procedure uses only IEEE-754 correctly-rounded binary64 multiplication — no `log` or `ceil` — so it is deterministic across libm implementations. It matches the arithmetic the DSP feedback loop itself performs.
+
+Its output end is `E_i = E_{i-1} + tail_frames`. Define:
+
+```text
+input_end_frame = E_{i-1}
+output_end_frame = E_i
+N_echo = output_end_frame - input_end_frame
+```
+
+The echo processes its stage input on `[0, input_end_frame)` and receives zero input on `[input_end_frame, output_end_frame)`.
 
 ### Automatic terminal window
 
-Let `T = output_end_frame` and `dry_end_frame = frame(D)`. The terminal window is applied to the wet signal `d_lp_c[n]` for frames `n ∈ [dry_end_frame, T)` — the tail region only. Frames before `dry_end_frame` (the dry region) pass through unwindowed. When `N_echo < W` (the tail is shorter than the minimum window), the window is clamped to `W = max(2, N_echo)` to avoid the active region extending into the dry region.
-
-The echo wet tail terminates smoothly. Apply the same terminal window as the reverb effect, using the echo's own tail length `N_echo = output_end_frame - dry_end_frame`:
+The echo wet tail terminates smoothly. The terminal window is applied to the wet signal `d_lp_c[n]` for frames `n ∈ [input_end_frame, output_end_frame)` — the stage's own tail region only. Frames before `input_end_frame` pass through unwindowed. When `N_echo < W` (the tail is shorter than the minimum window), the window is clamped to `W = max(2, N_echo)` to avoid the active region extending into the stage input region.
 
 ```text
-N_echo = output_end_frame - dry_end_frame
+T = output_end_frame
+N_echo = output_end_frame - input_end_frame
 five_ms_frames = floor(5 × sample_rate / 1000 + 0.5)
 W = max(2, min(five_ms_frames, ceil(N_echo / 10)))
 terminal_gain(n) = 1                              when n < T-W
@@ -461,11 +489,25 @@ The dry signal passes through at full level regardless of `wet_gain`. The echo w
 
 ### Conformance bar
 
-In canonical mode, the echo effect MUST produce bit-identical output for the same document and render profile, with the following tolerance: the lowpass coefficient `a = exp(-2π × f / sample_rate)` is a transcendental — platforms may differ in the least-significant bit of the binary64 result. This is the same tolerance as the reverb wet-lowpass coefficient.
+In canonical mode, the echo effect MUST produce output matching the published echo impulse-response test vector within an explicit numerical tolerance. The lowpass coefficient `a = exp(-2π × f / sample_rate)` is transcendental; the coefficient tolerance is:
+
+```text
+|a_engine − a_ref| ≤ 8 × ε × max(1, |a_ref|)
+```
+
+where `ε = 2⁻⁵²` (binary64 machine epsilon). This matches the existing biquad filter coefficient tolerance in [Engine Build Guide](15-engine-build-guide.md) step 3.
+
+For each checkpoint frame `n` in the echo impulse-response test vector, the rendered output MUST satisfy:
+
+```text
+|y_engine[n] − y_ref[n]| ≤ 1e-10 × max(1, |y_ref[n]|)
+```
+
+This bound is specific to the published test vector configuration (`delay_ms=200, feedback=0.6, wet_gain=0.3, damp_hz=4000, 48 kHz, 144,048 output frames`). Future echo test vectors with longer tails MUST publish their own bound, scaled to the accumulated ULP drift over the response length. The `1e-10` bound is much larger than realistic ULP accumulation (~`1e-9` over 144K frames for this configuration) and much smaller than a perceptible difference (~`1e-3`) or an implementation bug (~`1e-2`).
 
 ### Authoring guidance
 
-The tail length is *derived* from `feedback` and `delay_ms` via a non-obvious formula. High `feedback` combined with long `delay_ms` produces very long output:
+The tail length is *derived* from `feedback` and `delay_ms` via an iterative binary64 procedure (see §Timeline above). High `feedback` combined with long `delay_ms` produces very long output:
 
 - `feedback: 0.99`, `delay_ms: 1000` → tail ≈ 11.5 minutes
 - `feedback: 0.999`, `delay_ms: 1000` → tail ≈ 2 hours

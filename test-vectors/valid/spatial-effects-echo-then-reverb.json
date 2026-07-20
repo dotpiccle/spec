@@ -1,0 +1,51 @@
+{
+  "$schema": "https://spec.dotpiccle.com/schema/v1.json",
+  "piccle": "1.0",
+  "name": "Echo then reverb",
+  "description": "Stacked spatial effects: echo first, then reverb. Proves serial application in array order (non-commutative with reverb-then-echo).",
+  "spatial_effects": [
+    {
+      "type": "echo",
+      "delay_ms": 80,
+      "feedback": 0.3,
+      "wet_gain": 0.15,
+      "damp_hz": 4000
+    },
+    {
+      "type": "reverb",
+      "amount": 0.2,
+      "tail_ms": 100,
+      "soften_hz": 4000
+    }
+  ],
+  "layers": [
+    {
+      "id": "tone",
+      "duration_ms": 100,
+      "source": {
+        "type": "tone",
+        "wave": "sine",
+        "pitch": {
+          "frequencies": [
+            {
+              "hz": 880
+            }
+          ]
+        }
+      },
+      "volume": {
+        "fade_in": {
+          "ms": 2
+        },
+        "fade_out": {
+          "ms": 20
+        },
+        "levels": [
+          {
+            "level": 0.5
+          }
+        ]
+      }
+    }
+  ]
+}

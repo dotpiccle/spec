@@ -11,8 +11,8 @@
   },
   "derived": {
     "delay_length": 9600,
-    "tail_ms_effective": 3000,
-    "N_repeats": 15,
+    "N_total": 15,
+    "tail_frames": 144000,
     "dry_end_frame": 48,
     "output_end_frame": 144048,
     "N_echo": 144000,

@@ -20,6 +20,8 @@ Each invalid fixture fails for exactly one primary reason, matching the rule lis
 | `time-above-safe-integer.json`             | Time values cannot exceed `2^53-1` milliseconds.  |
 | `layer-end-out-of-range.json`              | Semantic: derived layer end exceeds `2^53-1`.     |
 | `output-end-out-of-range.json`             | Semantic: document plus reverb tail exceeds `2^53-1`. |
+| `spatial-echo-output-end-out-of-range.json`| Semantic: document plus echo tail exceeds `2^53-1`. |
+| `spatial-multi-effect-output-end-out-of-range.json` | Semantic: cumulative spatial-effects tail exceeds `2^53-1`. |
 | `pitch-frequencies-entry-missing-hz.json`  | Pitch: each `frequencies[]` entry requires `hz`.  |
 | `pitch-timing-exceeds-duration.json`       | Semantic: pitch contour timing must not exceed `duration_ms`. |
 | `frequency-out-of-range.json`              | Pitch: `hz` must be 20–20000.                     |
