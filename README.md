@@ -5,7 +5,7 @@
 <p align="center"><strong>Declarative synthesis and DSP semantics for UI micro-audio.</strong></p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/spec-v1.0.0-brightgreen?style=flat-square" alt="version 1.0.0">
+  <img src="https://img.shields.io/badge/spec-v1.0.1-brightgreen?style=flat-square" alt="version 1.0.1">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="license"></a>
   <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/status-stable-brightgreen?style=flat-square" alt="stable status"></a>
 </p>
@@ -44,7 +44,7 @@ A Piccle asset contains structured synthesis instructions rather than recorded a
 
 This repository contains the normative DSP specification, JSON Schema, technical authoring examples, qualification fixtures, numeric aids, and the execution contract for the official [Piccle Rust engine](https://github.com/dotpiccle/engine-rs). It targets audio engineers, engine maintainers, validation/tooling authors, and AI infrastructure. Introductory and consumer-facing documentation belongs on a separate documentation surface.
 
-Piccle v1.0 is stable. The authoritative release artifact is the `v1.0.0` repository tag; website publication is optional and is not part of format validity.
+Piccle v1.0 is stable. The authoritative release artifact is the latest `v1.0.x` repository tag; website publication is optional and is not part of format validity.
 
 ## V1 scope
 
@@ -191,9 +191,9 @@ The repository document fixtures verify validation behavior, non-PCM numeric aid
 
 | Document version | Repository status | Schema                               |
 | ---------------- | ----------------- | ------------------------------------ |
-| `1.0`            | Stable (`v1.0.0`) | [`schemas/v1.json`](schemas/v1.json) |
+| `1.0`            | Stable (`v1.0.1`) | [`schemas/v1.json`](schemas/v1.json) |
 
-Documents use a `major.minor` `piccle` value. Repository tags use semantic versions. The stable Piccle v1 specification is tagged `v1.0.0`.
+Documents use a `major.minor` `piccle` value. Repository tags use semantic versions. The latest stable Piccle v1 specification is tagged `v1.0.1`.
 
 Published stable schemas are immutable. See [Contributing](CONTRIBUTING.md) for compatibility and release policy.
 

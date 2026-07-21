@@ -2,6 +2,23 @@
 
 All notable changes to the Piccle specification are documented here.
 
+## [1.0.1] - 2026-07-21
+
+### Fixed
+
+- Extended the numeric-aid transcendental tolerance to the exponential fade-in and fade-out
+  half-duration checkpoints. Their normative `pow` formula can differ in the last bit across math
+  libraries, so exact equality was not a portable qualification requirement. All other fade
+  checkpoints remain exact. This clarification changes no document validity, DSP formula, or
+  rendered intent ([#25](https://github.com/dotpiccle/spec/issues/25)).
+- Pinned the specification CI's official GitHub Actions to immutable commit SHAs.
+
+### Release evidence
+
+- Stable schema SHA-256: `58bbd0946fa5c8e7175866f7a48b4afcd5ef00b1f3c9b29ee8197b396f55ceb4`
+  (unchanged from `v1.0.0`).
+- Website and DNS publication remain optional mirrors, not release gates.
+
 ## [1.0.0] - 2026-07-21
 
 ### Breaking

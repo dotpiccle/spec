@@ -1,6 +1,6 @@
-# Piccle v1 Release Checklist
+# Piccle v1.0.1 Release Checklist
 
-This checklist records the stable `v1.0.0` specification release. Website publication is optional; the repository tag and frozen schema are authoritative.
+This checklist records the stable `v1.0.1` patch release. Website publication is optional; the repository tag and frozen schema are authoritative. Engine qualification applies only to profiles the engine declares; unavailable or undeclared hardware profiles are not release gates.
 
 ## Automated repository gate
 
@@ -12,9 +12,9 @@ This checklist records the stable `v1.0.0` specification release. Website public
 
 ## Release artifact
 
-- [x] Freeze [schemas/v1.json](schemas/v1.json) in the `v1.0.0` release commit.
+- [x] Confirm [schemas/v1.json](schemas/v1.json) is byte-identical to `v1.0.0`.
 - [x] Record schema SHA-256 `58bbd0946fa5c8e7175866f7a48b4afcd5ef00b1f3c9b29ee8197b396f55ceb4` in [CHANGELOG.md](CHANGELOG.md).
-- [ ] Push the release commit and `v1.0.0` tag to the canonical Git remote.
+- [ ] Push the release commit and `v1.0.1` tag to the canonical Git remote.
 
 Website or DNS publication MAY mirror the tagged schema later. It does not block or redefine the stable specification.
 
@@ -27,13 +27,12 @@ Website or DNS publication MAY mirror the tagged schema later. It does not block
 - [ ] Verify canonical 48 kHz timing, PCG32 sequences, oscillator phase, filter equations, equal-power balance, reverb measurements, and output clipping.
 - [ ] Confirm invalid, unsupported, and internal-render errors remain distinct in the engine API.
 
-## Cross-platform engine qualification
+## Declared-profile engine qualification
 
 - [ ] Qualify a native desktop x86-64 engine integration.
 - [ ] Qualify a native desktop ARM64 engine integration.
 - [ ] Qualify a browser engine integration using JavaScript, WebAssembly, or WebAudio.
 - [ ] Qualify a native mobile ARM engine integration.
-- [ ] Qualify a constrained no-FPU engine profile using binary32 or fixed-point DSP.
 - [ ] Exercise every supported rate in the reverb qualification matrix's representative set: 8,
       16, 22.05, 24, 32, 44.1, 48, 96, and 192 kHz. Profiles with a smaller finite rate set test
       every declared rate.
@@ -51,7 +50,7 @@ Website or DNS publication MAY mirror the tagged schema later. It does not block
 - [ ] Check recognizability, onset clicks, ending clicks, clipping, loudness consistency, oscillator aliasing, filter instability, and reverb cutoff.
 - [ ] Pass the reverb perceptual-equivalence tolerances in [Spatial Effects](docs/07-spatial-effects.md) across the finite canonical, qualification, and additional-profile matrices in the [Piccle Engine Implementation Contract](docs/15-engine-build-guide.md) step 6. Use the published canonical fixtures at 48 kHz and generate same-configuration references on demand elsewhere.
 - [ ] A/B confirm wet onset, echo density, early-to-late energy, stereo decorrelation, brightness, and decay without metallic ringing or discrete echoes; RT60 and tolerance agreement alone is insufficient without listening review.
-- [ ] Profile the examples and the engine's published maximum supported document on the lowest supported device; document render throughput, peak CPU, state memory, and simultaneous voices.
+- [ ] Profile the examples and the engine's published maximum supported document on each available representative device used for a release claim; document render throughput, peak CPU, state memory, and simultaneous voices.
 - [ ] Confirm the production render path performs no JSON work, schema traversal, sorting, table construction, impulse measurement, or memory allocation.
 - [ ] Confirm output can be streamed in bounded blocks without retaining whole-document PCM.
 - [ ] Confirm oscillator cost is bounded per voice and does not evaluate the full reference harmonic series per sample.
@@ -60,9 +59,9 @@ Website or DNS publication MAY mirror the tagged schema later. It does not block
 
 ## Stable specification release
 
-- [x] Move the changelog entries to `v1.0.0` with the release date.
+- [x] Move the changelog entries to `v1.0.1` with the release date.
 - [x] Set README status to stable.
-- [x] Create the `v1.0.0` tag from the validated commit.
-- [x] Verify the tagged schema checksum.
+- [ ] Create the `v1.0.1` tag from the validated commit.
+- [ ] Verify the tagged schema checksum.
 
 Official engine, cross-platform, listening, and performance sections above are the downstream `dotpiccle/engine-rs` release contract. They do not alter the frozen Piccle v1 document specification.

@@ -38,6 +38,16 @@ NUMERIC_DIR = ROOT / "test-vectors" / "numeric"
 MATRIX_PATH = NUMERIC_DIR / "reverb-qualification-matrix.json"
 CANONICAL_SCHEMA_URI = "https://spec.dotpiccle.com/schema/v1.json"
 MAX_SAFE_INTEGER = 9007199254740991
+TRANSCENDENTAL_NUMERIC_AID_PREFIXES = (
+    "$.balance.",
+    "$.lowpass_1000_hz_48000_resonance_0.",
+)
+TRANSCENDENTAL_NUMERIC_AID_PATHS = frozenset(
+    {
+        "$.fade_values_at_half.fade_in.exponential",
+        "$.fade_values_at_half.fade_out.exponential",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -54,6 +64,13 @@ def load_json(path: Path) -> Any:
         object_pairs_hook=reject_duplicate_keys,
         parse_constant=reject_non_finite_constant,
         parse_float=parse_finite_float,
+    )
+
+
+def numeric_aid_uses_transcendental_tolerance(path: str) -> bool:
+    """Return whether a numeric-aid path is derived from a permitted transcendental."""
+    return path in TRANSCENDENTAL_NUMERIC_AID_PATHS or path.startswith(
+        TRANSCENDENTAL_NUMERIC_AID_PREFIXES
     )
 
 
@@ -632,10 +649,7 @@ def numeric_aid_errors() -> list[str]:
             if left != right:
                 failures.append(f"numeric aid {path}: values differ")
         elif isinstance(right, float) and isinstance(left, (int, float)):
-            is_transcendental = path.startswith("$.balance.") or path.startswith(
-                "$.lowpass_1000_hz_48000_resonance_0."
-            )
-            if is_transcendental:
+            if numeric_aid_uses_transcendental_tolerance(path):
                 tolerance = 8 * sys.float_info.epsilon * max(1.0, abs(right))
                 if abs(float(left) - right) > tolerance:
                     failures.append(
