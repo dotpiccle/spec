@@ -8,6 +8,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from validate import numeric_aid_uses_transcendental_tolerance
+
 ROOT = Path(__file__).resolve().parents[1]
 CANONICAL_INVALID = '{\n  "invalid": true\n}\n'
 
@@ -36,7 +38,27 @@ def test_injected_failure_exits_nonzero() -> None:
         bad.unlink(missing_ok=True)
 
 
+def test_exponential_fade_checkpoints_use_transcendental_tolerance() -> None:
+    assert numeric_aid_uses_transcendental_tolerance(
+        "$.fade_values_at_half.fade_in.exponential"
+    ) and numeric_aid_uses_transcendental_tolerance(
+        "$.fade_values_at_half.fade_out.exponential"
+    )
+
+
+def test_nontranscendental_fade_checkpoints_remain_exact() -> None:
+    assert not any(
+        numeric_aid_uses_transcendental_tolerance(path)
+        for path in (
+            "$.fade_values_at_half.fade_in.linear",
+            "$.fade_values_at_half.fade_in.exponential_extra",
+        )
+    )
+
+
 if __name__ == "__main__":
     test_clean_repo_passes()
     test_injected_failure_exits_nonzero()
+    test_exponential_fade_checkpoints_use_transcendental_tolerance()
+    test_nontranscendental_fade_checkpoints_remain_exact()
     print("validate.py exit-code regression test: PASS")
