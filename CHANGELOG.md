@@ -1,12 +1,12 @@
 # Changelog
 
-All notable changes to the Piccle specification are documented here. Piccle v1 has not yet reached a stable release.
+All notable changes to the Piccle specification are documented here.
 
-## Unreleased — targeting v1.0.0-rc.1
+## [1.0.0] - 2026-07-21
 
 ### Breaking
 
-- **Removed top-level `reverb` field.** Replaced with `spatial_effects` array — reverb becomes one entry with `type: "reverb"` inside the array. Migration: wrap `"reverb": { ... }` as `"spatial_effects": [ { "type": "reverb", ... } ]`. This is a breaking change; v1.0 is unreleased so the schema URI remains mutable.
+- **Removed top-level `reverb` field.** Replaced with `spatial_effects` array — reverb becomes one entry with `type: "reverb"` inside the array. Migration from pre-release documents: wrap `"reverb": { ... }` as `"spatial_effects": [ { "type": "reverb", ... } ]`.
 
 ### Added
 
@@ -20,6 +20,8 @@ All notable changes to the Piccle specification are documented here. Piccle v1 h
 
 ### Changed
 
+- **Engine-facing documentation is now the authoritative `dotpiccle/engine-rs` contract.** Normative references to generic, reference, independent, or hypothetical conforming engines were replaced with explicit requirements for the official Piccle Rust engine. Chapter 13 now defines required DSP runtime, state-preparation, render-loop, and validation-architecture behavior; chapter 15 is the mandatory implementation and qualification contract and includes a machine-navigable calculation ownership index. Optional internal choices are labeled implementation-defined only when they cannot affect specified validation or output. The clean-room independent-engine release gate was removed. Document validity and existing DSP formulas are unchanged; the property-based reverb qualification pass is now mandatory for official engine releases.
+- **Repository documentation retargeted to audio-engineering infrastructure.** The normative specification, repository instructions, schema descriptions, examples guidance, and authoring patterns now assume digital-audio and DSP proficiency and use standard synthesis, signal-processing, measurement, and topology terminology. Introductory tutorials, consumer analogies, and note-frequency primers were removed or assigned to a separate user-documentation surface. This changes no document validity, defaults, DSP algorithms, or playback semantics.
 - **Signal-flow stage** "reverb dry/wet crossfade, when present" renamed to "parallel spatial effects, when present". Output-end formula generalized from `D + reverb.tail_ms` to `D + max_i(tail_ms_effective_i)` (longest tail, not sum — effects run in parallel).
 - `docs/07-reverb.md` renamed to `docs/07-spatial-effects.md` — now the canonical home for both the reverb and echo normative specifications. The reverb section preserves all existing semantics (FDN topology, 7 perceptual-equivalence metrics, canonical IR fixtures, terminal window, normalization, RT60). Reverb's `amount` changed from dry/wet crossfade to additive wet gain (dry always present from the parallel stage).
 - `docs/11-engine-safety.md` — added `echo.damp_hz` to render-profile frequency clamping; updated determinism classes table with echo effect row.
@@ -107,6 +109,11 @@ Reverb's internal DSP (FDN topology, 7 perceptual-equivalence metrics, canonical
 
 ### Fixed
 
+- Corrected the normative directional fade equations so fade-in explicitly interpolates from zero to the first level and fade-out interpolates from the held level to zero. Added machine-recomputed half-duration fade checkpoints for all five curves. This clarifies the already intended and reference-engine behavior; document validity and rendered intent are unchanged.
+- Synchronized the README's format tree, signal-flow diagram, and example inventory with the `spatial_effects` array and parallel wet-contribution model.
+- Consolidated the normative echo delay-line algorithm in `docs/13-implementer-notes.md`, clarified that both reference spatial-effect runtime sections are normative, and removed the duplicate topology from `docs/07-spatial-effects.md`.
+- Corrected the render-profile chapter's stale `frame(D + tail_ms)` reverb boundary. Spatial-effect tails are computed in frames and added to `frame(D)`, matching the normative effect timelines and numeric aids.
+- Removed stale hard-coded fixture counts from the engine build guide, added the missing echo implementation step, and made public artifact references clickable.
 - Made every normative reference-generator reduction use explicit left-to-right binary64
   accumulation. Python 3.12 changed the algorithm used by built-in `sum()`, which caused 36
   last-bit feedback-matrix mismatches across Python versions despite the specification's fixed
@@ -133,9 +140,9 @@ Reverb's internal DSP (FDN topology, 7 perceptual-equivalence metrics, canonical
 - Updated stale modal-floor rationale in `docs/07-reverb.md` to reference `manifest.json` as the source of truth for the current worst non-degenerate value (was inlining a stale `−32.8 dB` from before the issue #11 fixture regeneration). This initially retained an unconditional `−30 dB` gate; the later reference-qualified fix above supersedes that behavior for same-configuration references above the floor.
 - Fixed `docs/15-engine-build-guide.md` step 3 requiring exact equality for all `dsp-values.json` entries. The initial fix exempted only the lowpass fields and pointed to oscillator-only step 4; the later explicit-tolerance fix above supersedes that incomplete resolution and also covers balance values generated from their normative `sin`/`cos` formulas.
 
-### Release gates
+### Release evidence
 
-- The canonical website and schema URI must resolve and serve the frozen schema.
-- A clean-room engine must be implementable from the normative text without unresolved questions.
-- Every official example and primitive-coverage asset must pass cross-platform rendering, headphone, full-range, small-speaker, and low-bandwidth listening review.
+- Stable schema SHA-256: `58bbd0946fa5c8e7175866f7a48b4afcd5ef00b1f3c9b29ee8197b396f55ceb4`.
+- The authoritative release is the `v1.0.0` repository tag. Website and DNS publication are optional mirrors, not release gates.
+- Repository validation covers schema, semantic rules, accepted/rejected fixtures, numeric and behavior aids, reverb baselines, documentation parity, inventories, canonical JSON, anchors, and links.
 - Stable `v1.0.0` release notes must record the tagged schema's SHA-256 checksum.

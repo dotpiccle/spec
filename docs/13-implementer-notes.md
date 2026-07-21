@@ -1,8 +1,8 @@
-# Implementer Notes
+# Piccle Engine DSP Runtime
 
-This appendix contains both normative and non-normative sections. The §Reference reverb runtime section is normative — a conforming engine MUST implement the reverb topology specified there. All other sections are implementation guidance.
+This chapter defines the required DSP runtime, state preparation, render-loop boundaries, and validation architecture for [`dotpiccle/engine-rs`](https://github.com/dotpiccle/engine-rs). Equations, processing order, initialization, and observable output requirements are normative. A section explicitly labeled as rationale supplies context but does not replace a requirement.
 
-## Recommended reading order
+## Required reading order
 
 1. [Document Structure](01-document-structure.md)
 2. [Conventions](02-conventions.md)
@@ -12,11 +12,13 @@ This appendix contains both normative and non-normative sections. The §Referenc
 6. [Engine Safety](11-engine-safety.md)
 7. [Conformance](14-conformance.md)
 
-For a task-ordered implementation checklist, see [Engine Build Guide](15-engine-build-guide.md).
+For the task-ordered implementation and qualification contract, see [Piccle Engine Implementation Contract](15-engine-build-guide.md).
 
 ## Reference reverb runtime
 
-The conforming reverb runtime is the diffused eight-line feedback-delay network (FDN) below. A conforming engine MUST implement this topology. It requires ~194 operations per output sample with state proportional to `tail_ms` for long tails (~65 bytes per ms at 48 kHz binary64 plus ~1.6 KiB constant diffuser state, ~34 KiB at 500 ms, ~16 KiB at 220 ms, ~448 bytes at 1 ms).
+The Piccle engine reverb runtime is the diffused eight-line feedback-delay network (FDN) below. The engine MUST implement this topology.
+
+**Runtime cost:** The topology requires approximately 194 operations per output sample with state proportional to `tail_ms` for long tails (approximately 65 bytes per ms at 48 kHz binary64 plus 1.6 KiB of constant diffuser state, 34 KiB at 500 ms, 16 KiB at 220 ms, and 448 bytes at 1 ms). The engine MUST allocate this state during render-plan preparation, not in the audio render loop.
 
 For one `tail_ms` and sample-rate configuration, define the conformance-response length `R` exactly as the reverb harness does:
 
@@ -198,16 +200,16 @@ Measure the final softened, windowed response for the active render profile duri
 
 ### Perceptual qualification
 
-The strict perceptual-equivalence tolerances in [Spatial Effects](07-spatial-effects.md) §Perceptual-equivalence metric algorithms provide the machine-checkable conformance bar. Each of the seven metrics has a normatively pinned measurement algorithm, and the baseline values per canonical fixture are published in `manifest.json`. The engine's FDN output MUST pass those tolerances across the finite canonical, qualification, and additional-profile matrices in [Engine Build Guide](15-engine-build-guide.md) step 6.
+The Piccle engine MUST pass the strict perceptual-equivalence tolerances in [Spatial Effects](07-spatial-effects.md) §Perceptual-equivalence metric algorithms. Each of the seven metrics has a normatively pinned measurement algorithm, and the baseline values per canonical fixture are published in [manifest.json](../test-vectors/numeric/reverb-reference-irs/manifest.json). Apply those tolerances across the finite canonical, qualification, and additional-profile matrices in [the implementation contract](15-engine-build-guide.md) step 6.
 
-**Note.** Further listening review should confirm:
+The release listening gate MUST confirm:
 
 - immediate wet onset rather than audible predelay;
 - dense, noise-like reflections without discrete echoes;
 - no pitched or metallic ringing;
 - similar early-to-late energy balance and decay shape;
 - low left/right correlation without unstable image movement; and
-- comparable brightness after the normative lowpass.
+- spectral centroid within the tolerance defined for the post-lowpass wet response.
 
 Also inspect each metric from the [normative algorithm specification](07-spatial-effects.md#perceptual-equivalence-metric-algorithms). No single metric substitutes for listening. An engine that only matches RT60 does not conform.
 
@@ -215,7 +217,7 @@ At 48 kHz, the FDN's total delay `M = Σ d[i] ≈ 0.169 × tail_ms × sample_rat
 
 ## Reference echo runtime
 
-The conforming echo runtime is the two per-channel delay lines (one per L/R channel) with feedback-path lowpass (lossy-bilinear comb filter) below. A conforming engine MUST implement this topology.
+The Piccle engine echo runtime is the two per-channel delay lines (one per L/R channel) with feedback-path lowpass (lossy-bilinear comb filter) below. The engine MUST implement this topology.
 
 The echo uses two per-channel delay lines (one per L/R channel) with independent lowpass state, mirroring the reverb's per-channel wet lowpass. The delay length `delay_length = max(1, frame(delay_ms))` is the same for both channels; only the lowpass state and delay buffer contents differ. This preserves the author's `balance` placement — a panned dry sound produces a panned echo in the same position.
 
@@ -231,7 +233,7 @@ For each frame `n` in `[0, output_end_frame)`, for each channel `c` in `{L, R}`:
 4. Write `delay_buffer_c[write_index_c] = stage_input_c[n] + fb_c[n]`
 5. Apply the terminal window (see [Spatial Effects](07-spatial-effects.md) §Echo effect) to `d_lp_c[n]` → `d_win_c[n]`
 6. `w_c[n] = d_win_c[n]`
-7. `y_c[n] = stage_input_c[n] + wet_gain × w_c[n]`
+7. `contribution_c[n] = wet_gain × w_c[n]`
 8. Advance `read_index_c` and `write_index_c` (mod `delay_length`)
 
 Where:
@@ -241,7 +243,9 @@ delay_length = max(1, frame(delay_ms))
 a = exp(-2π × min(damp_hz, render_frequency_max) / sample_rate)
 ```
 
-The echo requires two delay lines of `delay_length` frames each (one per L/R channel), one state variable per channel for the IIR lowpass, and constant work per frame. State is proportional to `delay_ms` (~75 KiB per 100 ms at 48 kHz binary64 for both channels; scales linearly with `delay_ms`).
+The document output for an isolated echo is `stage_input_c[n] + contribution_c[n]`. In a `spatial_effects` array with multiple entries, add only `contribution_c[n]` from this echo to the shared dry mix; do not add another copy of `stage_input_c[n]`.
+
+**Runtime cost:** The echo requires two delay lines of `delay_length` frames each (one per L/R channel), one state variable per channel for the IIR lowpass, and constant work per frame. State is proportional to `delay_ms` (approximately 75 KiB per 100 ms at 48 kHz binary64 for both channels). The engine MUST allocate this state during render-plan preparation.
 
 ### Denormal handling
 
@@ -253,33 +257,33 @@ The echo wet tail MUST terminate smoothly using the automatic terminal window de
 
 ## Noise implementation
 
-Implement PCG32 with explicit-width unsigned integers. Languages without native wrapping integers should mask the state and result after each operation. Convert the result to binary64 before division by `2^32`.
+Implement PCG32 with explicit-width unsigned integers. On targets without native wrapping integers, the engine MUST mask the state and result after each operation. Convert the result to binary64 before division by `2^32`.
 
-The `soft` and `sharp` character gains are analytic stationary-RMS gains. They avoid pre-rendering, duration-dependent normalization, and unbounded buffers. Unit tests for an engine should compare the first several generator integers with a separately implemented PCG32 routine before testing the character filters.
+The `soft` and `sharp` character gains are analytic stationary-RMS gains. They avoid pre-rendering, duration-dependent normalization, and unbounded buffers. Engine tests MUST compare the published PCG32 prefix and character-filter values in [the numeric DSP aid](../test-vectors/numeric/dsp-values.json) before exercising complete noise renders.
 
 ## Oscillators
 
-A band-limited wavetable or polyBLEP oscillator is usually more efficient than evaluating a harmonic series per frame. Treat the published series as a conformance target, not a production algorithm. Build tables outside the render loop and share immutable tables between voices. Preserve the normative zero phase, phase integral, and harmonic targets when selecting or interpolating tables. Frequency-dependent tables help prevent high-frequency square and saw layers from aliasing across output systems.
+The published finite harmonic series defines the output target, not the private Rust oscillator representation. The production oscillator MUST have bounded per-frame cost, MUST prepare any tables outside the render loop, and MUST preserve zero phase, the phase integral, harmonic amplitudes, harmonic phases, DC limit, and alias limits in [Sources](03-sources.md). A wavetable, polyBLEP, or another internal realization is permitted only when it satisfies those requirements.
 
 ## Dynamic biquads
 
-The canonical profile recomputes coefficients per frame. A production engine may reduce coefficient work when a cutoff is static. For moving cutoffs, common stable approaches include per-frame coefficient calculation, short control blocks with coefficient interpolation, or a topology-preserving transform. Validate fast exponential sweeps at high Q; direct coefficient interpolation can become unstable.
+Canonical mode MUST recompute coefficients for every frame. Production profiles MUST compute static-cutoff coefficients during render-plan preparation. For moving cutoffs, a production profile MAY use per-frame calculation, bounded control blocks with stable coefficient interpolation, or a topology-preserving transform, but it MUST preserve declared boundary timing, stability, and the filter response requirements. Qualification MUST include fast exponential sweeps at maximum `resonance`; an optimization that produces non-finite or unstable output is invalid.
 
 The normative coefficient equations and zero initial state are in [Filters](06-filters.md).
 
 ## Denormal handling
 
-On x86, Flush-to-Zero and Denormals-Are-Zero flags are usually the cheapest protection. On other platforms, explicitly clear sufficiently small state values. Apply the strategy consistently to filters, reverb feedback paths, and echo feedback paths.
+On x86 targets, the Piccle engine MUST enable Flush-to-Zero and Denormals-Are-Zero for the render thread when the target exposes those modes. On targets without equivalent modes, it MUST explicitly clear sufficiently small state values. The selected strategy MUST be applied consistently to filters, reverb feedback paths, and echo feedback paths and MUST satisfy the `-180 dBFS` bound in [Engine Safety](11-engine-safety.md) §Denormal protection.
 
 ## Voice allocation
 
-Preflight the layer intervals before playback so the engine can determine peak simultaneous voices. A sweep-line over sorted start and end boundaries is sufficient. Allocate or reserve a bounded voice pool before rendering; do not allocate a new voice or grow collections in the audio callback. When a host chooses degraded partial playback, earlier layer-array entries have the recommended priority.
+The engine MUST preflight layer intervals, compute peak simultaneous voices, and reserve a bounded voice pool before rendering. The interval algorithm is implementation-defined because it cannot affect output. The audio callback MUST NOT allocate a new voice or grow a collection. If the host explicitly enables degraded partial playback, the engine MUST retain earlier layer-array entries first and MUST report degradation.
 
 ## Render-loop discipline
 
-Compile a validated document into an immutable render plan before producing audio. The plan should contain resolved defaults, absolute frame boundaries, contour segments, precomputed static gains, oscillator-table selections, filter configuration, and bounded state sizes.
+The engine MUST compile a validated document into an immutable render plan before producing audio. The plan MUST contain resolved defaults, absolute frame boundaries, contour segments, precomputed static gains, oscillator realization selections, filter configuration, and bounded state sizes.
 
-The production render loop should:
+The production render loop MUST:
 
 - accept and emit fixed-size blocks or individual frames without requiring a whole-document PCM buffer;
 - advance contour cursors instead of searching contour arrays each frame;
@@ -287,11 +291,11 @@ The production render loop should:
 - reuse cached oscillator tables and reverb normalization values; and
 - perform work proportional to active voices and filters, with constant reverb work per frame.
 
-JSON decoding, schema validation, semantic validation, sorting, table construction, impulse measurement, resource-limit checks, and memory allocation belong before rendering. Canonical test mode may favor clarity over speed, but it should not be presented as the recommended production architecture.
+JSON decoding, schema validation, semantic validation, sorting, table construction, impulse measurement, resource-limit checks, and memory allocation MUST complete before rendering begins. Canonical test mode MAY use a slower internal realization, but production entry points MUST preserve the preparation/render separation above.
 
 ## Validation architecture
 
-Keep these failures separate in the public API:
+The Piccle engine public API MUST keep these failures separate:
 
 - malformed JSON;
 - schema-invalid document;
@@ -303,4 +307,4 @@ This separation makes authoring tools useful and prevents device capacity from b
 
 ## Release qualification
 
-Before claiming engine conformance, render every official example in canonical mode and in each additional declared render profile. Qualify native desktop, browser, mobile, constrained-device, low-rate, stereo, and mono-host integrations that the engine supports. Listen on headphones, full-range speakers, a small-device speaker, and the lowest-bandwidth supported output, then inspect for non-finite samples, clipping frequency, high-frequency aliasing, envelope discontinuities, reverb cutoff, and unexpected CPU spikes.
+Before releasing the Piccle engine, render every official example in canonical mode and in each production render profile. Qualify every supported native desktop, browser, mobile, constrained-device, low-rate, stereo, and mono-host integration. Complete the listening and measurement gates in [the Release Checklist](../RELEASE_CHECKLIST.md), including non-finite samples, clipping frequency, high-frequency aliasing, envelope discontinuities, spatial-effect termination, state memory, and render-time CPU spikes.

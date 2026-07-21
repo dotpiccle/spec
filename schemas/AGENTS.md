@@ -34,9 +34,9 @@ Do not change `additionalProperties` or equivalent behavior without considering 
 
 ### Defaults
 
-A schema `default` is not automatically an engine requirement.
+A schema `default` is not automatically a Piccle engine requirement.
 
-Every engine-applied default must also be stated in normative documentation.
+Every Piccle engine-applied default must also be stated in normative documentation.
 
 When adding or changing a default, update:
 
@@ -68,18 +68,18 @@ Do not fragment schemas into tiny files that make the format harder to understan
 
 ### Schema descriptions
 
-Descriptions must speak to the person creating audio. That person must not need to know anything about the engine or how it works. The description should tell them what the field does and how to use it.
+Descriptions target audio engineers, Piccle engine maintainers, tooling authors, and technically capable automated systems. Use standard synthesis and signal-processing terminology. A description should identify the field's signal-domain role, unit, range interpretation, and audible or computational control surface without teaching foundational audio concepts. When a description mentions engine behavior, it refers to `dotpiccle/engine-rs` and points conceptually to the canonical normative calculation rather than offering implementation advice.
 
-Engine implementation details (topology, determinism, arithmetic, tolerances, normalization, windowing) belong in `docs/` — never in the schema description.
+Normative topology, arithmetic order, determinism, tolerances, normalization, and conformance measurement procedures still belong in `docs/`; schema descriptions should summarize semantics and link concepts through terminology, not duplicate algorithms.
 
-Bad (engine-focused):
+Bad (duplicates normative implementation detail):
 
 > The wet-path first-order lowpass corner frequency. An engine clamps it to render_frequency_max before coefficient calculation.
 
-Bad (merely restates type):
+Bad (beginner paraphrase):
 
-> A number representing frequency.
+> Makes the reverb sound warmer or brighter.
 
-Better (author-focused):
+Better (technical and field-focused):
 
-> How much to soften the reverb tail. Higher values (up to 12000 Hz) make the space sound warmer; lower values (down to 200 Hz) make it brighter and clearer.
+> Corner frequency, in Hz, of the first-order lowpass applied to the reverb wet path.

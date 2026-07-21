@@ -8,8 +8,8 @@ A Piccle document is a single JSON object with the fields below.
 | --------------------- | ------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `$schema`             | string  | --       | No       | When present, MUST be `https://spec.dotpiccle.com/schema/v1.json`.                                                                                                                      |
 | `piccle`              | string  | --       | **Yes**  | The Piccle format version. MUST be `"1.0"` for this specification.                                                                                                                      |
-| `name`                | string  | --       | No       | Non-empty human-readable name for this sound.                                                                                                                                           |
-| `description`         | string  | --       | No       | Non-empty human-readable description of what this sound is for.                                                                                                                         |
+| `name`                | string  | --       | No       | Non-empty UTF-8 metadata label for the asset.                                                                                                                                           |
+| `description`         | string  | --       | No       | Non-empty UTF-8 metadata describing the asset's intended UI-audio function.                                                                                                             |
 | `duration_ms`         | integer | computed | No       | Total document duration in milliseconds. 1 or more. If absent, duration is computed from the latest-ending layer. A shorter duration trims layers; a longer duration pads with silence. |
 | `master_volume_level` | number  | 1        | No       | Final master gain. 0 = silent, 1 = full. A single number; unlike layer `volume`, this field does not accept a contour object. Independent of per-layer volume.                          |
 | `spatial_effects`      | array   | --       | No       | Optional whole-document spatial effects applied after the dry mix. Each entry is a `reverb` or `echo`. All effects run in parallel — each receives the same dry mix and adds its wet contribution. An empty array is valid and equivalent to omitting the field. |
@@ -17,15 +17,15 @@ A Piccle document is a single JSON object with the fields below.
 
 ## Layer fields
 
-Each layer is an independent sound generator. The fields below define its behavior:
+Each layer is an independently scheduled mono source path with its own DSP state. The fields below define its source, temporal extent, filter chain, amplitude envelope, and stereo placement:
 
 | Field         | Type             | Default | Required | Description                                                                                                                                       |
 | ------------- | ---------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `id`          | string           | --      | **Yes**  | Unique identifier for this layer. Lowercase letters, digits, and hyphens only (pattern: `^[a-z][a-z0-9-]*$`). MUST be unique within the document. |
 | `start_ms`    | integer          | 0       | No       | When this layer starts playing, in milliseconds from the document start. Default 0 = start at the same time as all other layers.                  |
 | `duration_ms` | integer          | --      | **Yes**  | How long this layer plays, in milliseconds. 1 or more.                                                                                            |
-| `source`      | object           | --      | **Yes**  | The raw sound this layer makes: a `tone` or deterministic `noise`. See [Sources](03-sources.md).                                                  |
-| `volume`      | number or object | 1       | No       | Loudness contour. A number (0–1) or an object with `fade_in`, `fade_out`, and a `levels` array. See [Layer Volume](05-layer-volume.md).                       |
+| `source`      | object           | --      | **Yes**  | Mono excitation generator: a band-limited periodic `tone` or deterministic `noise`. See [Sources](03-sources.md).                                |
+| `volume`      | number or object | 1       | No       | Linear-amplitude envelope. A scalar gain in [0, 1] or an object with `fade_in`, `fade_out`, and a `levels` array. See [Layer Volume](05-layer-volume.md). |
 | `balance`     | number           | 0       | No       | Stereo position. −1 = full left, 0 = center, 1 = full right.                                                                                      |
 | `filters`     | array            | []      | No       | Filter chain applied in series. Zero or more filters. See [Filters](06-filters.md).                                                               |
 
@@ -33,7 +33,7 @@ Both tone and noise sources produce a mono signal. Stereo placement is applied e
 
 ## The layers field
 
-`layers` is the heart of a Piccle document. It is an array of one or more layer objects. The spec does not impose a maximum layer count — engines MAY enforce their own limits. Each layer is an independent sound generator with its own source, volume contour, balance, and optional filter chain.
+`layers` is an array of one or more independently scheduled signal paths. The specification does not impose a maximum layer count; each Piccle engine profile MUST publish any layer-count support limit it enforces. Each layer contains one excitation source, an optional serial biquad chain, a linear-amplitude envelope, and equal-power stereo balance.
 
 Here is a minimal document showing the required fields:
 

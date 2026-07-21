@@ -30,6 +30,23 @@
     "easeOut": 0.75,
     "easeInOut": 0.5
   },
+  "fade_values_at_half": {
+    "level": 0.8,
+    "fade_in": {
+      "linear": 0.4,
+      "exponential": 8.944271909999158e-06,
+      "easeIn": 0.2,
+      "easeOut": 0.6000000000000001,
+      "easeInOut": 0.4
+    },
+    "fade_out": {
+      "linear": 0.4,
+      "exponential": 8.944271909999158e-06,
+      "easeIn": 0.6000000000000001,
+      "easeOut": 0.19999999999999996,
+      "easeInOut": 0.4
+    }
+  },
   "zero_duration_transition_chain": {
     "declared_targets": [
       0.1,

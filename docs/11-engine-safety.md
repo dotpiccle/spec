@@ -1,10 +1,10 @@
 # Engine Safety and Render Profiles
 
-This chapter defines Piccle's platform-independent conformance profile, additional engine render profiles, frequency safety, and resource behavior.
+This chapter defines the Piccle engine's canonical test profile, production render-profile contract, frequency safety, finite-output behavior, and resource preflight.
 
 ## Canonical conformance profile
 
-Every conforming engine MUST provide a canonical test mode with:
+The Piccle engine MUST provide a canonical test mode with:
 
 | Property                     | Canonical value                 |
 | ---------------------------- | ------------------------------- |
@@ -14,7 +14,7 @@ Every conforming engine MUST provide a canonical test mode with:
 | Output sample storage        | IEEE-754 binary32               |
 | Time origin                  | Frame `0`, document time `0 ms` |
 
-Canonical mode may be exposed through diagnostics, tests, command-line tooling, or another engine-defined interface. It does not need to be the engine's normal production profile.
+Canonical mode MUST be reachable by the engine qualification suite. The Rust API surface used to reach it is implementation-defined; canonical mode does not need to be the normal production profile.
 
 Convert any non-negative document-time boundary `m` in milliseconds to a frame at sample rate `r` with:
 
@@ -24,19 +24,19 @@ frame(m) = floor(m × r / 1000 + 0.5)
 
 `m` may be a derived rational boundary, such as the 90% point of a reverb tail. Evaluate the formula in binary64 in canonical mode. At 48 kHz, every integer millisecond is exactly 48 frames.
 
-Engines MUST construct one absolute boundary schedule before rendering. For a layer whose declared start is `S`, every local boundary at offset `c` maps to `frame(S + c)`. A segment from offsets `a` through `b` contains:
+The Piccle engine MUST construct one absolute boundary schedule before rendering. For a layer whose declared start is `S`, every local boundary at offset `c` maps to `frame(S + c)`. A segment from offsets `a` through `b` contains:
 
 ```text
 frame(S + b) - frame(S + a)
 ```
 
-Do not round `a`, `b`, or a segment duration independently. The document cutoff is `frame(D)`, and a reverb output ends at `frame(D + tail_ms)`. Timelines are half-open: `[start_frame, end_frame)`.
+Do not round `a`, `b`, or a segment duration independently. The document cutoff is `frame(D)`. Spatial-effect tails are computed in frames from each effect's parameters and added to that cutoff as defined in [Spatial Effects](07-spatial-effects.md) §Output length. Timelines are half-open: `[start_frame, end_frame)`.
 
 Canonical mode processes source values, filter state, reverb state, coefficients, and controls in binary64. After the final hard clip, convert each left and right sample to binary32 using round-to-nearest, ties-to-even.
 
 ## Additional engine render profiles
 
-An engine MAY provide other render profiles for particular platforms, products, or resource classes. Each such profile:
+The Piccle engine MAY provide production render profiles for particular platforms, products, or resource classes. Every exposed profile:
 
 - MUST declare an integer render sample rate of at least 8000 Hz;
 - MAY use binary32, fixed-point, SIMD, WebAssembly, JavaScript numbers, DSP hardware, or another documented numeric mode;
@@ -46,7 +46,7 @@ An engine MAY provide other render profiles for particular platforms, products, 
 - MUST produce finite, stable output and suppress energy at and above Nyquist; and
 - MUST apply every specified default, contour, gain, state, and signal-flow rule.
 
-Cross-rate and cross-numeric-mode sample equality is not required. Whether an engine renders live, ahead of playback, offline, into a cache, or through another execution strategy is an engine concern and does not change Piccle document semantics or conformance.
+Cross-rate and cross-numeric-mode sample equality is not required. Whether the Piccle engine renders live, ahead of playback, offline, into a cache, or through another execution strategy is implementation-defined and MUST NOT change Piccle document semantics or qualification.
 
 ## Render-profile frequency safety
 
@@ -62,15 +62,15 @@ Canonical mode therefore uses `20000` Hz. The engine clamps instantaneous pitch 
 [20, render_frequency_max]
 ```
 
-It also clamps the fixed `soft` and `sharp` noise-character corners, `reverb.soften_hz`, and `echo.damp_hz` to `render_frequency_max` before calculating their coefficients. Declared document values remain unchanged and valid; the clamp adapts rendering to the profile's available bandwidth.
+It also clamps the fixed `soft` and `sharp` noise-character corners and the `soften_hz` or `damp_hz` field of each applicable `spatial_effects` entry to `render_frequency_max` before calculating coefficients. Declared document values remain unchanged and valid; the clamp adapts rendering to the profile's available bandwidth.
 
-An engine MAY instead report a valid document as unsupported when an output-bandwidth policy cannot represent the document adequately. Output-bandwidth limits affect support, never format validity.
+If an active profile's published output-bandwidth policy cannot represent a document adequately, the engine MUST report the valid document as unsupported. It MUST NOT change format validity.
 
 ## Conformance
 
-A conforming engine passes every normative 48 kHz canonical-profile requirement. It MAY expose any number of additional render profiles.
+The Piccle engine MUST pass every normative 48 kHz canonical-profile requirement and MUST qualify every additional render profile it exposes.
 
-Conformance does not prescribe whether rendering happens during playback, before playback, on the target device, on another processor, or as part of an asset-build pipeline. It describes the engine's accepted documents and rendered output, not its deployment architecture.
+The specification does not prescribe whether rendering happens during playback, before playback, on the target device, on another processor, or in an asset-build pipeline. That deployment choice is implementation-defined; accepted documents and rendered output remain governed by this specification.
 
 ## Determinism classes
 
@@ -93,19 +93,19 @@ The final hard clipper defined in [Output](08-output.md) is mandatory and is the
 
 ## Denormal protection
 
-Engines MUST prevent subnormal values from causing unbounded DSP cost. Flush-to-zero modes, explicit state floors, or equivalent methods are permitted. Denormal handling MUST NOT produce output above `-180 dBFS` and MUST NOT change a declared timeline boundary.
+The Piccle engine MUST prevent subnormal values from causing unbounded DSP cost. Flush-to-zero modes, explicit state floors, or equivalent methods are permitted. Denormal handling MUST NOT produce output above `-180 dBFS` and MUST NOT change a declared timeline boundary.
 
 ## Engine-defined resource limits
 
-Piccle does not impose maximum document duration, layer count, filter count, contour point count, reverb tail, simultaneous voice count, memory, or CPU cost. Engines MAY publish finite limits for these resources.
+Piccle does not impose maximum document duration, layer count, filter count, contour point count, reverb tail, simultaneous voice count, memory, or CPU cost. Each production profile MUST publish finite limits for every resource it bounds.
 
 A document that passes format validation but exceeds a published engine limit is valid but unsupported by that engine. Resource and output-bandwidth limits MUST be checked before allocating render resources and MUST NOT be presented as schema or semantic-validation failures.
 
-Each tone or noise layer active at a frame counts as one voice. If an engine chooses partial playback after exceeding a voice limit, it SHOULD retain earlier array entries first, but partial playback is degraded behavior and MUST be reported to the host.
+Each tone or noise layer active at a frame counts as one voice. If the host explicitly enables partial playback after a voice-limit failure, the engine MUST retain earlier layer-array entries first and MUST report degraded output to the host. Otherwise it MUST return unsupported without rendering.
 
 ## Untrusted input
 
-Engines MUST treat documents as untrusted input. Before rendering, they MUST:
+The Piccle engine MUST treat documents as untrusted input. Before rendering, it MUST:
 
 1. Enforce parser size and nesting limits. If input exceeds them before validity can be established, report a resource-limit rejection.
 2. Reject invalid UTF-8, malformed JSON, and duplicate member names.

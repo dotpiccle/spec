@@ -10,7 +10,7 @@ This chapter defines the normative noise generator. Noise is streamed; Piccle do
 | `character` | string  | —       | **Yes**  | `soft`, `neutral`, or `sharp`.                                     |
 | `seed`      | integer | `0`     | No       | Unsigned 32-bit deterministic seed, from `0` through `4294967295`. |
 
-The generator and all character filters start from their initial state at the layer's `start_ms`. Replaying a layer with the same `character` and `seed` MUST reproduce the same canonical-profile source samples. Two layers with the same character and seed intentionally produce identical source streams; authors SHOULD use different seeds when they want decorrelated texture.
+The generator and all character filters start from their initial state at the layer's `start_ms`. Replaying a layer with the same `character` and `seed` MUST reproduce the same canonical-profile source samples. Two layers with identical character and seed produce identical source streams; decorrelated texture requires different seeds.
 
 ## PCG32 stream
 
@@ -45,11 +45,11 @@ Convert each unsigned result `u` to one binary64 raw sample:
 x = 2 × (u / 4294967296) - 1
 ```
 
-The resulting discrete uniform values lie in `[-1, 1)`. The first non-discarded result supplies sample frame zero. Engines MUST NOT substitute a platform random-number generator.
+The resulting discrete uniform values lie in `[-1, 1)`. The first non-discarded result supplies sample frame zero. The Piccle engine MUST NOT substitute a platform random-number generator.
 
 ## Character filters
 
-All filters below use a zero initial state and the active render profile's `sample_rate`. Canonical mode uses binary64. An engine clamps each fixed character corner to `render_frequency_max` from [Engine Safety](11-engine-safety.md).
+All filters below use a zero initial state and the active render profile's `sample_rate`. Canonical mode uses binary64. The Piccle engine clamps each fixed character corner to `render_frequency_max` from [Engine Safety](11-engine-safety.md).
 
 ### `neutral`
 
@@ -108,4 +108,4 @@ Noise produces one mono channel. The layer's equal-power `balance` stage convert
 
 Canonical 48 kHz renders are deterministic for a given character and seed. Other engine render profiles use the same PCG32 sequence and recompute clamped character coefficients at their declared rates. Cross-rate sample equality is not required.
 
-For implementation quality checks, a noise layer long enough to reach stationary behavior SHOULD measure within 10% of RMS `0.25`. Its spectrum SHOULD follow the stated first-order response within 3 dB per one-third-octave band, excluding bands whose upper edge reaches Nyquist.
+The Piccle engine qualification suite MUST render a noise layer long enough to reach stationary behavior and verify RMS within 10% of `0.25`. It MUST verify the stated first-order response within 3 dB per one-third-octave band, excluding bands whose upper edge reaches Nyquist.

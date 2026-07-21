@@ -1,6 +1,6 @@
 # Test vectors — agent instructions
 
-This directory contains machine-verifiable conformance fixtures. Test vectors verify; examples teach.
+This directory contains machine-verifiable conformance fixtures. Test vectors verify normative behavior; examples demonstrate technical configurations.
 
 Test vectors live under these subdirectories:
 
@@ -16,4 +16,4 @@ For the normative definition of each fixture category, expected outcomes, and co
 
 Every invalid fixture must fail for one primary reason. Do not create a fixture containing many unrelated errors unless it specifically tests multi-error reporting.
 
-A valid fixture should state: what behavior it tests, which schema version applies, expected validation result, and expected semantic result when practical.
+A valid fixture MUST state what behavior it tests, which schema version applies, the expected validation result, and the expected semantic result when one exists.

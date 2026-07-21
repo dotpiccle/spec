@@ -13,8 +13,8 @@ A Piccle document MUST be UTF-8 encoded JSON as defined by [RFC 8259](https://ww
 - Implementations MUST parse decimal numbers with at least IEEE-754 binary64 precision for control calculations. Audio sample storage may use binary32 as defined by the canonical render profile.
 - When a decimal is converted to binary64, use round-to-nearest, ties-to-even. A parser that retains greater precision MUST produce the same binary64 value before canonical control evaluation.
 - `NaN`, `Infinity`, and `-Infinity` tokens are not JSON and MUST fail JSON parsing with code `json.non_finite_number`.
-- A syntactically valid decimal token whose mathematical value cannot be represented as finite IEEE-754 binary64, such as `1e400`, MUST fail JSON parsing with code `json.number_out_of_range`. An engine MUST NOT silently convert it to infinity before validation.
-- JSON Schema's `integer` type is mathematical, not lexical. A JSON number such as `1`, `1.0`, or `1e0` satisfies an integer field because its value has no fractional part. Engines MUST accept all three forms when the value meets the field's range.
+- A syntactically valid decimal token whose mathematical value cannot be represented as finite IEEE-754 binary64, such as `1e400`, MUST fail JSON parsing with code `json.number_out_of_range`. The Piccle engine MUST NOT silently convert it to infinity before validation.
+- JSON Schema's `integer` type is mathematical, not lexical. A JSON number such as `1`, `1.0`, or `1e0` satisfies an integer field because its value has no fractional part. The Piccle engine MUST accept all three forms when the value meets the field's range.
 - Object member order has no semantic meaning. Array order has meaning only where this specification explicitly defines it.
 
 The optional root `$schema` member, when present, MUST equal `https://spec.dotpiccle.com/schema/v1.json`.
@@ -80,7 +80,7 @@ Defaults generally represent an identity or safe baseline:
 - `transition_curve: "linear"` — linear interpolation.
 - `offset_cents: 0` — no detuning.
 - `seed: 0` — the default deterministic noise stream.
-- Root and layer `volume: 1` — unity gain.
+- Root `master_volume_level: 1` and layer `volume: 1` — unity gain.
 
 Fields that choose a sound characteristic, such as source `type`, `wave`, `character`, and reverb fields, have no implicit default unless their field table states one.
 
@@ -136,4 +136,4 @@ These forms share the same output-envelope semantics defined in [Layer Volume](0
 
 ## Forward compatibility
 
-Unknown properties are invalid in v1. A future optional field therefore requires a new Piccle schema version. A newer engine may support both the old and new schema versions, but a v1.0 validator MUST NOT silently accept fields it does not recognize.
+Unknown properties are invalid in v1. A future optional field therefore requires a new Piccle schema version. A newer Piccle engine release MAY support both old and new schema versions, but its v1.0 validator MUST NOT silently accept fields it does not recognize.

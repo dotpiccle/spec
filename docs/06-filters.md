@@ -1,16 +1,16 @@
 # Filters
 
-Filters shape a sound by removing or boosting certain frequency regions. A layer can have zero or more filters applied **in series** -- filter 1's output feeds filter 2, and so on. The spec does not impose a maximum filter count per layer — engines MAY enforce their own limit.
+The `filters` array defines zero or more serial second-order IIR sections on a layer. Each section receives the preceding section's output. The specification imposes no filter-count maximum; each Piccle engine profile MUST publish any filter-count support limit it enforces.
 
 Each filter has a **fixed type** for the whole layer, a `frequencies` array describing how the cutoff moves over time, and a `resonance` value.
 
 ## Filter types
 
-| Type       | What it does                                                         | Use for                                                   |
-| ---------- | -------------------------------------------------------------------- | --------------------------------------------------------- |
-| `lowpass`  | Keeps low frequencies, softens highs. Like a blanket over the sound. | Warm/soft sounds, muffled effects, whooshes that open up. |
-| `highpass` | Keeps high frequencies, removes lows. Makes sound thin/crisp.        | Clicks, ticks, paper sounds, bright effects.              |
-| `bandpass` | Keeps a focused frequency band, removes everything above and below.  | Pops, resonant impacts, telephone-like sounds.            |
+| Type | Transfer-function class | Piccle coefficient form |
+| --- | --- | --- |
+| `lowpass` | Second-order lowpass | RBJ-style lowpass numerator with resonance-derived `Q` |
+| `highpass` | Second-order highpass | RBJ-style highpass numerator with resonance-derived `Q` |
+| `bandpass` | Constant 0 dB peak-gain bandpass | `b0 = α`, `b1 = 0`, `b2 = -α` before `a0` normalization |
 
 ## Filter structure
 
@@ -43,9 +43,9 @@ Each filter has a **fixed type** for the whole layer, a `frequencies` array desc
 | `transition_ms`    | integer | 0        | No       | How long to move from this cutoff to the next. 0 ms or more. Ignored on last entry. |
 | `transition_curve` | string  | `linear` | No       | Shape of the transition. Ignored on last entry.                                     |
 
-## Static filter (one entry)
+## Static cutoff
 
-The most common case -- a single fixed cutoff, like a button click or a notification bell:
+A one-entry frequency contour holds a constant cutoff or center frequency for the layer lifetime:
 
 ```json
 "filters": [
@@ -59,11 +59,11 @@ The most common case -- a single fixed cutoff, like a button click or a notifica
 ]
 ```
 
-_A bandpass filter centered at 2000 Hz with slight resonance -- produces a focused, clicky sound. "A short noise burst, brightened with a bandpass filter -- the everyday button click."_
+_A 2 kHz constant-peak-gain bandpass section with `resonance: 0.2`._
 
-## Filter sweep (two entries)
+## Two-point cutoff trajectory
 
-A filter whose cutoff moves over time, like a whoosh that opens from dull to crisp:
+A two-entry contour produces a time-varying cutoff:
 
 ```json
 "filters": [
@@ -78,7 +78,7 @@ A filter whose cutoff moves over time, like a whoosh that opens from dull to cri
 ]
 ```
 
-_A lowpass filter sweeping from 200 Hz to 8000 Hz over 110 ms -- the cutoff opens up, making the sound go from muffled to bright. "A brightening whoosh -- noise that opens up from dull to crisp."_
+_A lowpass cutoff transitioning exponentially from 200 Hz to 8 kHz over 110 ms._
 
 ## Multi-point filter contour (three-plus entries)
 
@@ -122,19 +122,11 @@ Use multiple filters in the `filters` array when you need different types operat
 ]
 ```
 
-_The lowpass opens from 3000 Hz to 9000 Hz while the highpass stays fixed at 500 Hz. The filter chain removes deep rumble while the lowpass gradually brightens the sound._
+_The lowpass corner sweeps from 3000 Hz to 9000 Hz while the highpass corner remains fixed at 500 Hz, progressively increasing retained upper-band energy while maintaining low-frequency attenuation._
 
-## Resonance
+## Resonance and Q
 
-Resonance controls how much the filter rings at its cutoff frequency. Think of it like a small bell tuned to the cutoff frequency:
-
-- **At `resonance: 0`** there is no bell -- the filter just quietly passes sound through.
-- **At higher values**, the filter starts to ring at its cutoff frequency after the input stops, like a struck bell singing its note.
-- **A notification bell** typically uses `resonance: 0.4-0.6` on a bandpass filter at the bell's pitch.
-
-This is not the same as reverb. Reverb makes the _whole sound_ bounce back like an echo in a room. Resonance makes a filter sustain _one frequency_ like a struck bell. A sound can use both.
-
-The exact Q mapping and coefficients are defined below.
+`resonance` is a normalized control mapped linearly to quality factor `Q` over `[0.707, 12]`. Increasing `Q` narrows the transition bandwidth and increases the pole-pair decay time and response magnitude near cutoff for lowpass/highpass sections. For the constant-peak-gain bandpass form, increasing `Q` narrows bandwidth while retaining 0 dB peak gain. The exact mapping and coefficients are defined below.
 
 ## Timing rules
 
@@ -173,6 +165,6 @@ y[n] = b0×x[n] + b1×x[n-1] + b2×x[n-2]
        - a1×y[n-1] - a2×y[n-2]
 ```
 
-In the canonical render profile, evaluate the control for frame `n`, compute that frame's coefficients, and then process input sample `x[n]`. A moving cutoff is recomputed for every sample frame. Other engine render profiles use their clamped render frequency and MAY use a numerically stable optimization when they preserve the declared contour timing and finite, stable output. Guidance for avoiding zipper noise is non-normative; see [Implementer Notes](13-implementer-notes.md).
+In the canonical render profile, evaluate the control for frame `n`, compute that frame's coefficients, and then process input sample `x[n]`. A moving cutoff is recomputed for every sample frame. Production render profiles use their clamped render frequency and MAY optimize coefficient evaluation only when they preserve declared contour timing and finite, stable output. The required production-profile constraints are in [Piccle Engine DSP Runtime](13-implementer-notes.md) §Dynamic biquads.
 
 Frequency clamping and numeric requirements are defined in [Engine Safety and the Canonical Render Profile](11-engine-safety.md).

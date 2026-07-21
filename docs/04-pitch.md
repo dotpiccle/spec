@@ -1,6 +1,6 @@
 # Pitch
 
-Pitch lives inside a tone source (see [Sources](03-sources.md)). It describes how the pitch of a tone changes over time using a `frequencies` array.
+Pitch is the fundamental-frequency control object of a tone source (see [Sources](03-sources.md)). It defines a piecewise time-varying frequency trajectory through the `frequencies` array.
 
 Pitch is always a `frequencies` array -- there are no static shortcuts. A steady tone is a one-entry array; a glide is two entries; a multi-point contour is three or more.
 
@@ -31,9 +31,9 @@ _Fields inside each `frequencies[]` entry:_
 | `transition_ms`    | integer | 0        | No       | How long to move from this pitch to the next. 0 ms or more. Ignored on the last entry. |
 | `transition_curve` | string  | `linear` | No       | Shape of the transition. See curves below. Ignored on the last entry.                  |
 
-## Static pitch (one entry)
+## Stationary fundamental (one entry)
 
-The most common case -- a single steady pitch, like a doorbell ding or notification beep:
+A single entry produces a stationary fundamental frequency:
 
 ```json
 "pitch": {
@@ -43,11 +43,11 @@ The most common case -- a single steady pitch, like a doorbell ding or notificat
 }
 ```
 
-_A steady tone at 1046.5 Hz (C6) -- a doorbell ding._
+_A stationary fundamental at 1046.5 Hz._
 
-## Simple glide (two entries)
+## Two-point frequency transition
 
-A pitch that moves from one frequency to another, like a slide whistle:
+A two-entry contour transitions from the first fundamental-frequency target to the second:
 
 ```json
 "pitch": {
@@ -58,13 +58,13 @@ A pitch that moves from one frequency to another, like a slide whistle:
 }
 ```
 
-_A pitch gliding from 620 Hz to 430 Hz over 50 ms with an exponential curve -- like a droplet falling._
+_An exponential fundamental-frequency transition from 620 Hz to 430 Hz over 50 ms._
 
-The exponential curve is natural for pitch drops. See [Transition Curves](10-curves.md) for the exact formula and behavior.
+Exponential interpolation produces constant frequency ratios over equal time intervals. See [Transition Curves](10-curves.md) for the exact formula.
 
 ## Multi-point contour (three or more entries)
 
-For complex pitch shapes, like a droplet that bounces or an error sound that goes up then down:
+Three or more entries define a multi-segment fundamental-frequency trajectory:
 
 ```json
 "pitch": {
@@ -82,11 +82,11 @@ _A three-point pitch contour: 620 Hz drops to 430 Hz (exponential), then to 310 
 
 Pitch entries follow the standard contour entry timing rules defined in [Conventions](02-conventions.md). The 20 Hz minimum frequency keeps all exponential inputs valid. An exponential target equal to the start frequency produces no change.
 
-## Offset cents (chorus and detuning)
+## Cents offset and detuning
 
-The `offset_cents` field adds a small pitch shift to every entry in the `frequencies` array. It is measured in **cents**, where 100 cents = 1 semitone (one piano key).
+The `offset_cents` field applies an equal-tempered frequency ratio to the interpolated contour. One hundred cents equals one semitone and 1200 cents equals one octave.
 
-Use `offset_cents` to create chorus or beating effects: two tone layers at the same pitch but with different offsets produce a warm, shimmering sound.
+Parallel tone layers with small non-zero relative offsets produce deterministic beating at the difference frequency. Larger offsets produce explicit interval transposition.
 
 ```json
 {
@@ -120,9 +120,9 @@ Use `offset_cents` to create chorus or beating effects: two tone layers at the s
 }
 ```
 
-_Two identical sine tones at 528 Hz, one shifted up by 12 cents -- creates a warm, drifting chorus effect._
+_Two 528 Hz sinusoidal layers with a relative detuning of 12 cents._
 
-For every sample frame, engines MUST apply pitch operations in this order:
+For every sample frame, the Piccle engine MUST apply pitch operations in this order:
 
 1. Evaluate the `frequencies` contour to obtain `contour_hz`.
 2. Apply the cents offset:
@@ -135,29 +135,3 @@ For every sample frame, engines MUST apply pitch operations in this order:
 4. Use the clamped result for oscillator phase integration.
 
 Do not clamp each declared target before interpolation, and do not apply `offset_cents` after the render-profile clamp. This order is observable near the format and Nyquist boundaries.
-
-## Note-to-Hz quick reference (non-normative)
-
-For convenience, here are common musical notes and their frequencies. Piccle uses Hz everywhere (not note names), but this table helps if you think in notes.
-
-| Note          | Hz      |
-| ------------- | ------- |
-| C4 (middle C) | 261.63  |
-| D4            | 293.66  |
-| E4            | 329.63  |
-| F4            | 349.23  |
-| G4            | 392.00  |
-| A4 (tuning A) | 440.00  |
-| B4            | 493.88  |
-| C5            | 523.25  |
-| D5            | 587.33  |
-| E5            | 659.25  |
-| F5            | 698.46  |
-| G5            | 783.99  |
-| A5            | 880.00  |
-| C6            | 1046.50 |
-| E6            | 1318.51 |
-| A6            | 1760.00 |
-| C7            | 2093.00 |
-
-Each octave up doubles the frequency. To find any note frequency: `freq = 440 * 2^((note_semitones_from_A4) / 12)`.

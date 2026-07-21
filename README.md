@@ -2,17 +2,17 @@
   <img alt="piccle" src="assets/banner.png" width="600">
 </p>
 
-<p align="center"><strong>Building micro-audio made easy.</strong></p>
+<p align="center"><strong>Declarative synthesis and DSP semantics for UI micro-audio.</strong></p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/spec-v1.0.0--rc.1-orange?style=flat-square" alt="version candidate">
+  <img src="https://img.shields.io/badge/spec-v1.0.0-brightgreen?style=flat-square" alt="version 1.0.0">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="license"></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/status-release%20candidate-orange?style=flat-square" alt="release candidate status"></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/status-stable-brightgreen?style=flat-square" alt="stable status"></a>
 </p>
 
 <p align="center">
   <a href="#what-is-piccle">What is Piccle?</a> ·
-  <a href="#quick-start">Quick start</a> ·
+  <a href="#minimal-document">Minimal document</a> ·
   <a href="docs/00-overview.md">Specification</a> ·
   <a href="examples/">Examples</a> ·
   <a href="schemas/v1.json">JSON Schema</a> ·
@@ -23,7 +23,7 @@
 
 ## What is Piccle?
 
-Piccle is a product that makes building micro-audio for user interfaces across platforms easy — from browsers and desktop applications to mobile devices, consoles, vehicles, kiosks, and embedded appliances. This repository is the specification for the Piccle format.
+Piccle is a declarative format for finite procedural UI-audio signals across browsers, desktop and mobile systems, consoles, vehicles, kiosks, and embedded targets. This repository is the normative technical specification for the format.
 
 A Piccle asset contains structured synthesis instructions rather than recorded audio:
 
@@ -42,10 +42,9 @@ A Piccle asset contains structured synthesis instructions rather than recorded a
 }
 ```
 
-This repository is the specification for the Piccle product. It contains the normative specification, JSON Schema, authoring examples, and validation fixtures. It does not contain a playback engine — Piccle's reference engine lives in a separate repository. Anyone may implement their own engine using this specification.
+This repository contains the normative DSP specification, JSON Schema, technical authoring examples, qualification fixtures, numeric aids, and the execution contract for the official [Piccle Rust engine](https://github.com/dotpiccle/engine-rs). It targets audio engineers, engine maintainers, validation/tooling authors, and AI infrastructure. Introductory and consumer-facing documentation belongs on a separate documentation surface.
 
-> [!IMPORTANT]
-> Piccle v1 is a release candidate. Do not describe the format as stable until the canonical schema URL, clean-room implementation, and listening gates in [Conformance](docs/14-conformance.md) are complete.
+Piccle v1.0 is stable. The authoritative release artifact is the `v1.0.0` repository tag; website publication is optional and is not part of format validity.
 
 ## V1 scope
 
@@ -56,7 +55,7 @@ Piccle v1 is designed for finite, one-shot UI sounds:
 - short impacts, clicks, chimes, textures, and whooshes;
 - layered tone and deterministic noise synthesis.
 
-The format is platform-neutral. Piccle's reference engine includes a canonical 48 kHz test mode, and any conforming engine does the same. Desktop, browser, mobile, console, vehicle, kiosk, and embedded engines use the same documents and may publish different render profiles and resource limits. Whether an engine renders live, ahead of playback, offline, or into a cache is an implementation choice.
+The format is platform-neutral. The Piccle engine provides a canonical 48 kHz test mode and may expose additional production render profiles for desktop, browser, mobile, console, vehicle, kiosk, and embedded integrations. Every profile uses the same document semantics. Execution placement—live, ahead of playback, offline, or cached—is internal to the engine and cannot change validation or rendered intent.
 
 V1 does not define looping, continuous progress playback, host-controlled parameters, gesture control, theming inputs, modulation, speech, recorded samples, or long-form music. Hosts may replay an asset, but seamless looping is outside the format contract.
 
@@ -67,7 +66,7 @@ document
 ├── piccle          "1.0"
 ├── duration_ms     optional explicit cutoff
 ├── master_volume_level  final master gain
-├── reverb          { amount, tail_ms, soften_hz }
+├── spatial_effects[]  parallel reverb and/or echo entries
 └── layers[]
     ├── id, start_ms, duration_ms
     ├── source
@@ -81,10 +80,10 @@ document
 The normative signal flow is:
 
 ```text
-source → filters → layer volume → balance → mix → reverb → root master_volume_level → hard clip → platform adaptation
+source → filters → layer volume → balance → dry mix → parallel spatial effects → root master_volume_level → hard clip → platform adaptation
 ```
 
-## Quick start
+## Minimal document
 
 The shortest valid tone document is:
 
@@ -105,43 +104,44 @@ The shortest valid tone document is:
 }
 ```
 
-Optional fields use documented defaults. Schema `default` annotations do not modify JSON; engines apply the defaults defined by the normative chapters.
+Optional fields use documented defaults. Schema `default` annotations do not modify JSON; the Piccle engine applies the defaults defined by the normative chapters.
 
 ## Documentation paths
 
-| Audience and goal                               | Start here                                                                                    |
-| ----------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Learn the format model                          | [Overview](docs/00-overview.md)                                                               |
-| Implement parsing and the document model        | [Document Structure](docs/01-document-structure.md) and [Conventions](docs/02-conventions.md) |
-| Implement DSP behavior                          | [Sources](docs/03-sources.md), then chapters 04–11                                            |
-| Author common UI sounds                         | [Cookbook](docs/12-cookbook.md)                                                               |
-| Review non-normative DSP guidance               | [Implementer Notes](docs/13-implementer-notes.md)                                             |
-| Implement validation and conformance reporting  | [Conformance](docs/14-conformance.md)                                                         |
-| Build an engine from the complete specification | [Engine Build Guide](docs/15-engine-build-guide.md)                                           |
-| Propose a format change                         | [Contributing](CONTRIBUTING.md)                                                               |
-| Prepare an RC or stable release                 | [Release Checklist](RELEASE_CHECKLIST.md)                                                     |
+| Technical goal                                             | Start here                                                                                    |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Review the format scope and signal model                   | [Overview](docs/00-overview.md)                                                               |
+| Implement parsing and the resolved document model          | [Document Structure](docs/01-document-structure.md) and [Conventions](docs/02-conventions.md) |
+| Implement source, control, filter, mix, and output DSP      | [Sources](docs/03-sources.md), then chapters 04–11                                            |
+| Inspect non-normative synthesis and sound-design patterns  | [Technical Authoring Patterns](docs/12-cookbook.md)                                           |
+| Implement required runtime algorithms and state            | [Piccle Engine DSP Runtime](docs/13-implementer-notes.md)                                     |
+| Implement validation results and qualification reporting   | [Conformance](docs/14-conformance.md)                                                         |
+| Implement and qualify `dotpiccle/engine-rs`                | [Piccle Engine Implementation Contract](docs/15-engine-build-guide.md)                        |
+| Propose a format change                                    | [Contributing](CONTRIBUTING.md)                                                               |
+| Prepare an RC or stable release                            | [Release Checklist](RELEASE_CHECKLIST.md)                                                     |
 
 When artifacts disagree, authority is: normative `docs/` chapters, schema, test vectors, examples, then README.
 
 ## Examples
 
-The official examples are small authoring demonstrations, not normative audio renders.
+The official examples are compact synthesis and signal-processing configurations, not normative PCM renders.
 
 | Example                                                                                     | Intent                                    |
 | ------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| [`button-click.json`](examples/button-click.json)                                           | Seeded sharp noise and highpass filtering |
-| [`toggle-on.json`](examples/toggle-on.json) / [`toggle-off.json`](examples/toggle-off.json) | Rising and falling toggle feedback        |
-| [`success.json`](examples/success.json)                                                     | Staggered rising confirmation tones       |
-| [`error.json`](examples/error.json)                                                         | Muted impact and descending tones         |
-| [`notification.json`](examples/notification.json)                                           | Detuned bell layers and reverb            |
-| [`transition.json`](examples/transition.json)                                               | Noise and a moving lowpass filter         |
-| [`sparkle.json`](examples/sparkle.json)                                                     | Four staggered tones                      |
-| [`droplet.json`](examples/droplet.json)                                                     | Multi-point pitch motion                  |
-| [`bloom.json`](examples/bloom.json)                                                         | Slow detuned swell                        |
-| [`loading.json`](examples/loading.json)                                                     | One-shot “work started” cue, not a loop   |
-| [`ready.json`](examples/ready.json)                                                         | Tick and two harmonic tones               |
-| [`whisper.json`](examples/whisper.json)                                                     | Single soft-noise swell                   |
-| [`page.json`](examples/page.json)                                                           | Layered paper texture and glass tick      |
+| [`button-click.json`](examples/button-click.json)                                           | Seeded noise excitation through a static highpass biquad |
+| [`toggle-on.json`](examples/toggle-on.json) / [`toggle-off.json`](examples/toggle-off.json) | Opposed pitch-contour trajectories                     |
+| [`success.json`](examples/success.json)                                                     | Staggered pitched partials with reverb                 |
+| [`error.json`](examples/error.json)                                                         | Band-limited transient plus descending tone layers     |
+| [`notification.json`](examples/notification.json)                                           | Detuned tonal layers with parallel reverb              |
+| [`transition.json`](examples/transition.json)                                               | Noise excitation with a time-varying lowpass cutoff    |
+| [`sparkle.json`](examples/sparkle.json)                                                     | Four asynchronously scheduled tonal layers             |
+| [`droplet.json`](examples/droplet.json)                                                     | Multi-segment pitch contour                             |
+| [`bloom.json`](examples/bloom.json)                                                         | Detuned tonal onset and long envelope                   |
+| [`loading.json`](examples/loading.json)                                                     | Finite broadband onset with tonal sustain |
+| [`ready.json`](examples/ready.json)                                                         | Transient plus two harmonic partials      |
+| [`whisper.json`](examples/whisper.json)                                                     | Lowpass-shaped deterministic noise envelope            |
+| [`page.json`](examples/page.json)                                                           | Layered filtered-noise and tonal transients             |
+| [`echo.json`](examples/echo.json)                                                           | Lowpass-feedback comb response                         |
 
 ## Validation
 
@@ -163,37 +163,37 @@ The command:
 
 CI runs the same command.
 
-## Building an engine
+## Implementing the Piccle engine
 
-Most users will use Piccle's reference engine. If you want to build your own engine — for a new platform, language, or use case — give an implementation agent this complete repository and a target such as:
+The official implementation is [`dotpiccle/engine-rs`](https://github.com/dotpiccle/engine-rs). Give an implementation agent both repositories and the target-platform constraints:
 
-> Implement a conforming Piccle engine for `<platform>` using `<language and integration constraints>`. Follow the Engine Build Guide, implement canonical mode and every v1 primitive, and provide the required conformance evidence.
+> Implement Piccle v1 in `dotpiccle/engine-rs` for `<target integration>`. Treat the Piccle specification as authoritative for parsing, validation, default resolution, frame scheduling, DSP calculations, state initialization, signal flow, error classification, and qualification. Do not invent behavior that is absent from the specification.
 
-The [Engine Build Guide](docs/15-engine-build-guide.md) provides the task order and definition of done. Normative behavior remains in chapters 00–11 and 14. Live, offline, cached, and ahead-of-playback execution are engine choices.
+The [Piccle Engine Implementation Contract](docs/15-engine-build-guide.md) gives the mandatory work sequence and definition of done. Required behavior lives in chapters 00–11 and 14; chapter 13 defines runtime algorithms, state, preparation, and render-loop invariants. Private Rust structure and platform I/O remain owned by the engine repository.
 
-An implementation question that requires inventing Piccle behavior is a specification defect. Resolve it here rather than silently choosing behavior in one engine.
+An implementation question that requires inventing observable Piccle behavior is a specification defect. Resolve it here before encoding behavior in `engine-rs`.
 
 ## Conformance and engine limits
 
-Piccle's reference engine and any independent engine follow the same processing model, which has five distinct outcomes:
+The Piccle engine follows one processing model with five distinct outcomes:
 
 1. resource-rejected before parsing completes;
 2. malformed JSON;
 3. schema-invalid;
 4. semantically invalid;
-5. valid but unsupported by a particular engine's published render limits.
+5. valid but unsupported by the active Piccle engine profile's published limits.
 
-Piccle v1 leaves capacity limits to engines. That means format validity is portable, but the ability to render an unusually large valid document is capacity-dependent. Engines must report unsupported documents separately from invalid documents.
+Piccle v1 separates format validity from profile capacity. The Piccle engine MUST report a valid document that exceeds an active profile limit as unsupported, never invalid.
 
-The repository document fixtures verify validation behavior, non-PCM numeric aids check individual formulas, and behavior aids check document-level frame schedules. They do not, by themselves, prove audible rendering conformance; see [Conformance](docs/14-conformance.md).
+The repository document fixtures verify validation behavior, non-PCM numeric aids check individual formulas, and behavior aids check document-level frame schedules. They do not, by themselves, prove complete engine qualification; see [Conformance](docs/14-conformance.md).
 
 ## Versioning
 
 | Document version | Repository status | Schema                               |
 | ---------------- | ----------------- | ------------------------------------ |
-| `1.0`            | Release candidate | [`schemas/v1.json`](schemas/v1.json) |
+| `1.0`            | Stable (`v1.0.0`) | [`schemas/v1.json`](schemas/v1.json) |
 
-Documents use a `major.minor` `piccle` value. Repository tags use semantic versions. The first stable tag will be `v1.0.0`; until then, release candidates use tags such as `v1.0.0-rc.1`.
+Documents use a `major.minor` `piccle` value. Repository tags use semantic versions. The stable Piccle v1 specification is tagged `v1.0.0`.
 
 Published stable schemas are immutable. See [Contributing](CONTRIBUTING.md) for compatibility and release policy.
 

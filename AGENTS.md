@@ -2,11 +2,13 @@
 
 ## 1. Mission
 
-You are working in the specification repository for **Piccle** — the declarative micro-audio format. This repository defines what makes a valid Piccle document and how conforming engines interpret it.
+You are working in the specification repository for **Piccle** — the declarative micro-audio format. This repository defines what makes a valid Piccle document and exactly how the official Piccle engine parses, validates, schedules, and renders it.
 
-The Piccle format describes short procedural audio experiences: UI feedback, transitions, notifications, confirmations, errors, and other audio micro-interactions.
+The Piccle format describes short procedural audio signals for UI feedback, transitions, notifications, confirmations, errors, and other audio micro-interactions.
 
-This repository does **not** implement a playback engine — Piccle's reference engine lives in a separate repository.
+This repository is technical infrastructure for audio engineers, DSP engineers, maintainers of [`dotpiccle/engine-rs`](https://github.com/dotpiccle/engine-rs), validation-tool authors, and AI systems operating on the normative format. Consumer-facing tutorials and simplified sound-design documentation live outside this repository.
+
+This repository does **not** contain playback code. The official implementation lives in [`dotpiccle/engine-rs`](https://github.com/dotpiccle/engine-rs), and its externally observable document, validation, timing, DSP, and output behavior is defined here.
 
 See `docs/00-overview.md` for the full mission, product promise, and glossary.
 
@@ -37,9 +39,9 @@ The specification, schema, examples, and changelog must remain synchronized.
 
 ### Scope of this repository
 
-Changes belong here when they affect the Piccle format itself: top-level document structure, field names/types/defaults/constraints, source/oscillator/envelope/filter/effect/modulation/sequencing/timing semantics, validation behavior, compatibility requirements, versioning rules, normative terminology, official examples, conformance fixtures, format evolution proposals, and specification changelogs.
+Changes belong here when they affect the Piccle format or required engine behavior: top-level document structure, field names/types/defaults/constraints, source/oscillator/envelope/filter/effect/modulation/sequencing/timing semantics, validation behavior, calculation order, DSP topology, state initialization, tolerances, compatibility requirements, versioning rules, normative terminology, official examples, qualification fixtures, format evolution proposals, and specification changelogs.
 
-Changes do not belong here when they are specific to one implementation: Engine internals, Android/iOS playback code, Flutter bindings, platform-specific optimizations, engine-specific public APIs, application integration code, implementation-specific benchmarks, or bugs that do not reveal an ambiguity or defect in the specification. Implementation-specific work belongs in the appropriate engine or SDK repository.
+Changes do not belong here when they affect only private code structure: Rust module layout, crate APIs, Android/iOS playback adapters, Flutter bindings, platform I/O, implementation-specific optimizations, application integration code, or benchmarks. Those changes belong in the engine or SDK repository unless they change behavior defined by this specification.
 
 If an implementation issue exposes ambiguity in the format, clarify the format here and fix the implementation separately.
 
@@ -73,13 +75,15 @@ piccle-spec/
 | What                                                                                              | Where                                                  |
 | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
 | Contribution workflow, change categories, versioning, compatibility checklist, definition of done | `CONTRIBUTING.md`                                      |
-| Normative specification                                                                           | `docs/00-overview.md` through `docs/14-conformance.md` |
+| Normative format and engine contract                                                               | `docs/00-overview.md` through `docs/15-engine-build-guide.md`, except the explicitly non-normative technical patterns in chapter 12 |
 | JSON naming, units, timing, contours, normative-language glossary                                 | `docs/02-conventions.md`                               |
 | Schema-authoring rules                                                                            | `schemas/AGENTS.md`                                    |
 | Example-authoring rules                                                                           | `examples/AGENTS.md`                                   |
 | Conformance and test-vector rules                                                                 | `docs/14-conformance.md` and `test-vectors/AGENTS.md`  |
 | Doc-authoring rules (single canonical source, writing style, audio semantics)                     | `docs/AGENTS.md`                                       |
 | Engine safety, resource limits, render profiles                                                   | `docs/11-engine-safety.md`                             |
+| Required DSP runtime algorithms and state                                                         | `docs/13-implementer-notes.md`                         |
+| Official engine implementation and qualification contract                                        | `docs/15-engine-build-guide.md`                        |
 | Validation gate                                                                                   | `python3 scripts/validate.py` (see `README.md`)        |
 
 ## 4. Design principles
@@ -92,18 +96,18 @@ A Piccle document describes the intended sound. It must not contain executable c
 
 Prefer structured, bounded configuration over expressions, scripts, or implementation-specific instructions.
 
-### 4.2 AI-friendly
+### 4.2 Machine-explicit
 
-Field names and structures should be predictable, explicit, and easy to generate correctly.
+Field names and structures must be predictable, explicit, and mechanically generatable. Optimize for unambiguous parsing, validation, synthesis, and automated authoring rather than introductory readability.
 
 Prefer:
 
-- Clear words over obscure audio engineering abbreviations.
+- Established audio-engineering and DSP terminology.
 - Consistent object shapes.
 - Explicit units.
 - Enumerated values where the valid set is finite.
 - Reusable definitions.
-- Helpful schema descriptions.
+- Technically precise schema descriptions.
 - Small, focused examples.
 
 Avoid:
@@ -115,11 +119,11 @@ Avoid:
 - Values that require undocumented inference.
 - Ambiguous unitless numbers.
 
-### 4.3 Human-readable
+### 4.3 Audio-engineering native
 
-A developer should be able to understand the broad behavior of a Piccle asset by reading its JSON.
+An audio engineer or DSP implementer should be able to infer the signal topology, control trajectories, gain staging, temporal boundaries, and spatial processing by inspecting a Piccle document.
 
-Do not optimize for a few bytes at the cost of readability. Transport compression can be handled separately.
+Use standard terminology such as oscillator, phase accumulator, spectral centroid, biquad, Q, RT60, FDN, impulse response, wet path, contour, gain, and Nyquist without replacing it with consumer analogies. Define Piccle-specific terms and mathematically ambiguous conventions, but do not teach foundational audio engineering. Do not optimize for a few bytes at the cost of technical legibility; transport compression is separate.
 
 ### 4.4 Portable
 
@@ -129,7 +133,7 @@ Do not expose platform-specific concepts in the core format.
 
 ### 4.5 Deterministic where practical
 
-Compatible engines should produce perceptually equivalent output from the same document.
+The Piccle engine MUST produce the defined output from a document in every supported render profile.
 
 When exact sample-level equivalence is impractical, the specification must define:
 
@@ -171,7 +175,7 @@ Before adding a new concept, determine whether existing primitives can represent
 
 ### 4.9 Perceptual value over theoretical completeness
 
-Piccle exists to produce polished micro-audio.
+Piccle exists to produce perceptually controlled micro-audio.
 
 Prioritize features that materially improve UI sound design over features added only for completeness or parity with professional synthesizers.
 
@@ -186,10 +190,17 @@ When working in this repository:
 - Do not silently normalize inconsistent terminology; investigate it.
 - Do not modify published historical versions casually.
 - Do not add implementation-specific requirements to the core format.
+- Treat “engine” in normative prose as the official Piccle engine in `dotpiccle/engine-rs`; do not write for a hypothetical ecosystem of independent implementations.
+- State required calculations, state initialization, processing order, error behavior, and tolerances directly. Do not substitute recommendations when observable behavior is intended.
+- Mark internal choices as implementation-defined only when they cannot affect specified output or validation behavior.
 - Do not duplicate normative rules across many files when a canonical section can be referenced.
 - Do not create speculative abstractions without an immediate format need.
 - Do not add fields merely because another audio format has them.
 - Prefer explicit TODOs or open questions over pretending an unresolved behavior is defined.
+- Assume the reader understands digital audio, synthesis, filtering, gain staging, envelopes, sample frames, and spectral analysis.
+- Use canonical audio-engineering and DSP jargon when it is more precise than general-language paraphrase.
+- Do not add beginner analogies, consumer-device metaphors, note-frequency primers, or tutorial prose to the normative specification.
+- Keep simplified end-user and introductory authoring documentation outside this repository.
 
 When information is missing, inspect existing repository conventions first.
 
@@ -215,10 +226,10 @@ Add subdirectory AGENTS.md files only when those directories develop specialized
 
 ## 7. Final principle
 
-The quality of Piccle depends on the reference engine and any independent engine interpreting the same document consistently.
+The quality of Piccle depends on this repository and `dotpiccle/engine-rs` remaining one synchronized product contract.
 
 Optimize every change for:
 
-> Clear documents, predictable generation, safe validation, portable playback, and perceptually expressive micro-audio.
+> Technically exact documents, predictable generation, safe validation, portable DSP behavior, and perceptually expressive micro-audio.
 
 When forced to choose between a clever format and a clear format, choose the clear format.

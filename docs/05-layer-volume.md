@@ -1,24 +1,24 @@
-# Volume
+# Layer Volume and Amplitude Envelope
 
-The `volume` field is the complete loudness description for a **layer** -- how loud the sound is and how that loudness changes over time. It exists in two forms.
+The layer `volume` field defines a linear-amplitude control signal applied after the serial filter chain and before equal-power panning. It accepts either a scalar shorthand or an object-form piecewise envelope.
 
 > **Note:** The document root has a separate `master_volume_level` field (a single 0–1 number representing final post-mix gain). Unlike layer `volume`, it does **not** accept a contour object. See [Output](08-output.md#root-volume) for the root field's definition. This chapter covers only the layer `volume` field.
 
-## Form 1: Number shorthand (steady level)
+## Scalar shorthand
 
-A plain number means the layer plays at a constant level for its entire duration, with a fast anti-click fade-out:
+A number defines a constant base gain with the normative terminal linear fade:
 
 ```json
 "volume": 0.4
 ```
 
-_A steady tone at 40% loudness. Equivalent to: `{"fade_in": {"ms": 0}, "fade_out": {"ms": 5}, "levels": [{"level": 0.4}]}`._
+_A linear-amplitude gain of 0.4, equivalent to `{"fade_in": {"ms": 0}, "fade_out": {"ms": 5}, "levels": [{"level": 0.4}]}`._
 
-This is the 90% case -- steady tones, beeps, and hums that do not change loudness.
+Use the shorthand when no intermediate amplitude targets or non-linear terminal curve are required.
 
-## Form 2: Object contour (changing level)
+## Object-form envelope
 
-For sounds that change loudness over time -- bells that strike then ring, clicks that punch then fade, pads that swell -- use the object form:
+The object form defines fade-in, ordered level segments, and fade-out explicitly:
 
 ```json
 "volume": {
@@ -31,7 +31,7 @@ For sounds that change loudness over time -- bells that strike then ring, clicks
 }
 ```
 
-_A bell-like contour: fades in over 2 ms, strikes at 40%, (exponentially) settles to 8% over 35 ms, holds there, then fades out over 200 ms._
+_A 2 ms attack to 0.4, 35 ms exponential decay to 0.08, sustain at 0.08, and 200 ms exponential release._
 
 ### Object fields
 
@@ -39,20 +39,20 @@ _A bell-like contour: fades in over 2 ms, strikes at 40%, (exponentially) settle
 | ---------- | ------ | ------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `fade_in`  | object | `{"ms": 0, "curve": "linear"}` | No       | Fade-in from silence to the first level. Object with `ms` (duration, 0 or more) and optional `curve`.                                             |
 | `fade_out` | object | `{"ms": 5, "curve": "linear"}` | No       | Fade-out from the last level to silence. Object with `ms` (duration, 0 or more) and optional `curve`. The 5 ms default prevents an audible click. |
-| `levels`   | array  | --                             | **Yes**  | One or more entries describing the loudness contour. Each entry is described below.                                                               |
+| `levels`   | array  | --                             | **Yes**  | One or more ordered linear-amplitude targets. Each entry is described below.                                                                       |
 
 ### Level entry fields
 
 | Field              | Type    | Default  | Required | Description                                                                                                                                                        |
 | ------------------ | ------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `level`            | number  | --       | **Yes**  | Target loudness at this point. 0-1. Always a plain number.                                                                                                         |
+| `level`            | number  | --       | **Yes**  | Target linear-amplitude gain in [0, 1]. Always a scalar number.                                                                                                    |
 | `hold_ms`          | integer | 0        | No       | How long to hold at this level before transitioning to the next. 0 ms or more. Ignored on the last entry (the layer holds at the last level until the layer ends). |
 | `transition_ms`    | integer | 0        | No       | How long to move from this level to the next. 0 ms or more. Ignored on the last entry (the fade-out handles the ending).                                           |
 | `transition_curve` | string  | `linear` | No       | Shape of the transition to the next level. Ignored on the last entry.                                                                                              |
 
-## One level (steady tone)
+## Single-level envelope
 
-A single level entry with no transition fields produces a steady loudness:
+A single level entry with no transition fields produces stationary gain:
 
 ```json
 "volume": {
@@ -65,9 +65,9 @@ A single level entry with no transition fields produces a steady loudness:
 
 _Equivalent to the shorthand `"volume": 0.3`._
 
-## Two levels (ADSR-style)
+## Two-level attack-decay-sustain-release envelope
 
-Two levels reproduce the classic attack-decay-sustain-release shape found in most UI sounds:
+Two levels define attack, peak hold, decay, sustain, and terminal release segments:
 
 ```json
 "volume": {
@@ -80,9 +80,9 @@ Two levels reproduce the classic attack-decay-sustain-release shape found in mos
 }
 ```
 
-_A sound that snaps to 50%, holds for 5 ms, exponentially decays to 10% over 50 ms, then fades out over 200 ms._
+_A 2 ms attack to 0.5, 5 ms peak hold, 50 ms exponential decay to a 0.1 sustain level, and 200 ms release._
 
-## Three or more levels (complex contours)
+## Multi-segment envelope
 
 For hit-dip-rise-fall or other complex shapes, use three or more levels:
 
@@ -98,7 +98,7 @@ For hit-dip-rise-fall or other complex shapes, use three or more levels:
 }
 ```
 
-_A sharp hit to 60%, immediate dip to 20%, exponential rise to 40%, hold for the remaining time, then fade out._
+_A three-target amplitude trajectory followed by the declared terminal fade._
 
 ## Layer-envelope algorithm (normative)
 
@@ -117,18 +117,16 @@ fade_start_ms = E - min(fade_out.ms, L)
 O = frame(E) - frame(fade_start_ms)
 ```
 
-This absolute-boundary subtraction is mandatory. Engines MUST NOT calculate `I`, `O`, or `T` by rounding each duration independently.
+This absolute-boundary subtraction is mandatory. The Piccle engine MUST NOT calculate `I`, `O`, or `T` by rounding each duration independently.
 
-Let `c_in(t)` be the fade-in curve function and `c_out(t)` be the fade-out curve function for `t` in `[0, 1)`, as defined in [Curve Formulas](10-curves.md#curve-formulas). For `linear`, `easeIn`, `easeOut`, and `easeInOut`, `c(0) = 0` and `c(1) = 1`. For `exponential`, the start or target may be near-zero per the epsilon rule in [Engine Safety](11-engine-safety.md).
-
-For local layer frame `n`, where `0 <= n < T`, fade-out gain is:
+Let `curve(start, target, t)` denote the selected interpolation formula from [Curve Formulas](10-curves.md#curve-formulas), evaluated for `t` in `[0, 1)`. For local layer frame `n`, where `0 <= n < T`, the object-form envelope value during fade-out is:
 
 ```text
-1                            when O = 0 or n < T-O
-c_out((n - (T-O)) / O)      otherwise
+held_level                                                     when O = 0 or n < T-O
+curve(held_level, 0, (n - (T-O)) / O)                         otherwise
 ```
 
-For `I > 0`, local layer frame `n < I` uses `c_in(n / I)` multiplied by the first level. The first level becomes exact at frame `I`. Fade-in and fade-out cannot overlap in an object-form contour because such a schedule is semantically invalid.
+For `I > 0`, local layer frame `n < I` uses `curve(0, first_level, n / I)`. The first level becomes exact at frame `I`. Fade-in and fade-out cannot overlap in an object-form contour because such a schedule is semantically invalid. For numeric shorthand, use the same rule with `held_level` equal to the shorthand number and `curve` equal to `linear`.
 
 If the document root truncates a layer, the layer envelope is evaluated only through the truncation boundary; see [Output](08-output.md).
 
@@ -136,9 +134,9 @@ If the document root truncates a layer, the layer envelope is evaluated only thr
 
 The `curve` property on `fade_in` and `fade_out` reuses the same five-curve enum as `transition_curve`. Any curve available for level-to-level transitions is also available for both fade directions.
 
-For fade-in from silence, `easeOut` and `easeInOut` are usually the most musical choices: they rise naturally and avoid a mechanical constant-rate onset. Avoid `exponential` for fade-in from silence; it spends most of its duration near zero and rises abruptly at the end.
+For fade-in from zero, `easeOut` concentrates gain change near onset while `easeInOut` reduces the derivative at both boundaries. An exponential fade-in remains near the positive floor for most of the interval and concentrates gain change near the terminal boundary.
 
-For fade-out to silence, `exponential` is the natural choice for struck, plucked, or percussive sounds because it mirrors physical decay. `easeIn` suits "settle then cut" exits where the sound recedes gradually then falls silent quickly.
+For fade-out to zero, `exponential` produces a constant-ratio decay toward the positive floor. `easeIn` retains more energy early in the release and concentrates attenuation near the layer boundary.
 
 The same curve shapes and formulas defined in [Transition Curves](10-curves.md) apply. For very short fade durations (under 5–10 ms), curve choice has minimal audible effect; the anti-click fade-out uses a short window specifically.
 
@@ -156,13 +154,13 @@ Before this feature, authors who needed a curved transition to or from silence u
 }
 ```
 
-Use the marker-level form when the curve should shape a transition _between two audible levels_ and the final level happens to be zero — for example, an exponential decay from an earlier sustain level. Use `fade_out.curve` for the common case of a simple exit to silence after the final target is reached. The two approaches compose: a marker-level transition shapes the move into zero, and `fade_out` then operates on that zero (silently, producing no audible effect).
+Use the marker-level form when zero is an explicit contour target rather than the endpoint of the terminal fade stage. The two mechanisms compose: a level transition may reach zero before `fade_out` begins, after which the terminal fade multiplies an already zero-valued envelope.
 
-## Anti-click note: why fade_out.ms defaults to 5
+## Default terminal de-click fade
 
-In digital audio, any sound that is still audible (non-zero amplitude) at the exact moment it stops produces a brief, high-frequency **click** -- a discontinuity in the waveform. This is not a format opinion or an engine choice; it is how digital audio works on every platform.
+A hard transition from a non-zero sample to zero introduces a broadband discontinuity. The default `fade_out.ms: 5` applies a short linear terminal window to reduce this boundary transient.
 
-The default `fade_out.ms: 5` applies a tiny fade that smooths the discontinuity. If the contour reaches a final `level` of `0`, this default has no audible effect because the sound is already silent. To request an abrupt ending, set `fade_out.ms: 0` explicitly.
+If the contour already reaches `level: 0`, the default terminal fade has zero output. Set `fade_out.ms: 0` to retain an abrupt declared layer boundary.
 
 The engine does NOT add a fade when root `duration_ms` truncates a layer before its declared fade. What you write is what you hear; align the layer end with the document cutoff when a smooth exit is required.
 

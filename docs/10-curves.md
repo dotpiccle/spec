@@ -2,25 +2,9 @@
 
 This chapter defines contour scheduling and the five normative interpolation functions.
 
-## How to read the curve illustrations
+## Interpolation convention
 
-The illustrations in this chapter are non-normative. They show rising transitions from left to right: time advances along the horizontal axis, and the interpolated value rises along the vertical axis. A denser rise near the left means that more of the change happens early; a denser rise near the right means that more happens late.
-
-```text
-value
-  ^                         target
-  |                       /
-  |                     /
-  |                   /
-  |                 /
-  | start         /
-  +----------------------------> time
-    t = 0                    t = 1
-```
-
-For `linear`, `easeIn`, `easeOut`, and `easeInOut`, the same progress shape applies whether the target is above or below the start. A falling transition therefore moves slowly or quickly at the same part of its duration as the corresponding rising illustration.
-
-`exponential` is different: it interpolates ratios rather than equal differences. Its exact shape depends on the ratio between `start` and `target`, so its illustration uses a concrete `0.1` to `1.0` example.
+The interpolation parameter `t` is normalized segment time over `[0, 1)`. `linear`, `easeIn`, `easeOut`, and `easeInOut` apply a normalized progress function to the signed difference `target - start`; their temporal curvature is invariant under transition direction. `exponential` interpolates the endpoint ratio and therefore depends on both endpoint magnitudes.
 
 The `transition_curve` on one contour entry shapes the movement from that entry's value to the next entry's value. It changes only the intermediate values: it does not change the hold duration, transition duration, start value, or exact target at the segment boundary.
 
@@ -60,19 +44,7 @@ Let `start` and `target` be the surrounding entry values and let `t` be in `[0, 
 v(t) = start + (target - start) × t
 ```
 
-`linear` changes by the same absolute amount during every equal interval of time. It has no acceleration or deceleration: at 25% of the transition time, it has completed 25% of the value change.
-
-```text
-target |                         *
-       |                    *
-       |               *
-       |          *
-start  |     *
-       +---------------------------> time
-             steady rate
-```
-
-Use it when a parameter should move at a constant rate, or when a very short transition does not benefit from additional shaping. For pitch, a linear curve changes by equal numbers of hertz per unit of time, not by equal musical intervals.
+`linear` has constant first derivative `(target - start)` with respect to normalized time and zero second derivative. For pitch contours it produces constant Hz/s, not constant cents/s.
 
 ### `exponential`
 
@@ -84,23 +56,9 @@ v(t) = s × (e / s)^t
 
 The positive floor prevents division by zero for volume transitions. At the segment boundary, the engine uses the exact declared target, including zero. Pitch and filter inputs are already positive.
 
-`exponential` changes by the same ratio during every equal interval of time. The midpoint is the geometric mean of the floored endpoints, not their arithmetic average. For example, a transition from `100 Hz` to `400 Hz` reaches `200 Hz` halfway through because both halves multiply frequency by two.
+`exponential` has constant logarithmic rate. Its midpoint is the geometric mean of the floored endpoints. A transition from 100 Hz to 400 Hz therefore reaches 200 Hz at `t = 0.5`, producing constant cents/s for frequency contours.
 
-The following rising illustration uses `start = 0.1` and `target = 1.0`:
-
-```text
-1.0    |                         *
-       |                        /
-       |                      /
-       |                  ***
-0.1    |     *************
-       +---------------------------> time
-             slow, then fast
-```
-
-For a rising transition, smaller values occupy more of the timeline before the curve climbs rapidly toward the target. For a falling transition, the value drops rapidly at first and then spends more time near the smaller target. This behavior is often perceptually natural for pitch and filter-frequency sweeps because frequency ratios correspond more closely to musical intervals than equal differences in hertz do.
-
-When either volume endpoint is zero, the formula uses `1e-10` internally and switches to the exact declared zero only at the segment boundary. Authors should expect a transition involving zero to remain mathematically positive until that boundary.
+When either volume endpoint is zero, the formula uses `1e-10` internally and switches to the exact declared zero only at the segment boundary. A transition involving zero therefore remains mathematically positive until that boundary.
 
 ### `easeIn`
 
@@ -108,19 +66,7 @@ When either volume endpoint is zero, the formula uses `1e-10` internally and swi
 v(t) = start + (target - start) × t²
 ```
 
-`easeIn` begins with almost no movement and continuously accelerates. At 50% of the transition time, it has completed only 25% of the value change; the remaining 75% happens during the second half.
-
-```text
-target |                         *
-       |                       **
-       |                    ***
-       |              ******
-start  |     *********
-       +---------------------------> time
-             slow, then fast
-```
-
-Use it when the transition should feel restrained at its start and decisive near its end, such as a sweep that gathers energy. The curve does not ease into the target: its rate is greatest immediately before the boundary.
+`easeIn` is quadratic progress. Its first derivative is zero at `t = 0` and maximal immediately before the target boundary; 25% of the value delta is complete at `t = 0.5`.
 
 ### `easeOut`
 
@@ -128,19 +74,7 @@ Use it when the transition should feel restrained at its start and decisive near
 v(t) = start + (target - start) × (1 - (1-t)²)
 ```
 
-`easeOut` changes rapidly at the start and continuously decelerates toward the target. At 50% of the transition time, it has already completed 75% of the value change.
-
-```text
-target |                  ********
-       |              ****
-       |          ****
-       |       ***
-start  |     **
-       +---------------------------> time
-             fast, then slow
-```
-
-Use it when the response should be immediate but settle gently, such as a parameter change that should do most of its work early. The curve leaves the start at its maximum rate and then slows continuously; it does not ease away from the starting value.
+`easeOut` is the time-reversed quadratic progress function. Its first derivative is maximal at `t = 0` and zero at `t = 1`; 75% of the value delta is complete at `t = 0.5`.
 
 ### `easeInOut`
 
@@ -148,23 +82,11 @@ Use it when the response should be immediate but settle gently, such as a parame
 v(t) = start + (target - start) × (t² / (t² + (1-t)²))
 ```
 
-`easeInOut` begins slowly, accelerates through the middle, and decelerates toward the target. It is symmetric around the midpoint and completes exactly 50% of the value change at 50% of the transition time.
-
-```text
-target |                       ***
-       |                    ***
-       |             *******
-       |          ***
-start  |     *****
-       +---------------------------> time
-          slow, fast, then slow
-```
-
-Use it for a smooth departure and arrival when neither endpoint should feel abrupt. Compared with `easeIn` and `easeOut`, it concentrates more of the change around the middle of the transition.
+`easeInOut` is a symmetric rational quadratic with zero first derivative at both endpoints and 50% progress at `t = 0.5`. It concentrates control-rate change near the segment midpoint.
 
 ## Curve comparison
 
-This non-normative table compares how much of a rising value change has occurred at selected times. The first four rows use a normalized `0` to `1` transition. The exponential row uses `0.1` to `1.0`, then expresses its current value as a percentage of that example's total absolute change.
+This non-normative table reports normalized progress checkpoints. The first four rows use a `0` to `1` transition. The exponential row uses `0.1` to `1.0` and expresses its current value as a fraction of that example's absolute delta.
 
 | Curve           | At 25% time | At 50% time | At 75% time | Character                 |
 | --------------- | ----------: | ----------: | ----------: | ------------------------- |
@@ -174,28 +96,28 @@ This non-normative table compares how much of a rising value change has occurred
 | `easeInOut`     |         10% |         50% |         90% | Slow at both endpoints    |
 | `exponential`\* |       8.65% |      24.03% |      51.37% | Equal ratios through time |
 
-The percentages describe the illustrated rising examples only. In particular, exponential interpolation should be chosen for its ratio-based behavior, not as a generic substitute for `easeIn`.
+The exponential percentages are endpoint-dependent and apply only to the stated `0.1` to `1.0` interval.
 
-All control calculations use binary64 precision. Engines MUST produce finite values and MUST begin the next segment from the exact preceding target so rounding error does not accumulate across a contour.
+All control calculations use binary64 precision. The Piccle engine MUST produce finite values and MUST begin the next segment from the exact preceding target so rounding error does not accumulate across a contour.
 
 ## Fade curves
 
-A fade stage (the `fade_in` or `fade_out` object) is a special case of the same scheduling and interpolation rules. For a fade-out of `O > 0` frames, the fade gain at local layer frame `n >= T - O` is:
+A fade stage (the `fade_in` or `fade_out` object) is a special case of the same scheduling and interpolation rules. Let `curve(start, target, t)` mean the selected formula in §Curve formulas. For a fade-out of `O > 0` frames, the envelope value at local layer frame `n >= T - O` is:
 
 ```text
 t = (n - (T - O)) / O
-gain = c(t)
+value = curve(held_level, 0, t)
 ```
 
-where `c(t)` is the curve function for `fade_out.curve`. The gain multiplies the held final level. At frame `T`, the gain reaches zero.
+At the exclusive layer-end boundary `T`, the value becomes exact zero and no sample is emitted for that layer.
 
-For a fade-in of `I > 0` frames, the fade gain at local layer frame `n < I` is:
+For a fade-in of `I > 0` frames, the envelope value at local layer frame `n < I` is:
 
 ```text
 t = n / I
-gain = c(t)
+value = curve(0, first_level, t)
 ```
 
-The gain multiplies the first level. At frame `I`, the gain reaches `1` and the first level becomes exact.
+At frame `I`, the first level becomes exact.
 
 For `exponential`, the same positive-floor rule from [Curve Formulas](#curve-formulas) applies to prevent division by zero. During a fade-out, `s` is the held level (positive) and `target` floors to `1e-10` internally; the exact `0` is produced only at frame `T`. During a fade-in from silence, `s` floors to `1e-10` and `target` is the first level. See [Engine Safety](11-engine-safety.md) for the canonical epsilon definition.

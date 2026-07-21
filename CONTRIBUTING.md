@@ -1,31 +1,33 @@
 # Contributing to Piccle
 
-Piccle is a company that ships a declarative micro-audio format. This repository is the specification for it. Changes must remain clear enough for the reference engine and any independent engine, and constrained enough for untrusted input across browsers, desktop and mobile systems, consoles, vehicles, kiosks, and embedded appliances.
+Piccle is a company that ships a declarative micro-audio format and the official [`dotpiccle/engine-rs`](https://github.com/dotpiccle/engine-rs) implementation. This repository is the normative format and engine-behavior contract. Changes must be unambiguous to audio engineers, engine maintainers, tooling authors, and AI infrastructure, and constrained enough for untrusted input across browsers, desktop and mobile systems, consoles, vehicles, kiosks, and embedded appliances.
 
 ## Design principles
 
-Changes should preserve these properties:
+Changes MUST preserve these properties:
 
 - **Declarative:** documents contain data, never executable code.
-- **AI-friendly:** fields are explicit, consistently shaped, and schema-constrained.
-- **Readable:** JSON remains understandable without specialist tooling.
+- **Machine-explicit:** fields are structurally regular, schema-constrained, unit-explicit, and suitable for deterministic automated generation.
+- **Audio-engineering native:** terminology describes synthesis, DSP topology, gain structure, timing, and perceptual constraints directly.
 - **Portable:** semantics do not depend on a platform audio API.
 - **Engine-neutral:** the format defines rendered results without prescribing live, offline, cached, or ahead-of-playback execution.
 - **Deterministic where practical:** exact rules are used for validation, timing, and control behavior; measurable tolerances are used where DSP algorithms may vary.
-- **Bounded by engines:** valid documents are finite, and engines publish resource limits before allocating render resources.
+- **Bounded by engine profiles:** valid documents are finite, and each Piccle engine profile publishes resource limits before allocating render resources.
 - **Backward-compatible:** released documents do not change meaning without a new major format version.
 - **Small and composable:** new primitives require demonstrated one-shot UI-audio value.
 
 ## Documentation model
 
-- `docs/00` through `docs/11` and `docs/14` are normative reference chapters unless a section says otherwise.
-- `docs/12-cookbook.md` is a task-oriented authoring guide.
-- `docs/13-implementer-notes.md` is non-normative implementation guidance.
-- `schemas/v1.json` is the machine-readable structural contract.
-- `test-vectors/` verifies parsing, schema, and semantic validation.
-- `examples/` demonstrates authoring patterns but is not normative audio output.
+- [Docs 00 through 11](docs/00-overview.md), [Piccle Engine DSP Runtime](docs/13-implementer-notes.md), [Conformance](docs/14-conformance.md), and the [Piccle Engine Implementation Contract](docs/15-engine-build-guide.md) are normative unless a section says otherwise.
+- [Technical Authoring Patterns](docs/12-cookbook.md) is a non-normative collection of synthesis and DSP configurations.
+- [Piccle Engine DSP Runtime](docs/13-implementer-notes.md) defines required runtime algorithms, state preparation, and render-loop invariants.
+- [schemas/v1.json](schemas/v1.json) is the machine-readable structural contract.
+- [test-vectors/](test-vectors/) verifies parsing, schema, and semantic validation.
+- [examples/](examples/) demonstrates authoring patterns but is not normative audio output.
 
 Each rule has one canonical documentation home. Other pages link to that rule rather than restating it.
+
+This repository assumes proficiency with digital audio and signal processing. Introductory tutorials, consumer analogies, note-frequency primers, and simplified authoring guidance belong outside the specification repository.
 
 ## Proposing a format change
 
@@ -38,7 +40,7 @@ Open an issue describing:
 5. CPU, memory, malicious-input, and determinism implications.
 6. At least one realistic example and positive and negative validation cases.
 
-Looping, continuous playback, host-controlled parameters, gesture control, modulation, and theming inputs are intentionally deferred beyond v1 and require a format proposal. Platform support is not a new format feature: engines adapt rates, numeric modes, channels, and resources without changing document validity.
+Looping, continuous playback, host-controlled parameters, gesture control, modulation, and theming inputs are intentionally deferred beyond v1 and require a format proposal. Platform support is not a new format feature: Piccle engine profiles adapt rates, numeric modes, channels, and resources without changing document validity.
 
 ### Before making changes
 
@@ -85,7 +87,7 @@ For an additive feature, normally update:
 
 ### Breaking change
 
-A breaking change includes: removing or renaming a field; changing a field's type or default in a way that alters existing playback; making previously valid documents invalid; changing the interpretation of an existing value; tightening a constraint beyond the range allowed by the current version; requiring engines to produce materially different output for existing assets.
+A breaking change includes: removing or renaming a field; changing a field's type or default in a way that alters existing playback; making previously valid documents invalid; changing the interpretation of an existing value; tightening a constraint beyond the range allowed by the current version; or requiring the Piccle engine to produce materially different output for existing assets.
 
 Do not introduce a breaking change casually.
 
@@ -132,7 +134,7 @@ Use this table to determine commonly affected files:
 | Field rename or removal |    Yes |  Yes |      Yes |          Yes |        Yes |
 | New major feature       |    Yes |  Yes |      Yes |          Yes |        Yes |
 
-Treat this as guidance, not permission to omit an affected artifact.
+This matrix is mandatory for affected artifacts; it does not permit omission of an unlisted dependency.
 
 ## Compatibility checklist
 
@@ -140,15 +142,15 @@ Before completing a format change, answer:
 
 - Do existing valid documents remain valid?
 - Do they retain the same meaning?
-- Could existing engines reject the new document?
-- Can engines safely ignore the new field?
+- Could the current Piccle engine reject the new document?
+- Can the Piccle engine safely ignore the new field while loading an older format version?
 - Is the default behavior explicit?
 - Are unknown-field rules sufficient?
 - Does this require a new version?
 - Is migration guidance required?
 - Could an AI generator confuse the new field with an existing field?
 - Could this create unbounded CPU or memory use?
-- Could different engines reasonably interpret it differently?
+- Could `dotpiccle/engine-rs` require an unstated calculation, state transition, or error behavior?
 
 Document material compatibility decisions in the proposal, specification, or pull request.
 
@@ -193,14 +195,14 @@ A change is complete only when:
 - Unrelated files remain unchanged.
 - The final summary states what changed and which checks were run.
 
-For format additions, Piccle's engine team and any independent engine implementer should be able to implement the feature without guessing (see `docs/15-engine-build-guide.md` for the engine-implementation definition of done).
+For format additions, the Piccle engine team and implementation agents MUST be able to implement the feature without guessing (see the [Piccle Engine Implementation Contract](docs/15-engine-build-guide.md) for the definition of done).
 
 ## Versioning
 
 The document field uses `major.minor`, such as `"piccle": "1.0"`. Repository releases use semantic versions, such as `v1.0.0-rc.1` and `v1.0.0`.
 
 - Major format versions may make breaking document changes.
-- Minor format versions may add backward-compatible capabilities for newer engines.
+- Minor format versions may add backward-compatible capabilities implemented by newer Piccle engine releases.
 - Patch repository releases may clarify text without changing validation or existing playback meaning.
 
 A published schema URI is immutable. Release preparation must verify that the canonical URI serves the exact tagged schema and record its SHA-256 checksum in the release notes.
@@ -210,6 +212,6 @@ A published schema URI is immutable. Release preparation must verify that the ca
 1. Keep changes under the `Unreleased` changelog section.
 2. Run repository validation in a clean checkout.
 3. Verify the canonical schema URL.
-4. Complete the clean-room implementation and listening gates in [Conformance](docs/14-conformance.md).
+4. Complete the official engine qualification and listening gates in [Conformance](docs/14-conformance.md).
 5. Create an RC tag while any external gate remains open.
 6. Move changelog entries to `v1.0.0` only when every stable-release gate is complete.

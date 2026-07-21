@@ -1,15 +1,15 @@
-# Cookbook
+# Technical Authoring Patterns
 
-This non-normative how-to guide contains recipes for common one-shot UI sounds: clicks, notifications, chimes, whooshes, errors, reverb, and echo. Normative field behavior lives in chapters 00 through 11 and 14.
+This non-normative catalog presents compact synthesis and DSP configurations for one-shot UI-audio classes. It assumes familiarity with oscillators, deterministic noise excitation, control contours, biquads, gain envelopes, and spatial processing. Normative document and engine behavior lives in chapters 00 through 11, 13, and 14.
 
-## Make a button click
+## Broadband transient with highpass shaping
 
-Start with **noise**. A button click is a short burst of hiss -- there is no pitch, just a crisp tick.
+Use deterministic broadband excitation, a short amplitude envelope, and static highpass filtering:
 
-1. Create a noise layer with `character: "neutral"`.
-2. Give it a short `duration_ms` (about 60-100 ms).
-3. Shape the volume so it punches quickly and fades out: a short `fade_in` (1 ms), a peak level (0.5), and a `fade_out` (around 40-60 ms).
-4. Add a `highpass` filter to brighten it and remove low-end rumble.
+1. Select `character: "neutral"` for a spectrally unshaped PCG32 source.
+2. Limit the layer to an 80 ms transient.
+3. Apply a 1 ms attack and 50 ms release at 0.5 peak linear gain.
+4. Apply a 2 kHz highpass biquad with `resonance: 0`.
 
 ```json
 {
@@ -40,16 +40,15 @@ Start with **noise**. A button click is a short burst of hiss -- there is no pit
 }
 ```
 
-_A short noise burst, brightened with a highpass filter -- the everyday button click._
+_An 80 ms broadband transient with low-frequency attenuation._
 
-## Make a notification bell
+## Damped sinusoidal notification partial
 
-Start with a **tone**. A notification bell is a pitched sound, like a doorbell ding.
+Use a stationary sinusoidal oscillator, an attack-decay-sustain-release amplitude trajectory, and a low-level reverb contribution:
 
-1. Create a tone layer with `wave: "sine"`.
-2. Set the pitch to something pleasant, like A5 (880 Hz).
-3. Shape the volume like a bell: a quick rise to a peak, then an exponential decay to a lower sustain level, then a fade-out.
-4. Add reverb for warmth using a spatial_effect.
+1. Configure a sine oscillator at 880 Hz.
+2. Apply a 2 ms attack to 0.5, a 30 ms exponential decay to 0.08, and a 200 ms exponential release.
+3. Add a parallel reverb branch with 0.2 wet gain, 300 ms RT60/tail, and 4 kHz wet-path lowpass.
 
 ```json
 {
@@ -85,16 +84,16 @@ Start with a **tone**. A notification bell is a pitched sound, like a doorbell d
 }
 ```
 
-_A single soft bell at A5 (880 Hz) with gentle reverb._
+_A damped 880 Hz sinusoidal partial with a diffuse wet tail._
 
-## Make a success chime
+## Staggered ascending tonal sequence
 
-Use multiple **tone** layers offset in time. A success sound is often three rising notes, like a little melody.
+Schedule three independent sinusoidal layers with ascending fundamentals and overlapping decay envelopes:
 
-1. Create three sine tone layers, each at a different pitch.
-2. Offset their start times so they play one after another (e.g., 0 ms, 60 ms, 120 ms).
-3. Give each a bell-like volume shape.
-4. Add reverb for a polished finish using a spatial_effect.
+1. Use fundamentals at 523.25, 659.25, and 783.99 Hz.
+2. Set `start_ms` to 0, 60, and 120 ms respectively.
+3. Use matched transient/decay envelopes to preserve timbral consistency.
+4. Add one shared parallel reverb branch.
 
 ```json
 {
@@ -179,16 +178,15 @@ Use multiple **tone** layers offset in time. A success sound is often three risi
 }
 ```
 
-_Three rising sine tones with a short reverb -- the classic "done!" confirmation._
+_Three overlapping ascending sinusoidal layers with a shared reverb contribution._
 
-## Make a whoosh
+## Broadband excitation with exponential cutoff sweep
 
-Use **noise** with a **filter sweep**. A whoosh is noise that opens up from dull to crisp.
+Use deterministic broadband excitation and a time-varying lowpass cutoff:
 
-1. Create a noise layer with `character: "neutral"`.
-2. Add a `lowpass` filter that sweeps from a low cutoff to a high cutoff.
-3. Use `transition_curve: "exponential"` so the sweep sounds natural.
-4. Shape the volume with a slow fade-in and fade-out.
+1. Select neutral noise excitation.
+2. Sweep the lowpass cutoff exponentially from 200 Hz to 8 kHz over 150 ms.
+3. Apply a 20 ms attack, constant 0.3 base gain, and 30 ms release.
 
 ```json
 {
@@ -225,16 +223,16 @@ Use **noise** with a **filter sweep**. A whoosh is noise that opens up from dull
 }
 ```
 
-_A brightening whoosh -- noise that opens up from dull to crisp._
+_A 200 ms noise event with increasing spectral centroid._
 
-## Make an error sound
+## Descending multi-layer tonal event
 
-Use **descending tones**. An error sound signals something went wrong -- it often falls in pitch.
+Combine a bandpass-shaped noise transient with two delayed triangle-wave layers using descending exponential fundamental-frequency contours:
 
-1. Create triangle wave tones (warmer, less harsh than sine for errors).
-2. Use a `lowpass` filter to soften the sound.
-3. Have the pitch fall from higher to lower.
-4. Offset two layers so the second tone descends after the first.
+1. Generate a 1.5 kHz bandpass noise onset.
+2. Transition the first triangle oscillator from 500 Hz to 300 Hz.
+3. Transition the second from 400 Hz to 200 Hz with a 100 ms onset offset relative to the first.
+4. Use exponential pitch and amplitude transitions for constant-ratio decay.
 
 ```json
 {
@@ -327,16 +325,16 @@ Use **descending tones**. An error sound signals something went wrong -- it ofte
 }
 ```
 
-_A muted tick followed by two falling tones -- a calm, recoverable error._
+_A filtered-noise transient followed by two descending triangle-wave layers._
 
 
-## Make a soft echo (cuelume-style shimmer)
+## Low-feedback short-delay echo
 
-Use a single **echo** tap. A soft echo adds space without calling attention to itself — think of the shimmer after a gentle UI cue.
+Apply a short low-feedback echo branch to a damped sinusoidal source:
 
-1. Create a tone layer with a pleasant mid-range pitch.
-2. Set a short `fade_in` and a moderate `fade_out`.
-3. Add a single `echo` spatial effect with a short delay, low feedback, and damping.
+1. Configure a 660 Hz sine layer with 5 ms attack and 100 ms release.
+2. Set `delay_ms: 120` and `feedback: 0.25`.
+3. Use `wet_gain: 0.18` and a 4 kHz feedback-path lowpass.
 
 ```json
 {
@@ -371,15 +369,15 @@ Use a single **echo** tap. A soft echo adds space without calling attention to i
 }
 ```
 
-_A soft, shimmering echo behind a single tone — a common cuelume preset._
+_A 660 Hz damped sinusoid with low-level, progressively lowpass-filtered repeats._
 
-## Make a slap-back echo
+## Single-repeat short-delay echo
 
-A slap-back echo is a single distinct repeat. Use zero feedback to prevent further repeats.
+Set `feedback: 0` to produce one delayed repeat through the echo feedback-path lowpass:
 
-1. Create a noise layer with a short burst (or a tone).
-2. Brighten it with a highpass filter.
-3. Apply a slap-back echo: a very short delay with zero feedback.
+1. Generate a 100 ms noise transient.
+2. Apply a 1 kHz highpass section.
+3. Configure an 80 ms delay, zero feedback, 0.4 wet gain, and 8 kHz damping cutoff.
 
 ```json
 {
@@ -419,15 +417,15 @@ A slap-back echo is a single distinct repeat. Use zero feedback to prevent furth
 }
 ```
 
-_A short noise burst followed by a single slap-back repeat._
+_A highpass-shaped noise transient followed by one 80 ms delayed repeat._
 
-## Stack reverb onto an echo
+## Parallel echo and reverb branches
 
-Combine both spatial effects for a richer sound. The echo adds rhythmic repeats while the reverb fills in the space between them.
+Declare both spatial effects to add discrete lowpass-feedback repeats and a diffuse FDN response to the same dry mix. Effects are parallel; neither processes the other's output and array order is non-semantic.
 
-1. Create a tone layer with a bell-like volume shape.
-2. Add an echo with moderate feedback.
-3. Add a reverb after the echo for a smooth tail.
+1. Configure a damped 440 Hz sinusoidal layer.
+2. Add an echo branch with 100 ms delay and 0.2 feedback.
+3. Add a separate reverb branch with 400 ms RT60/tail.
 
 ```json
 {
@@ -475,4 +473,4 @@ Combine both spatial effects for a richer sound. The echo adds rhythmic repeats 
 }
 ```
 
-_A layered tone with echo and reverb working together — echo provides the rhythm, reverb provides the space._
+_A damped sinusoid feeding independent echo and reverb wet branches._

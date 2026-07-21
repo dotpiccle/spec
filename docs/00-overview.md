@@ -1,73 +1,63 @@
 # Piccle v1 Overview
 
-The Piccle format is a declarative specification for describing short, one-shot procedural UI sounds such as feedback, transitions, notifications, confirmations, and errors. Piccle ships a reference engine — this specification is also precise enough for anyone to build their own engine. This chapter is part of the normative specification.
+Piccle is a declarative control format for finite procedural UI-audio signals. A document defines source excitation, control contours, per-layer filtering and gain, stereo placement, summation, optional parallel spatial processing, master gain, and output limiting. This chapter is normative.
 
-## Mission
+## Audience and documentation boundary
 
-Enable developers, designers, and AI agents to create high-quality, low-latency, lightweight, and expressive micro-audio using structured data.
+This specification targets audio engineers, DSP engineers, maintainers of [`dotpiccle/engine-rs`](https://github.com/dotpiccle/engine-rs), validation-tool authors, and automated systems that require the complete format and execution contract. It assumes familiarity with discrete-time signals, sample frames, oscillators, spectra, envelopes, digital filters, gain staging, stereo processing, impulse responses, and numerical precision.
 
-Piccle aims to become the "Lottie for audio": a portable and expressive format for audio animations and micro-interactions.
+Throughout the normative chapters, **the engine** means the official Piccle implementation in `dotpiccle/engine-rs`. Normative engine statements define its externally observable parsing, validation, scheduling, DSP, and output behavior. Private Rust types, module boundaries, threading, and platform I/O remain implementation details unless they affect that behavior.
 
-A Piccle asset should be:
+Introductory sound-design tutorials and simplified user documentation are outside this repository. They may reference this specification but do not define Piccle behavior.
 
-- Small enough to ship with an application.
-- Easy for humans to read and edit.
-- Easy for AI systems to generate reliably.
-- Deterministic enough for compatible engines to interpret consistently.
-- Expressive enough to create polished UI audio without prerecorded WAV or MP3 assets.
-- Safe and efficient enough for engines across browsers, desktop and mobile systems, consoles, vehicles, kiosks, and constrained interactive devices.
+## Format objectives
 
-## v1 feature summary
+A Piccle document is intended to be:
 
-| Feature            | Description                                                                                                                  |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| Layers (1 or more) | Each layer is an independent sound generator with its own volume, balance, and filter chain.                                 |
-| Tone source        | A pitched hum with a waveform shape (sine, triangle, square, saw) and a pitch contour.                                       |
-| Noise source       | A pitchless hiss with a perceptual character (soft, neutral, sharp).                                                         |
-| Pitch contour      | An always-array of frequency points with hold time, transition time, and transition curve.                                   |
-| Volume contour     | A shorthand number (constant level) or an N-level object with fade-in, fade-out, and per-segment timing.                     |
-| Filter chain       | Lowpass, highpass, or bandpass filters in series, each with its own frequency contour and resonance.                         |
-| Balance            | Stereo position from -1 (left) to 1 (right).                                                                                 |
-| Spatial effects | Optional whole-document spatial effects: reverb (amount, tail_ms, soften_hz) and echo (delay_ms, feedback, wet_gain, damp_hz). All effects run in parallel — each receives the same dry mix and adds its wet contribution. |
-| Output shaping     | Final master `master_volume_level` and mandatory safety clipping.                                                            |
-| Safety             | Built-in hard clipping, Nyquist-aware frequency handling, validation before allocation, and engine-declared resource limits. |
+- compact enough for application distribution and asset pipelines;
+- structurally explicit enough for deterministic parsing and automated generation;
+- portable across render architectures and platform audio APIs;
+- deterministic where exact equivalence is practical and tolerance-bounded elsewhere;
+- expressive enough for short layered synthetic UI cues; and
+- bounded for validation and preflight resource analysis.
 
-## v1 scope boundary
+## V1 signal model
 
-Piccle v1 describes finite, one-shot assets. It does not define looping, continuous progress playback, gesture-controlled parameters, host-supplied theming inputs, modulation, or dynamic interaction with a playing sound. A host application may replay an asset, but seamless looping and host parameters are outside the v1 format contract.
+| Component | Technical role |
+| --- | --- |
+| Layers | One or more independently scheduled mono signal generators with per-layer control and processing state. |
+| Tone source | Band-limited periodic oscillator using sine, triangle, square, or saw harmonic targets and a time-varying fundamental-frequency contour. |
+| Noise source | Deterministic PCG32 excitation with `neutral`, lowpass-shaped `soft`, or highpass-shaped `sharp` spectral character. |
+| Pitch contour | Ordered frequency targets with hold duration, transition duration, interpolation curve, and optional cents offset. |
+| Volume contour | Scalar-gain shorthand or a multi-segment amplitude envelope with independently curved fade-in and fade-out stages. |
+| Filter chain | Serial second-order lowpass, highpass, or constant-peak-gain bandpass biquads with time-varying cutoff and resonance-to-Q mapping. |
+| Balance | Equal-power mono-to-stereo panning over `[-1, 1]`. |
+| Spatial effects | Parallel document-level reverb and echo wet branches receiving the same dry stereo mix. |
+| Output stage | Post-effect `master_volume_level`, hard clipping to `[-1, 1]`, canonical stereo emission, then non-normative platform adaptation. |
 
-These deferred capabilities require a future format proposal. They are not implied by the `loading` example, which is a one-shot “work started” cue.
+The normative signal path is defined in [Output](08-output.md). Source and filter state are scoped to layer lifetime; spatial-effect state is scoped to the document output timeline.
 
-## Piccle in one minute
+## V1 scope boundary
 
-A Piccle sound is a short list of **layers** -- like one instrument per layer in a tiny band. For each layer you say three things:
+Piccle v1 describes finite, one-shot assets. It does not define looping, continuous progress playback, gesture-controlled parameters, host-supplied theming inputs, modulation, runtime parameter automation, speech synthesis, or recorded-sample playback. A host may retrigger an asset, but seamless looping and host-driven control are outside the v1 contract.
 
-1. **What it is** (`source`) -- the raw sound this layer makes. It is either a `tone` (a pitched hum -- think a dial tone, doorbell ding, or microwave beep) or `noise` (a pitchless hiss -- think TV static, tape hiss, or a whisper). For a `tone`, the `source` also includes its **pitch** -- a frequency in Hz (like 1046.5 for a C6 bell), or a `frequencies` array that glides from one pitch to another (like a drop of water falling). So the source is a _complete_ description of the raw sound: "a sine tone at 1046.5 Hz" or "soft noise."
+These capabilities require a future format proposal. The `loading` example is a one-shot onset cue and does not imply a loop primitive.
 
-2. **Its volume** -- how loud it is, and how that loudness changes over time. For a steady sound, just a number (`"volume": 0.4`). For a sound that changes loudness (a bell that strikes then rings, a click that punches then fades), a small object with a list of levels and transitions: how it fades in, what levels it moves through, and how it fades out.
+## Terminology
 
-3. **Optional filters** -- to soften it (keep the lows) or brighten it (keep the highs).
-
-The engine mixes all layers together, optionally applies **spatial effects** (reverb for a sense of space, echo for discrete repeats), and plays the result. That is the whole format.
-
-## Glossary
-
-| Term             | Meaning                                                                                                                                        |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Layer            | One sound generator within a document. Each layer has a source, volume, balance, and optional filters.                                         |
-| Source           | The raw sound a layer makes -- either a tone (pitched) or noise (pitchless).                                                                   |
-| Tone             | A pitched sound with a recognizable frequency, like a beep or bell.                                                                            |
-| Noise            | A pitchless sound, like static or a whisper.                                                                                                   |
-| Wave             | The shape of a tone's vibration. Piccle supports sine, triangle, square, and saw.                                                              |
-| Character        | The spectral quality of noise: soft (muffled), neutral (balanced), or sharp (bright).                                                          |
-| Frequency (Hz)   | How high or low a pitch sounds. Higher Hz = higher pitch. 440 Hz is the A above middle C.                                                      |
-| Volume           | How loud a sound is, from 0 (silent) to 1 (full).                                                                                              |
-| Balance          | Where a sound sits in stereo: -1 is left, 0 is center, 1 is right.                                                                             |
-| Contour          | How a value (like volume or pitch) changes over time, described as a sequence of target values with hold and transition timing.                |
-| Filter           | A processor that removes or boosts certain frequencies. Lowpass keeps lows, highpass keeps highs, bandpass keeps a focused range.              |
-| Resonance        | How much a filter rings at its target frequency, like a struck bell.                                                                           |
-| Reverb           | A sense of space around the sound, like playing in a small room.                                                                               |
-| Echo             | A spatial effect that adds one or more discrete repeats of the dry signal, each progressively darker. Fields: delay_ms, feedback, wet_gain, damp_hz.                                                      |
-| Transition curve | The interpolation shape between contour targets: linear, exponential, easeIn, easeOut, or easeInOut.                                           |
-| Offset cents     | A tiny pitch shift measured in cents (100 cents = 1 semitone). Two tones at slightly different cents create a warm chorus effect.              |
-| Boundary click   | A brief, harsh click caused by an abrupt non-zero start or stop. Piccle's default fade-out reduces ending clicks; authors control onset shape. |
+| Term | Definition |
+| --- | --- |
+| Layer | Independently scheduled mono source plus its filter chain, amplitude envelope, and stereo balance. |
+| Source | Deterministic tone oscillator or noise excitation generator. |
+| Fundamental frequency | Instantaneous oscillator frequency after contour evaluation, cents offset, and render-profile clamping. |
+| Partial | Sinusoidal component of a band-limited periodic waveform at an integer multiple of the fundamental. |
+| Contour | Piecewise control trajectory composed of target values, holds, transitions, and interpolation curves. |
+| Envelope | Time-varying linear-amplitude gain applied after the layer filter chain. |
+| Biquad | Second-order IIR section implementing one Piccle filter entry. |
+| Resonance | Normalized control mapped to filter quality factor `Q`. |
+| Dry mix | Canonical stereo sum of all active post-balance layers before spatial processing. |
+| Wet contribution | Output of one spatial-effect branch after its effect-specific gain, excluding the shared dry signal. |
+| RT60 | Time required for backward-integrated response energy to decay by 60 dB. |
+| FDN | Feedback delay network used by the normative reverb runtime. |
+| Render profile | Declared sample rate, numeric mode, channel/storage mode, output bandwidth, and resource limits. |
+| Boundary | Document-time instant mapped to an absolute sample frame by the active render profile. |

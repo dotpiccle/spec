@@ -49,7 +49,7 @@ Let `D` be the explicit root `duration_ms`, or the latest declared layer end whe
 
 For a layer starting at `S` and ending at `E = S + layer.duration_ms`, its untruncated global-frame interval is `[F(S), F(E))`. An explicit `duration_ms` changes the active interval to `[F(S), min(F(E), F(D)))`; the interval is empty when its end is not greater than its start. Truncation does not move or create a layer fade. A non-zero sample may therefore be followed by zero at the boundary. Authors who need a smooth explicit cutoff must align each affected layer's declared duration and fade with `D`.
 
-If `duration_ms` is longer than every layer, the dry mix is silent after the latest layer end. Reverb still receives zero input through `D` and its declared tail begins after `D`.
+If `duration_ms` is longer than every layer, the dry mix is silent after the latest layer end. Every spatial effect continues to receive zero input through `D`, and each declared tail begins after `D`.
 
 ## Root volume
 
@@ -57,7 +57,7 @@ The optional root `master_volume_level` is a linear master gain from `0` through
 
 ## Safety clipper
 
-For each final left and right sample `s`, engines MUST apply:
+For each final left and right sample `s`, the Piccle engine MUST apply:
 
 ```text
 clip(s) = -1 when s < -1
@@ -69,7 +69,7 @@ The hard clipper is the last normative DSP stage. It has no attack, release, loo
 
 ## Mono and device output
 
-The canonical output is always stereo. A host with mono hardware MAY downmix after clipping. The recommended non-normative equal-power-preserving downmix is:
+The Piccle render result is always stereo. Mono conversion is downstream platform adaptation and is not performed by the normative render pipeline. If a Piccle platform adapter performs equal-power-preserving mono conversion, it applies after clipping:
 
 ```text
 mono = (left + right) / sqrt(2)

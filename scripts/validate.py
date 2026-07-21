@@ -316,7 +316,8 @@ def check_schema_contract(schema: dict[str, Any]) -> list[str]:
     expect(spatial_echo["properties"]["feedback"].get("exclusiveMaximum"), 1, "echo feedback exclusiveMaximum")
     expect_property(spatial_echo, "wet_gain", kind="number", minimum=0, maximum=1)
     expect_property(spatial_echo, "damp_hz", kind="number", minimum=200, maximum=12000)
-    expect("tail_length" in spatial_echo["properties"]["feedback"]["description"] or "tail_ms_effective" in spatial_echo["properties"]["feedback"]["description"], True, "echo feedback tail-length documentation")
+    echo_feedback_description = spatial_echo["properties"]["feedback"]["description"]
+    expect("derived tail" in echo_feedback_description and "invalid" in echo_feedback_description, True, "echo feedback tail-length documentation")
 
     noise = defs["source"]["oneOf"][1]["properties"]
     expect(noise["character"]["enum"], ["soft", "neutral", "sharp"], "noise character enum")
@@ -384,21 +385,93 @@ def documentation_parity_errors() -> list[str]:
 
     exact_tokens = {
         "docs/01-document-structure.md": ["`duration_ms` | integer", "`master_volume_level` | number  | 1        | No"],
-        "docs/05-layer-volume.md": ["`fade_in`  | object | `{\"ms\": 0", "`fade_out` | object | `{\"ms\": 5"],
+        "docs/05-layer-volume.md": [
+            "`fade_in`  | object | `{\"ms\": 0",
+            "`fade_out` | object | `{\"ms\": 5",
+            "curve(held_level, 0",
+            "curve(0, first_level",
+        ],
         "docs/06-filters.md": ["`resonance`   | number | 0", "20-20000 Hz"],
-        "docs/07-spatial-effects.md": ["`amount`    | number", "`tail_ms`   | integer | `1` or more", "`soften_hz` | number  | `200`–`12000`"],
+        "docs/07-spatial-effects.md": [
+            "`amount`    | number",
+            "`tail_ms`   | integer | `1` or more",
+            "`soften_hz` | number  | `200`–`12000`",
+            "five_ms_frames",
+            "DSP conformance harness",
+            "1 + floor(0.9 × N)",
+            "Perceptual-equivalence metric algorithms",
+            "next_power_of_two",
+            "hop = max(1, floor(W_m / 4))",
+            "is excluded",
+            "magnitude weighting",
+        ],
         "docs/11-engine-safety.md": ["at least 8000 Hz", "min(20000, 0.49 × sample_rate)", "48000 Hz", "frame(S + b) - frame(S + a)"],
         "docs/04-pitch.md": ["Evaluate the `frequencies` contour", "Apply the cents offset", "Clamp `offset_hz`"],
-        "docs/07-spatial-effects.md": ["five_ms_frames", "DSP conformance harness", "1 + floor(0.9 × N)", "Perceptual-equivalence metric algorithms", "next_power_of_two", "hop = max(1, floor(W_m / 4))", "is excluded", "magnitude weighting"],
         "docs/08-output.md": ["Visit active layers in document array order", "max_i(tail_frames_i)"],
         "docs/14-conformance.md": ["start_ms + duration_ms", "document duration plus the longest spatial effect's effective tail length", "echo"],
         "docs/15-engine-build-guide.md": ["schemas/v1.json", "test-vectors/invalid-expectations.json", "test-vectors/numeric/dsp-values.json", "test-vectors/behavior/render-cases.json", "Definition of done"],
+        "README.md": ["duration_ms", "master_volume_level", "spatial_effects[]", "layers[]", "parallel spatial effects"],
+        "docs/10-curves.md": ["value = curve(held_level, 0, t)", "value = curve(0, first_level, t)"],
+        "docs/13-implementer-notes.md": ["# Piccle Engine DSP Runtime", "The engine MUST implement this topology", "contribution_c[n] = wet_gain × w_c[n]"],
     }
     for relative, tokens in exact_tokens.items():
         text = (ROOT / relative).read_text(encoding="utf-8")
         for token in tokens:
             if token not in text:
                 failures.append(f"documentation parity: {relative} lacks contract text {token!r}")
+
+    audience_contract_tokens = {
+        "AGENTS.md": ["### 4.2 Machine-explicit", "### 4.3 Audio-engineering native", "simplified end-user"],
+        "docs/AGENTS.md": ["### Technical audiences", "Audio and DSP engineers"],
+        "schemas/AGENTS.md": ["Descriptions target audio engineers", "signal-processing terminology"],
+        "README.md": ["normative technical specification", "Introductory and consumer-facing documentation"],
+        "docs/00-overview.md": ["## Audience and documentation boundary", "## V1 signal model", "discrete-time signals"],
+        "docs/03-sources.md": ["Deterministic RMS-normalized stochastic excitation", "## Tone oscillator", "## Noise excitation"],
+        "docs/12-cookbook.md": ["# Technical Authoring Patterns", "Effects are parallel"],
+    }
+    for relative, tokens in audience_contract_tokens.items():
+        text = (ROOT / relative).read_text(encoding="utf-8")
+        for token in tokens:
+            if token not in text:
+                failures.append(f"documentation audience: {relative} lacks technical-audience text {token!r}")
+
+    engine_contract_tokens = {
+        "AGENTS.md": ["dotpiccle/engine-rs", "exactly how the official Piccle engine", "implementation-defined only"],
+        "README.md": ["official [Piccle Rust engine]", "## Implementing the Piccle engine", "Piccle Engine Implementation Contract"],
+        "docs/00-overview.md": ["Throughout the normative chapters", "the official Piccle implementation"],
+        "docs/11-engine-safety.md": ["The Piccle engine MUST provide a canonical test mode", "MUST qualify every additional render profile"],
+        "docs/13-implementer-notes.md": ["required DSP runtime", "production render loop MUST", "public API MUST keep these failures separate"],
+        "docs/14-conformance.md": ["## Piccle engine contract", "dotpiccle/engine-rs", "mandatory qualification inputs"],
+        "docs/15-engine-build-guide.md": ["# Piccle Engine Implementation Contract", "## Calculation ownership index", "complete mandatory set is (a–g)"],
+        "RELEASE_CHECKLIST.md": ["## Official Piccle engine qualification", "dotpiccle/engine-rs"],
+    }
+    for relative, tokens in engine_contract_tokens.items():
+        text = (ROOT / relative).read_text(encoding="utf-8")
+        for token in tokens:
+            if token not in text:
+                failures.append(f"engine documentation: {relative} lacks official-engine contract text {token!r}")
+
+    forbidden_tokens = {
+        "AGENTS.md": ["### 4.2 AI-friendly", "### 4.3 Human-readable", "any independent engine", "reference engine"],
+        "CONTRIBUTING.md": ["**AI-friendly:**", "**Readable:** JSON", "independent engine implementer", "clean-room implementation"],
+        "README.md": ["├── reverb", "mix → reverb", "Building micro-audio made easy", "#quick-start", ">Quick start<", "independent conforming", "reference engine", "clean-room implementation"],
+        "RELEASE_CHECKLIST.md": ["Reference and independent engine qualification", "clean-room independent engine", "independent-implementation"],
+        "schemas/v1.json": ["fade_in_ms, fade_out_ms", "pitched hum", "pitchless hiss", "simple understandable audio"],
+        "docs/00-overview.md": ["## Piccle in one minute", "tiny band", "Easy for humans", "Easy for AI systems"],
+        "docs/03-sources.md": ["pitched hum", "pitchless hiss", "TV static", "One-sentence mental model"],
+        "docs/04-pitch.md": ["## Note-to-Hz quick reference", "one piano key", "slide whistle"],
+        "docs/06-filters.md": ["Like a blanket", "Think of it like"],
+        "docs/12-cookbook.md": ["# Cookbook", "Add a reverb after the echo", "like a doorbell"],
+        "docs/11-engine-safety.md": ["frame(D + tail_ms)"],
+        "docs/13-implementer-notes.md": ["# Implementer Notes", "## Recommended reading order", "All other sections are implementation guidance"],
+        "docs/14-conformance.md": ["reference engine and any independent engine"],
+        "docs/15-engine-build-guide.md": ["(63 JSON documents", "(38 documents", "# Engine Build Guide", "independent implementer", "Property-based differential testing (SHOULD)"],
+    }
+    for relative, tokens in forbidden_tokens.items():
+        text = (ROOT / relative).read_text(encoding="utf-8")
+        for token in tokens:
+            if token in text:
+                failures.append(f"documentation parity: {relative} retains stale contract text {token!r}")
     return failures
 
 
@@ -479,6 +552,23 @@ def numeric_aid_errors() -> list[str]:
         "status": "non-normative",
         "pcg32": {"seed_0_first_u32": pcg(0), "seed_1_first_u32": pcg(1), "seed_max_first_u32": pcg(4294967295)},
         "curve_progress_at_half": {"linear": .5, "exponential_0_1_to_1": math.sqrt(.1), "easeIn": .25, "easeOut": .75, "easeInOut": .5},
+        "fade_values_at_half": {
+            "level": .8,
+            "fade_in": {
+                "linear": .4,
+                "exponential": math.sqrt(.8e-10),
+                "easeIn": .2,
+                "easeOut": .8 * .75,
+                "easeInOut": .4,
+            },
+            "fade_out": {
+                "linear": .4,
+                "exponential": math.sqrt(.8e-10),
+                "easeIn": .8 + (0 - .8) * .25,
+                "easeOut": .8 + (0 - .8) * .75,
+                "easeInOut": .4,
+            },
+        },
         "zero_duration_transition_chain": {"declared_targets": [.1, .2, .3], "transition_frames": [0, 0], "first_emitted_target": .3},
         "oscillator_coefficients": {"sine_k1": 1.0, "square_k1": 4/math.pi, "square_k3": 4/(3*math.pi), "saw_k1": 2/math.pi, "saw_k2": -1/math.pi, "triangle_k1": 8/math.pi**2, "triangle_k3": -8/(9*math.pi**2)},
         "balance": {},
@@ -831,9 +921,17 @@ def reverb_qualification_matrix_errors() -> list[str]:
                     f"qualification matrix ({tail_ms}, {soften_hz}, {sample_rate}): "
                     f"reference fails its own modal predicate: {modal_description}"
                 )
-    # Verify property_test section exists
+    # Verify the mandatory deterministic property-test contract.
     if "property_test" not in matrix:
         failures.append("qualification matrix: missing property_test section")
+    else:
+        property_test = matrix["property_test"]
+        if property_test.get("requirement") != "MUST":
+            failures.append("qualification matrix: property_test requirement must be MUST")
+        if property_test.get("minimum_count") != 100:
+            failures.append("qualification matrix: property_test minimum_count must be 100")
+        if property_test.get("seed") != 0:
+            failures.append("qualification matrix: property_test seed must be 0")
     required_profile_rates = [8000, 16000, 22050, 24000, 32000, 44100, 48000, 96000, 192000]
     if matrix.get("additional_profile_sample_rates") != required_profile_rates:
         failures.append(
